@@ -1,0 +1,3046 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Heist: Code Breakers - AI Co-pilot Real-Time Edition</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Chakra Petch', sans-serif;
+            background-color: #05070f;
+            color: #f1f5f9;
+            overflow-x: hidden;
+            transition: filter 0.3s ease;
+        }
+        .mono {
+            font-family: 'Share Tech Mono', monospace;
+        }
+        /* UI Glow Defaults - Premium Cyberpunk Look */
+        .neon-shadow-purple {
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.35);
+        }
+        .neon-shadow-green {
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.35);
+        }
+        .neon-shadow-red {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.35);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #05070f;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6;
+        }
+        /* Sabotage Overlays */
+        .smoke-mask {
+            background: radial-gradient(circle, rgba(15,17,28,0.92) 20%, rgba(5,7,15,0.99) 100%);
+            backdrop-filter: blur(12px);
+        }
+        .ice-mask {
+            background: rgba(147, 197, 253, 0.15);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(191, 219, 254, 0.6);
+            box-shadow: inset 0 0 30px rgba(147, 197, 253, 0.3);
+        }
+        /* Dynamic VFX Animations */
+        @keyframes strike-left {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(60px) scale(1.25); filter: brightness(1.5) drop-shadow(0 0 20px #22c55e); }
+            100% { transform: translateX(0); }
+        }
+        @keyframes strike-right {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(-60px) scale(1.25); filter: brightness(1.5) drop-shadow(0 0 20px #ef4444); }
+            100% { transform: translateX(0); }
+        }
+        .anim-strike-p { animation: strike-left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .anim-strike-opp { animation: strike-right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+        @keyframes damage-shake {
+            0%, 100% { transform: translateX(0) translateY(0); }
+            20% { transform: translateX(-12px) translateY(-6px) rotate(-1.5deg); }
+            40% { transform: translateX(12px) translateY(6px) rotate(1.5deg); }
+            60% { transform: translateX(-10px) translateY(4px); }
+            80% { transform: translateX(10px) translateY(-4px); }
+        }
+        .anim-damage { animation: damage-shake 0.45s ease-in-out; }
+
+        @keyframes warning-flash {
+            0%, 100% { background-color: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.3); }
+            50% { background-color: rgba(239, 68, 68, 0.25); border-color: rgba(239, 68, 68, 0.9); box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+        }
+        .qte-warning { animation: warning-flash 0.5s infinite; }
+
+        /* Floating Damage Text Animation */
+        @keyframes damage-float {
+            0% { transform: translateY(0) scale(0.6); opacity: 0; }
+            30% { transform: translateY(-30px) scale(1.2); opacity: 1; }
+            100% { transform: translateY(-70px) scale(1); opacity: 0; }
+        }
+        .damage-pop-green {
+            animation: damage-float 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            color: #22c55e;
+            text-shadow: 0 0 15px rgba(34, 197, 94, 0.8);
+        }
+        .damage-pop-red {
+            animation: damage-float 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            color: #ef4444;
+            text-shadow: 0 0 15px rgba(239, 68, 68, 0.8);
+        }
+
+        /* SVG Laser Beam Effect */
+        @keyframes laser-grow {
+            0% { stroke-dashoffset: 1000; opacity: 1; stroke-width: 8; }
+            50% { stroke-dashoffset: 0; opacity: 1; stroke-width: 14; }
+            100% { opacity: 0; stroke-width: 1; }
+        }
+        .laser-line-p {
+            stroke-dasharray: 1000;
+            animation: laser-grow 0.6s ease-out forwards;
+            stroke: #22c55e;
+        }
+        .laser-line-opp {
+            stroke-dasharray: 1000;
+            animation: laser-grow 0.6s ease-out forwards;
+            stroke: #ef4444;
+        }
+
+        /* Skill Cast Animations */
+        @keyframes radial-pulse {
+            0% { transform: scale(0.8); opacity: 1; box-shadow: 0 0 0 0px rgba(34, 197, 94, 0.7); }
+            100% { transform: scale(1.5); opacity: 0; box-shadow: 0 0 0 40px rgba(34, 197, 94, 0); }
+        }
+        .skill-cast-spy {
+            animation: radial-pulse 0.8s ease-out forwards;
+            border-color: #22c55e !important;
+        }
+        @keyframes shield-glow-anim {
+            0%, 100% { box-shadow: 0 0 10px rgba(234, 179, 8, 0.2); }
+            50% { box-shadow: 0 0 25px rgba(234, 179, 8, 0.8); }
+        }
+        .skill-cast-guardian {
+            animation: shield-glow-anim 1s infinite alternate;
+            border-color: #eab308 !important;
+        }
+        @keyframes electrical-overclock {
+            0%, 100% { filter: hue-rotate(0deg) brightness(1); }
+            50% { filter: hue-rotate(180deg) brightness(1.6); transform: scale(1.1); }
+        }
+        .skill-cast-engineer {
+            animation: electrical-overclock 0.4s infinite alternate;
+            border-color: #3b82f6 !important;
+        }
+
+        /* Teacher Skill Ambient Effects */
+        @keyframes blackout-flicker {
+            0%, 100% { opacity: 1; }
+            15% { opacity: 0.15; }
+            20% { opacity: 0.9; }
+            45% { opacity: 0.05; }
+            50% { opacity: 0.85; filter: hue-rotate(90deg); }
+            90% { opacity: 0.2; }
+        }
+        .blackout-active {
+            animation: blackout-flicker 4s infinite;
+            filter: grayscale(0.8) contrast(1.2);
+            border: 4px solid #ef4444 !important;
+        }
+
+        @keyframes overdrive-pulse {
+            0%, 100% { box-shadow: inset 0 0 25px rgba(59, 130, 246, 0.3); }
+            50% { box-shadow: inset 0 0 50px rgba(59, 130, 246, 0.75); border-color: #3b82f6; }
+        }
+        .overdrive-active {
+            animation: overdrive-pulse 1s infinite alternate;
+        }
+
+        @keyframes bounty-pulse-anim {
+            0% { transform: scale(1); border-color: #ef4444; }
+            50% { transform: scale(1.05); border-color: #f97316; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
+            100% { transform: scale(1); border-color: #ef4444; }
+        }
+        .bounty-pulse {
+            animation: bounty-pulse-anim 1.2s infinite;
+        }
+        .floating-skill-popup {
+            animation: float-up-fade 1.5s forwards cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes float-up-fade {
+            0% { transform: translateY(15px); opacity: 0; }
+            20% { transform: translateY(0); opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateY(-30px); opacity: 0; }
+        }
+        .shield-glow {
+            box-shadow: 0 0 15px rgba(234, 179, 8, 0.6);
+            border-color: #eab308 !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between" id="game-body">
+
+    <!-- REAL-TIME STATUS BAR -->
+    <div class="bg-slate-900 border-b border-slate-800 px-4 py-2 flex flex-wrap gap-2 justify-between items-center text-xs text-slate-400 z-50">
+        <div class="flex items-center space-x-2">
+            <span class="inline-block w-2 h-2 bg-green-400 rounded-full animate-ping" id="cloud-ping-dot"></span>
+            <span class="font-bold text-slate-300" id="connection-status-text">กำลังเชื่อมต่อคลาวด์จัดเก็บข้อมูลเรียลไทม์...</span>
+        </div>
+        <div class="flex flex-wrap gap-1 md:gap-2">
+            <button onclick="switchViewDirectly('entrance')" class="bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-700 px-2 py-1 rounded">หน้าแรก</button>
+            <button onclick="switchViewDirectly('host')" class="bg-purple-950/40 hover:bg-purple-900/40 text-purple-300 border border-purple-800 px-2 py-1 rounded">หน้าครู (Host)</button>
+            <button onclick="switchViewDirectly('lobby')" class="bg-amber-950/40 hover:bg-amber-900/40 text-amber-300 border border-amber-800 px-2 py-1 rounded">Lobby นักเรียน</button>
+            <button onclick="switchViewDirectly('player')" class="bg-green-950/40 hover:bg-green-900/40 text-green-300 border border-green-800 px-2 py-1 rounded">หน้าจอดวล นักเรียน</button>
+        </div>
+    </div>
+
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur px-4 md:px-6 py-4 flex justify-between items-center sticky top-0 z-40">
+        <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 rounded-lg bg-green-500/10 border border-green-500/40 flex items-center justify-center text-green-400 font-bold text-lg">
+                <i class="fa-solid fa-satellite-dish animate-pulse"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-xs md:text-base tracking-wider text-green-400 uppercase">CYBER HEIST: CO-PILOT (LIVE)</h1>
+                <p class="text-[9px] text-slate-500 font-bold hidden sm:block">ม.6 ปัญญาประดิษฐ์เพื่อการทำงานแห่งอนาคต (Real-Time Synchronized Class)</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-2 md:space-x-3">
+            <button onclick="toggleSyllabusDrawer()" class="bg-slate-900 border border-slate-800 text-slate-300 hover:text-green-400 px-2 md:px-3 py-1.5 rounded-lg text-xs flex items-center space-x-1.5 transition-all">
+                <i class="fa-solid fa-book-open"></i>
+                <span class="hidden md:inline">คลังความรู้ AI</span>
+            </button>
+            <button onclick="toggleSound()" id="sound-btn" class="bg-slate-900 border border-slate-800 text-slate-400 hover:text-white px-2.5 py-1.5 rounded-lg text-xs">
+                <i class="fa-solid fa-volume-xmark"></i>
+            </button>
+            <div id="nav-room-badge" class="hidden flex items-center space-x-1 bg-slate-900 px-2 py-1.5 rounded-lg border border-slate-800 text-xs">
+                <span class="text-[8px] text-slate-500 uppercase font-bold">ROOM:</span>
+                <span class="mono font-bold text-green-400 animate-pulse text-[10px]" id="nav-room-id">HEIST88</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col justify-center max-w-7xl w-full mx-auto p-3 md:p-6 relative">
+        <!-- SVG Canvas layer for visual laser beams -->
+        <svg id="laser-vfx-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-30" style="display: none;">
+            <line id="laser-vfx-line" x1="0" y1="0" x2="0" y2="0" class="" />
+        </svg>
+
+        <!-- Floating Damage / Points Popup Area -->
+        <div id="vfx-damage-container" class="absolute inset-0 pointer-events-none z-40 overflow-hidden"></div>
+
+        <!-- SCREEN 1: THE PREMIUM DUAL ENTRANCE -->
+        <div id="screen-entrance" class="max-w-4xl w-full mx-auto py-6 md:py-10 space-y-6 md:space-y-8">
+            <div class="text-center space-y-2">
+                <span class="text-[10px] bg-green-500/10 text-green-400 px-3 py-1 rounded-full border border-green-500/20 font-bold tracking-widest uppercase">Classroom Real-time Interactive Game</span>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-white tracking-wider uppercase">สมรภูมิโจรกรรมรหัสอัจฉริยะ (Real-Time Edition)</h2>
+                <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">เล่นพร้อมกันทั้งห้องเรียน ดวลความรู้ 1v1 ชิงไอเทมรบกวนหน้าจอกันสด ๆ บนสมาร์ทโฟนของนักเรียนแต่ละคน</p>
+            </div>
+
+            <div class="bg-slate-950/80 p-4 md:p-6 rounded-2xl border border-slate-800 max-w-lg mx-auto space-y-6 shadow-2xl">
+                <div class="grid grid-cols-2 gap-2 p-1 bg-slate-900 rounded-xl border border-slate-800 text-xs font-bold text-center">
+                    <button onclick="selectLoginRole('player')" id="btn-tab-login-player" class="py-2.5 rounded-lg transition-all text-green-400 bg-slate-950 border border-green-500/30">
+                        <i class="fa-solid fa-user-secret mr-1.5"></i>นักเรียน (PLAYER)
+                    </button>
+                    <button onclick="selectLoginRole('host')" id="btn-tab-login-host" class="py-2.5 rounded-lg transition-all text-slate-400 hover:text-white">
+                        <i class="fa-solid fa-server mr-1.5"></i>ครูผู้สอน (HOST MONITOR)
+                    </button>
+                </div>
+
+                <!-- PLAYER INPUT REGISTRATION FORM -->
+                <div id="form-login-player" class="space-y-4 text-xs">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-slate-400 mb-1.5 uppercase font-semibold">รหัสเข้าห้องเรียน</label>
+                            <input type="text" id="join-room" value="HEIST88" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-green-400 uppercase font-bold focus:outline-none focus:border-green-500 tracking-wider">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1.5 uppercase font-semibold">ชื่อแฮกเกอร์ของคุณ</label>
+                            <input type="text" id="join-name" placeholder="เช่น แฮกเกอร์ ม.6" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-green-500">
+                        </div>
+                    </div>
+
+                    <!-- อวาตาร์ -->
+                    <div>
+                        <label class="block text-slate-400 mb-1.5 uppercase font-semibold">เลือกหน้ากากรหัสประจำตัว (Avatar)</label>
+                        <div class="grid grid-cols-4 gap-2 text-base" id="avatar-selector">
+                            <button onclick="setAvatar('user-ninja')" class="avatar-opt p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 hover:text-green-400" data-id="user-ninja">
+                                <i class="fa-solid fa-user-ninja"></i>
+                            </button>
+                            <button onclick="setAvatar('skull')" class="avatar-opt p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 hover:text-green-400" data-id="skull">
+                                <i class="fa-solid fa-skull"></i>
+                            </button>
+                            <button onclick="setAvatar('ghost')" class="avatar-opt p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 hover:text-green-400" data-id="ghost">
+                                <i class="fa-solid fa-ghost"></i>
+                            </button>
+                            <button onclick="setAvatar('robot')" class="avatar-opt p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 hover:text-green-400" data-id="robot">
+                                <i class="fa-solid fa-robot"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- คลาส -->
+                    <div>
+                        <label class="block text-slate-400 mb-1.5 uppercase font-semibold">สวมใส่คลาสเพื่อรับความสามารถติดตัว (Class)</label>
+                        <select id="join-class" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-300 focus:outline-none focus:border-green-500">
+                            <option value="spy">🕵️ Spy Class - โบนัสคูณความเร็วตอบ และมีสปายมองควัน</option>
+                            <option value="guardian">🛡️ Guardian Class - ต้านภัยขัดขวาง และมัลแวร์พังจอลดลง 50%</option>
+                            <option value="engineer">⚡ Engineer Class - ใช้ของขัดขวางฝ่ายตรงข้ามประหยัดพลังงาน RAM</option>
+                        </select>
+                    </div>
+
+                    <button onclick="enterAsPlayer()" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-slate-950 font-bold py-3.5 px-6 rounded-xl transition-all shadow-lg text-xs uppercase tracking-wider">
+                        <i class="fa-solid fa-circle-play mr-1.5"></i>เชื่อมต่อเข้าสเตชั่น (CONNECT LOBBY)
+                    </button>
+                </div>
+
+                <!-- HOST LOGIN VIEW -->
+                <div id="form-login-host" class="hidden text-xs space-y-4">
+                    <div>
+                        <label class="block text-slate-400 mb-1.5 uppercase font-semibold">รหัสเปิดห้องเรียน</label>
+                        <input type="text" id="host-room-id-input" value="HEIST88" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-purple-400 uppercase font-bold focus:outline-none focus:border-purple-500 tracking-wider">
+                    </div>
+                    <p class="text-slate-400 leading-relaxed text-center py-2">
+                        เข้าสู่จอหลักฉายขึ้นโปรเจกเตอร์หน้าห้อง (Spectator Stream Dashboard) สำหรับแสดงผลคะแนนและสั่งแปรปรวนสัญญาณสดห้องเรียน
+                    </p>
+                    <button onclick="enterAsHost()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-lg text-xs uppercase tracking-wider">
+                        <i class="fa-solid fa-desktop mr-1.5"></i>เปิดจอควบคุมคุณครู (MONITOR HOST)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: STUDENT LOBBY SCREEN (สแตนด์บายของนักเรียน) -->
+        <div id="screen-lobby" class="hidden max-w-2xl w-full mx-auto space-y-6">
+            <div class="bg-slate-950 border border-amber-500/30 rounded-2xl p-4 md:p-6 text-center relative overflow-hidden neon-shadow-purple">
+                <div class="absolute inset-0 bg-gradient-to-b from-amber-500/5 to-transparent"></div>
+                
+                <i class="fa-solid fa-spinner animate-spin text-4xl text-amber-400 mb-4"></i>
+                <h3 class="text-lg font-bold text-white uppercase tracking-wider">🛰️ ห้องสแตนด์บายเตรียมเจาะระบบ</h3>
+                <p class="text-xs text-slate-400 mt-1">คุณเข้าห้องสำเร็จแล้ว! รอคุณครูหน้าห้องกดปล่อยตัวนักเรียนพร้อมกันเพื่อเข้าสู่สังเวียนการดวลแบบเรียลไทม์</p>
+                
+                <div class="mt-6 p-4 bg-slate-900/80 rounded-xl border border-slate-800 text-left space-y-3">
+                    <div class="flex justify-between items-center text-xs border-b border-slate-800 pb-2">
+                        <span class="text-slate-400 font-bold">ข้อมูลสัญญาณพอร์ตของคุณ:</span>
+                        <span class="text-green-400 font-bold uppercase" id="lobby-ready-badge">สัญญาณพร้อมดวล</span>
+                    </div>
+                    <div class="flex items-center space-x-3 text-xs">
+                        <div class="w-8 h-8 rounded-full bg-slate-950 border border-slate-700 flex items-center justify-center text-slate-300">
+                            <i class="fa-solid" id="lobby-avatar-icon"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-200" id="lobby-player-name">-</p>
+                            <p class="text-[10px] text-slate-400" id="lobby-player-class">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-4">
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center">
+                    <i class="fa-solid fa-users mr-1.5 text-blue-400 animate-pulse"></i> รายชื่อแฮกเกอร์ที่กำลังออนไลน์ในขณะนี้
+                </h4>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="lobby-students-grid">
+                    <!-- Dynamic list of online players -->
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 3: MONITOR HOST DASHBOARD (ระบบจอคุณครู) -->
+        <div id="screen-host" class="hidden space-y-6 text-xs">
+            <!-- แผงสเตตัสแถวบน -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                <div class="bg-slate-950 p-3 md:p-4 rounded-xl border border-slate-800 flex items-center justify-between shadow-lg">
+                    <div>
+                        <p class="text-slate-500 font-bold uppercase tracking-wider text-[8px] md:text-[10px]">รหัสโฮสต์ห้องเรียน</p>
+                        <p class="text-lg md:text-xl font-bold text-purple-400 mono mt-0.5" id="host-code-display">HEIST88</p>
+                    </div>
+                    <div class="p-2 bg-purple-500/10 rounded-lg text-purple-400 hidden sm:block"><i class="fa-solid fa-key"></i></div>
+                </div>
+                <div class="bg-slate-950 p-3 md:p-4 rounded-xl border border-slate-800 flex items-center justify-between shadow-lg">
+                    <div>
+                        <p class="text-slate-500 font-bold uppercase tracking-wider text-[8px] md:text-[10px]">นักเรียนออนไลน์สดในห้อง</p>
+                        <p class="text-lg md:text-xl font-bold text-blue-400 mono mt-0.5" id="host-joined-count">0 คน</p>
+                    </div>
+                    <div class="p-2 bg-blue-500/10 rounded-lg text-blue-400 hidden sm:block"><i class="fa-solid fa-users"></i></div>
+                </div>
+                <div class="bg-slate-950 p-3 md:p-4 rounded-xl border border-slate-800 flex items-center justify-between shadow-lg">
+                    <div>
+                        <p class="text-slate-500 font-bold uppercase tracking-wider text-[8px] md:text-[10px]">สถานะแบทเทิล (Endless Mode)</p>
+                        <p class="text-xs md:text-sm font-bold text-green-400 mt-0.5 truncate" id="host-room-status-lbl">รอบเตรียมการ</p>
+                        <p class="text-[9px] text-purple-400 mt-1 font-bold hidden sm:block" id="host-round-display">ข้อที่ 1 (ชิง 1000 PTS)</p>
+                    </div>
+                    <div class="p-2 bg-green-500/10 rounded-lg text-green-400 hidden sm:block"><i class="fa-solid fa-network-wired"></i></div>
+                </div>
+                <div class="bg-slate-950 p-3 md:p-4 rounded-xl border border-yellow-500/30 flex items-center justify-between shadow-lg">
+                    <div>
+                        <p class="text-yellow-500 font-bold uppercase tracking-wider text-[8px] md:text-[10px]">ภาษีความมั่นคงกลาง (Vault)</p>
+                        <p class="text-lg md:text-xl font-bold text-yellow-400 mono mt-0.5" id="host-vault-display">0 แต้ม</p>
+                    </div>
+                    <div class="p-2 bg-yellow-500/10 rounded-lg text-yellow-400 hidden sm:block"><i class="fa-solid fa-vault"></i></div>
+                </div>
+            </div>
+
+            <!-- กลไกหลัก: จอควบคุมและสถานะดวล -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- คอลัมน์ซ้าย: การจับคู่และการเตรียมความพร้อม -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-slate-950 rounded-xl border border-slate-800 p-4 md:p-5 space-y-5 shadow-2xl">
+                        
+                        <!-- แผงควบคุมคำถามและสปีดควบคุม -->
+                        <div class="bg-slate-900 border border-amber-500/40 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <div class="text-center sm:text-left">
+                                <h4 class="font-bold text-amber-400 text-xs md:text-sm uppercase flex items-center justify-center sm:justify-start"><i class="fa-solid fa-infinity mr-1.5 animate-pulse"></i> โหมดล่าคะแนนชิงแชมป์ 1000 PTS (Endless Fight)</h4>
+                                <p class="text-slate-400 text-[9px] md:text-[10px] mt-0.5">ระบบจะรันข้อสอบสุ่ม 100 ข้อเรื่อย ๆ สลับ Heist ไดนามิก จนกว่าจะมีผู้ชนะสะสมแต้มเป้าหมาย</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2 justify-center sm:justify-end shrink-0 items-center">
+                                <button onclick="hostTriggerStartGame()" id="host-start-btn" class="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold py-2 px-4 rounded-lg text-xs uppercase tracking-wider flex items-center transition-all neon-shadow-green">
+                                    <i class="fa-solid fa-play mr-1.5"></i> START GAME
+                                </button>
+                                
+                                <!-- AUTO-PROGRESS PROGRESS BAR / STATUS -->
+                                <div id="host-auto-progress-panel" class="hidden flex items-center space-x-2 bg-slate-950 border border-green-500/30 px-3 py-1.5 rounded-lg text-[10px]">
+                                    <span class="text-green-400 font-bold uppercase tracking-wider animate-pulse">Auto Next:</span>
+                                    <span class="mono text-white font-bold text-xs" id="host-auto-countdown-lbl">--s</span>
+                                </div>
+
+                                <button onclick="resetGameSession()" class="bg-slate-950 hover:bg-red-950/20 text-slate-400 hover:text-red-400 border border-slate-800 px-3 py-2 rounded-lg text-xs transition-colors">
+                                    <i class="fa-solid fa-rotate mr-1"></i>รีเซ็ต
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- รายการแบทเทิลบอร์ด PvP สด -->
+                        <div class="space-y-3">
+                            <h3 class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest flex justify-between">
+                                <span>สัญญาณคู่แบทเทิลแรนดอมสด (Live Battle Matchups)</span>
+                                <span class="text-green-400 animate-pulse" id="host-active-rounds-badge">พร้อมเชื่อมโยง</span>
+                            </h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="host-matchups-grid">
+                                <!-- Dynamic Matchups -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ขวาสุด: รายชื่อคนจริงออนไลน์ ลีดเดอร์บอร์ด และระบบส่งสกิลครู -->
+                <div class="space-y-6">
+                    <!-- รายชื่อนักเรียนคนจริงในห้องเรียนพร้อมปุ่มเตะนักเรียน -->
+                    <div class="bg-slate-950 rounded-xl border border-slate-800 p-4 md:p-5 space-y-3 shadow-lg">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                            <h3 class="font-bold text-blue-400 uppercase flex items-center text-xs">
+                                <i class="fa-solid fa-users mr-1.5 text-blue-400"></i> แฮกเกอร์จริง (<span id="host-online-count-sub">0</span>)
+                            </h3>
+                            <!-- 💥 ปุ่มเตะออกทั้งหมด (Kick All) 💥 -->
+                            <button onclick="hostKickAllPlayers()" class="bg-red-900/60 hover:bg-red-700 text-white font-bold px-2 py-1 rounded text-[8px] transition-all hover:scale-105 active:scale-95">
+                                <i class="fa-solid fa-user-slash mr-1"></i>เตะออกทั้งหมด
+                            </button>
+                        </div>
+                        <div class="space-y-1.5 max-h-[150px] overflow-y-auto" id="host-online-students-list">
+                            <!-- Show real active students -->
+                        </div>
+                    </div>
+
+                    <!-- ทำเนียบลีดเดอร์บอร์ดดวลแต้ม -->
+                    <div class="bg-slate-950 rounded-xl border border-slate-800 p-4 md:p-5 space-y-3 shadow-lg">
+                        <h3 class="font-bold text-white uppercase border-b border-slate-800 pb-2 flex items-center text-xs">
+                            <i class="fa-solid fa-trophy mr-1.5 text-yellow-500"></i> ทำเนียบแต้ม (WIN TARGET: 1,000)
+                        </h3>
+                        <div class="space-y-2 max-h-[180px] overflow-y-auto" id="host-leaderboard">
+                            <!-- Leaderboard list -->
+                        </div>
+                    </div>
+
+                    <!-- แผงแกล้งพิเศษของคุณครู (Teacher Active Events) -->
+                    <div class="bg-slate-950 rounded-xl border border-red-500/40 p-4 md:p-5 space-y-3 shadow-lg">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                            <h3 class="font-bold text-red-500 flex items-center text-xs uppercase">
+                                <i class="fa-solid fa-triangle-exclamation mr-1.5 animate-pulse"></i> สั่งแปรปรวนสัญญาณ (Events)
+                            </h3>
+                            <!-- 💥 ปุ่มยกเลิกสัญญาณแปรวน (Cancel Event) 💥 -->
+                            <button onclick="clearHostEvent()" class="bg-slate-900 hover:bg-red-950 text-red-400 border border-red-500/30 px-2 py-0.5 rounded text-[9px] font-bold transition-all hover:scale-105 active:scale-95">
+                                <i class="fa-solid fa-ban mr-1"></i>ยกเลิกสกิลครู
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-[10px]">
+                            <button onclick="hostTriggerEvent('blackout')" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-red-500/30 p-2 rounded text-left text-slate-300">
+                                <span class="font-bold text-red-400 block mb-0.5">🔌 Blackout</span>
+                                บังหน้าจอคำถามผู้เล่นทันที
+                            </button>
+                            <button onclick="hostTriggerEvent('inflation')" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-yellow-500/30 p-2 rounded text-left text-slate-300">
+                                <span class="font-bold text-yellow-400 block mb-0.5">💰 Inflation</span>
+                                แต้มและดูดแต้ม x2 อัตโนมัติ
+                            </button>
+                            <button onclick="hostTriggerEvent('overdrive')" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-blue-500/30 p-2 rounded text-left text-slate-300">
+                                <span class="font-bold text-blue-400 block mb-0.5">⚡ Overdrive</span>
+                                บีบผู้เล่นเหลือ 10 วิทันที
+                            </button>
+                            <button onclick="hostTriggerEvent('bounty')" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-green-500/30 p-2 rounded text-left text-slate-300">
+                                <span class="font-bold text-green-400 block mb-0.5">🎯 Bounty Active</span>
+                                แจกโบนัสค่าหัวแฮกจ่าฝูง
+                            </button>
+                        </div>
+                        <div id="host-event-toast" class="hidden bg-slate-900 p-2 rounded border border-red-500/30 text-red-400 flex justify-between items-center">
+                            <span id="host-event-toast-msg">ปล่อยความปั่นป่วนเรียบร้อย!</span>
+                            <button onclick="clearHostEvent()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 4: CLEAN PLAYER CONSOLE (หน้าจอเครื่องคำสั่งฝั่งนักเรียน) -->
+        <div id="screen-player" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6 text-xs relative">
+            <div id="skill-cast-overlay" class="absolute top-10 left-1/2 -translate-x-1/2 pointer-events-none z-50 flex flex-col space-y-2"></div>
+
+            <!-- คอลัมน์ซ้าย: ข้อมูลตัวแฮกเกอร์ + RPG Upgrades -->
+            <div class="space-y-6">
+                <div class="bg-slate-950 rounded-xl border border-slate-800 p-5 relative overflow-hidden shadow-xl animate-fade-in" id="p-avatar-card">
+                    <div class="absolute top-4 right-4 flex items-center space-x-1.5 bg-green-500/10 text-green-400 border border-green-500/20 text-[8px] px-2 py-0.5 rounded-full font-bold">
+                        <span class="w-1 h-1 bg-green-500 rounded-full animate-ping"></span>
+                        <span>AUTO PvP CONNECTED</span>
+                    </div>
+
+                    <div class="flex items-center space-x-4 mb-4">
+                        <div class="w-12 h-12 rounded-full border-2 border-green-500/70 bg-green-950/20 flex items-center justify-center text-green-400 text-xl relative overflow-hidden" id="p-avatar-box">
+                            <i class="fa-solid" id="p-display-avatar"></i>
+                        </div>
+                        <div>
+                            <span class="font-bold text-sm text-white block" id="p-display-name">แฮกเกอร์เรา</span>
+                            <span class="text-[8px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded uppercase font-bold" id="p-display-class">Spy Class</span>
+                            <p class="text-[9px] text-green-400 mt-0.5" id="p-display-skill">สกิล: ตรวจจับมัลแวร์กู้ภัย</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 border-t border-slate-800/50 pt-4 text-center">
+                        <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800 relative">
+                            <span class="text-[8px] text-slate-400 block uppercase font-bold">คะแนนสะสม (ชิง 1000)</span>
+                            <p class="text-xl font-bold text-green-400 neon-text-green mono mt-0.5" id="p-display-score">0</p>
+                        </div>
+                        <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800 relative">
+                            <span class="text-[8px] text-slate-400 block uppercase font-bold">ค่าพลังงาน RAM</span>
+                            <p class="text-xl font-bold text-purple-400 mono mt-0.5"><span id="p-display-ram">8</span>/8 GB</p>
+                            <div class="absolute bottom-1 left-2.5 right-2.5 h-1 bg-slate-950 rounded-full overflow-hidden">
+                                <div id="p-ram-bar" class="h-full bg-purple-500 transition-all duration-300" style="width: 100%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="p-display-effects" class="mt-3 space-y-1"></div>
+                </div>
+
+                <!-- RPG Upgrades -->
+                <div class="bg-slate-950 rounded-xl border border-slate-800 p-5 space-y-3 shadow-lg">
+                    <h3 class="text-xs font-bold text-white uppercase flex items-center border-b border-slate-800 pb-2">
+                        <i class="fa-solid fa-gears mr-1.5 text-purple-400 animate-spin"></i> ปรับแต่งสเปกเครื่องแฮกเกอร์
+                    </h3>
+                    <div class="space-y-2 text-[11px]">
+                        <!-- CPU -->
+                        <div class="bg-slate-900/40 p-2 rounded-lg border border-slate-800/80 flex justify-between items-center">
+                            <div>
+                                <span class="font-bold text-slate-200 block">💾 CPU (ประมวลผล)</span>
+                                <span class="text-[9px] text-slate-400 block">ลดเวลาโดนแช่ปุ่ม: <span id="lvl-cpu" class="text-purple-400">Lv.1</span></span>
+                            </div>
+                            <button onclick="upgradeSystem('cpu')" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-2 py-1 rounded text-[9px] transition-all active:scale-95">
+                                <span id="cost-cpu">50</span> แต้ม
+                            </button>
+                        </div>
+                        <!-- Fan -->
+                        <div class="bg-slate-900/40 p-2 rounded-lg border border-slate-800/80 flex justify-between items-center">
+                            <div>
+                                <span class="font-bold text-slate-200 block">💨 Cooling Fan (ฟื้นฟู)</span>
+                                <span class="text-[9px] text-slate-400 block">เร่งการคืน RAM ทุกวิ: <span id="lvl-fan" class="text-purple-400">Lv.1</span></span>
+                            </div>
+                            <button onclick="upgradeSystem('fan')" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-2 py-1 rounded text-[9px] transition-all active:scale-95">
+                                <span id="cost-fan">60</span> แต้ม
+                            </button>
+                        </div>
+                        <!-- Antenna -->
+                        <div class="bg-slate-900/40 p-2 rounded-lg border border-slate-800/80 flex justify-between items-center">
+                            <div>
+                                <span class="font-bold text-slate-200 block">🛰️ Antenna (เสาสัญญาณ)</span>
+                                <span class="text-[9px] text-slate-400 block">คูณแต้มตอบถูกไหว: <span id="lvl-antenna" class="text-purple-400">Lv.1</span></span>
+                            </div>
+                            <button onclick="upgradeSystem('antenna')" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-2 py-1 rounded text-[9px] transition-all active:scale-95">
+                                <span id="cost-antenna">45</span> แต้ม
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- คู่ PvP matched -->
+                <div class="bg-slate-950 rounded-xl border border-slate-800 p-5 space-y-2 shadow-lg">
+                    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">เป้าหมายคู่ดวลข้อสอบ</h3>
+                    <div class="flex items-center justify-between p-3 bg-slate-900/60 rounded-lg border border-slate-800">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-red-950/20 border border-red-500/40 flex items-center justify-center text-red-400 text-base" id="opp-display-avatar-ico">
+                                <i class="fa-solid fa-ghost"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-xs text-white" id="opp-display-name">แฮกเกอร์ฝั่งตรงข้าม</h4>
+                                <p class="text-[9px] text-slate-400" id="opp-display-score">คะแนน: 0 แต้ม</p>
+                            </div>
+                        </div>
+                        <span class="text-[8px] bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded font-bold uppercase">OPPONENT</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- คอนโซลขวา: Active Skills + Quiz Board -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Arena UI panel -->
+                <div id="pvp-arena-panel" class="bg-slate-950 rounded-xl border border-slate-800 p-4 flex justify-between items-center relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 shadow-2xl">
+                    <div class="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-green-500/20 via-transparent to-red-500/20"></div>
+                    
+                    <!-- อวาตาร์ฝั่งผู้เล่นเรา -->
+                    <div class="flex flex-col items-center space-y-1.5 transition-all duration-200" id="pvp-p-box">
+                        <div class="w-14 h-14 rounded-full bg-green-500/10 border-2 border-green-500 flex items-center justify-center text-green-400 text-2xl shadow-lg relative animate-pulse" id="p-pvp-avatar-holder">
+                            <i class="fa-solid" id="pvp-avatar-p"></i>
+                        </div>
+                        <span class="text-[11px] font-bold text-green-400" id="pvp-name-p">แฮกเกอร์เรา</span>
+                        <div class="w-16 bg-slate-900 h-1 rounded-full overflow-hidden border border-slate-800">
+                            <div class="h-full bg-green-500 transition-all" id="pvp-health-p" style="width: 50%"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 text-xs italic font-bold">VS</div>
+                        <span class="text-[9px] text-slate-400 mt-1.5 uppercase tracking-wider mono animate-pulse" id="pvp-round-badge">ข้อที่ 1</span>
+                    </div>
+
+                    <!-- อวาตาร์เป้าหมาย -->
+                    <div class="flex flex-col items-center space-y-1.5 transition-all duration-200" id="pvp-opp-box">
+                        <div class="w-14 h-14 rounded-full bg-red-500/10 border-2 border-red-500 flex items-center justify-center text-red-400 text-2xl shadow-lg relative" id="opp-pvp-avatar-holder">
+                            <i class="fa-solid" id="pvp-avatar-opp"></i>
+                        </div>
+                        <span class="text-[11px] font-bold text-red-400" id="pvp-name-opp">คู่ดวล</span>
+                        <div class="w-16 bg-slate-900 h-1 rounded-full overflow-hidden border border-slate-800">
+                            <div class="h-full bg-red-500 transition-all" id="pvp-health-opp" style="width: 50%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 💥 NEW ACTIVE DISRUPTIVE SKILLS PANEL 💥 -->
+                <div class="bg-slate-950 rounded-xl border border-amber-500/40 p-4 space-y-3 neon-shadow-purple">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                        <h4 class="font-bold text-amber-400 text-xs uppercase flex items-center"><i class="fa-solid fa-gamepad mr-1.5 animate-bounce"></i> แผงควบคุมสกิลก่อกวนพอร์ต (Active Hacker Skills)</h4>
+                        <span class="text-[9px] text-slate-400">กดโจมตีระหว่างตอบโจทย์เมื่อ RAM พร้อม</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3 text-[10px]">
+                        <!-- Skill 1: DDoS Smoke -->
+                        <button onclick="castActiveSkill('smoke')" id="skill-btn-smoke" class="relative bg-slate-900 border border-slate-800 hover:border-purple-500/60 p-2.5 rounded-lg text-left transition-all hover:bg-slate-800 active:scale-95 flex flex-col justify-between h-[75px] overflow-hidden">
+                            <div>
+                                <span class="font-bold text-purple-400 block"><i class="fa-solid fa-smog mr-1"></i> DDoS ควัน</span>
+                                <span class="text-[8px] text-slate-400">ปิดจอคำถามคู่ดวล</span>
+                            </div>
+                            <span class="text-[8px] bg-purple-950 text-purple-300 px-1.5 py-0.5 rounded font-mono w-max">RAM: 4GB</span>
+                            <!-- Cooldown Overlay -->
+                            <div id="cooldown-smoke" class="absolute inset-0 bg-slate-950/90 hidden items-center justify-center text-xs font-bold text-purple-400">CD: 15s</div>
+                        </button>
+                        <!-- Skill 2: Ice Trojan -->
+                        <button onclick="castActiveSkill('ice')" id="skill-btn-ice" class="relative bg-slate-900 border border-slate-800 hover:border-blue-500/60 p-2.5 rounded-lg text-left transition-all hover:bg-slate-800 active:scale-95 flex flex-col justify-between h-[75px] overflow-hidden">
+                            <div>
+                                <span class="font-bold text-blue-400 block"><i class="fa-solid fa-snowflake mr-1"></i> Trojan แช่แข็ง</span>
+                                <span class="text-[8px] text-slate-400">แช่แข็งแป้นช้อยส์</span>
+                            </div>
+                            <span class="text-[8px] bg-blue-950 text-blue-300 px-1.5 py-0.5 rounded font-mono w-max">RAM: 6GB</span>
+                            <!-- Cooldown Overlay -->
+                            <div id="cooldown-ice" class="absolute inset-0 bg-slate-950/90 hidden items-center justify-center text-xs font-bold text-blue-400">CD: 20s</div>
+                        </button>
+                        <!-- Skill 3: Port Firewall -->
+                        <button onclick="castActiveSkill('shield')" id="skill-btn-shield" class="relative bg-slate-900 border border-slate-800 hover:border-yellow-500/60 p-2.5 rounded-lg text-left transition-all hover:bg-slate-800 active:scale-95 flex flex-col justify-between h-[75px] overflow-hidden">
+                            <div>
+                                <span class="font-bold text-yellow-400 block"><i class="fa-solid fa-shield-halved mr-1"></i> บาเรียพอร์ต</span>
+                                <span class="text-[8px] text-slate-400">สะท้อนผลขัดขวาง</span>
+                            </div>
+                            <span class="text-[8px] bg-yellow-950 text-yellow-300 px-1.5 py-0.5 rounded font-mono w-max">RAM: 2GB</span>
+                            <!-- Cooldown Overlay -->
+                            <div id="cooldown-shield" class="absolute inset-0 bg-slate-950/90 hidden items-center justify-center text-xs font-bold text-yellow-400">CD: 15s</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- คอนโซลทำข้อสอบ (Battle Terminal) -->
+                <div class="bg-slate-950 rounded-xl border border-slate-800 relative overflow-hidden min-h-[280px] shadow-2xl" id="p-battle-box">
+                    
+                    <!-- 1. ป้องกันตัวสวนกลับแบบเรียลไทม์ (Parry QTE) -->
+                    <div id="p-qte-overlay" class="hidden absolute inset-0 z-40 qte-warning flex flex-col items-center justify-center p-6 text-center text-white">
+                        <i class="fa-solid fa-triangle-exclamation text-4xl text-red-500 animate-bounce mb-2"></i>
+                        <h4 class="text-xs font-bold text-red-500 neon-text-red uppercase tracking-wider">⚠️ ตรวจพบสัญญาณเจาะพอร์ตโจรกรรมแต้ม!</h4>
+                        <p class="text-[10px] text-slate-300 mb-3 max-w-xs">ด่วน! รีบกดแก้ปุ่มทิศทางสัญญาณพอร์ตเพื่อสวนกลับ (Parry)</p>
+                        
+                        <div class="flex items-center justify-center space-x-3 mb-4">
+                            <div class="w-12 h-12 rounded-xl bg-slate-950 border-2 border-red-500 flex items-center justify-center text-2xl font-extrabold text-red-500" id="qte-symbol-lbl">▲</div>
+                        </div>
+                        
+                        <div class="grid grid-cols-4 gap-2 max-w-xs w-full text-xs">
+                            <button onclick="pressQte('up')" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white p-2 rounded-lg font-bold">▲</button>
+                            <button onclick="pressQte('down')" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white p-2 rounded-lg font-bold">▼</button>
+                            <button onclick="pressQte('left')" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white p-2 rounded-lg font-bold">◀</button>
+                            <button onclick="pressQte('right')" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white p-2 rounded-lg font-bold">▶</button>
+                        </div>
+                    </div>
+
+                    <!-- 2. ม่านควันแกล้ง (Smoke Sabotage Overlay) -->
+                    <div id="p-smoke-overlay" class="smoke-overlay absolute inset-0 hidden z-30 flex flex-col items-center justify-center p-6 text-center smoke-mask">
+                        <i class="fa-solid fa-smog text-5xl text-slate-500 animate-bounce mb-2"></i>
+                        <h4 class="text-xs font-bold text-purple-400 neon-text-purple uppercase">ตรวจพบระบบพ่นม่านควันดำ!</h4>
+                        <p class="text-[10px] text-slate-400 mb-3 max-w-xs">คลิกเช็ดซ้ำ ๆ เพื่อกู้ข้อมูลอ่านโจทย์ด่วน!</p>
+                        <button onclick="wipeSmokeScreen()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-5 py-1.5 rounded-full text-[10px] tracking-wider uppercase">
+                            <i class="fa-solid fa-hand-sparkles mr-1"></i>เช็ดจอภาพ (<span id="smoke-hits-lbl">3</span>)
+                        </button>
+                    </div>
+
+                    <!-- 3. ล็อกปุ่มแช่แข็ง (Ice Sabotage Overlay) -->
+                    <div id="p-ice-overlay" class="ice-overlay absolute inset-0 hidden z-30 flex flex-col items-center justify-center p-6 text-center ice-mask">
+                        <i class="fa-solid fa-snowflake text-5xl text-blue-300 animate-pulse mb-2"></i>
+                        <h4 class="text-xs font-bold text-blue-300 neon-text-blue uppercase">ตัวเลือกถูกแช่แข็ง!</h4>
+                        <p class="text-[10px] text-slate-100 mb-3 max-w-xs">ระบบกำลังละลายสัญญาณหน่วงชั่วคราว...</p>
+                        <span id="p-ice-decay-lbl" class="text-[11px] font-bold text-blue-300">เวลาละลาย: 3.0s</span>
+                    </div>
+
+                    <!-- สเตตัสคำถามแถบบน -->
+                    <div class="border-b border-slate-800 px-5 py-3 flex justify-between items-center bg-slate-900/40">
+                        <div class="flex items-center space-x-2 text-[10px]">
+                            <span class="bg-green-500/10 text-green-400 px-2 py-0.5 rounded border border-green-500/20 font-bold uppercase tracking-wider" id="p-round-lbl">ข้อที่ 1</span>
+                            <span id="p-overclock-tag" class="hidden bg-red-950/40 text-red-300 px-2 py-0.5 rounded border border-red-500/30 uppercase font-bold animate-pulse">Event Ready</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5 text-xs">
+                            <i class="fa-regular fa-clock text-slate-400 animate-pulse"></i>
+                            <span class="mono font-bold text-white" id="p-clock-display">20s</span>
+                        </div>
+                    </div>
+
+                    <!-- เนื้อหาคำถาม -->
+                    <div class="p-5 space-y-5">
+                        <div class="space-y-0.5">
+                            <p class="text-[8px] text-slate-500 uppercase tracking-widest font-bold">คิวคำถามวิชาการ</p>
+                            <h2 id="p-quiz-question" class="text-xs md:text-sm font-semibold text-white leading-relaxed">
+                                รอรับสัญญาณโจทย์จากห้องเรียนหลัก...
+                            </h2>
+                        </div>
+
+                        <!-- ตัวช้อยส์ตัวเลือก (Options Grid) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="p-options-grid">
+                            <button onclick="selectOption(0)" id="p-opt-0" class="p-option-btn text-left p-3 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 hover:border-slate-700 transition-all focus:outline-none flex items-start space-x-2 text-[11px] relative overflow-hidden">
+                                <span class="w-4 h-4 rounded bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 font-bold shrink-0 text-[10px]">A</span>
+                                <span class="text-slate-300 opt-txt">-</span>
+                            </button>
+                            <button onclick="selectOption(1)" id="p-opt-1" class="p-option-btn text-left p-3 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 hover:border-slate-700 transition-all focus:outline-none flex items-start space-x-2 text-[11px] relative overflow-hidden">
+                                <span class="w-4 h-4 rounded bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 font-bold shrink-0 text-[10px]">B</span>
+                                <span class="text-slate-300 opt-txt">-</span>
+                            </button>
+                            <button onclick="selectOption(2)" id="p-opt-2" class="p-option-btn text-left p-3 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 hover:border-slate-700 transition-all focus:outline-none flex items-start space-x-2 text-[11px] relative overflow-hidden">
+                                <span class="w-4 h-4 rounded bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 font-bold shrink-0 text-[10px]">C</span>
+                                <span class="text-slate-300 opt-txt">-</span>
+                            </button>
+                            <button onclick="selectOption(3)" id="p-opt-3" class="p-option-btn text-left p-3 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 hover:border-slate-700 transition-all focus:outline-none flex items-start space-x-2 text-[11px] relative overflow-hidden">
+                                <span class="w-4 h-4 rounded bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 font-bold shrink-0 text-[10px]">D</span>
+                                <span class="text-slate-300 opt-txt">-</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- บาร์ล่างของคอนโซลตอบคำถาม -->
+                    <div class="border-t border-slate-800 px-5 py-2 bg-slate-900/20 text-[10px] flex justify-between items-center">
+                        <span class="text-slate-500" id="p-submit-lbl">สถานะ: รอปล่อยโจทย์...</span>
+                        <div class="flex items-center space-x-1.5 text-slate-400">
+                            <span>ผู้ร่วมประลอง:</span>
+                            <span id="p-opp-submit-lbl" class="text-slate-500 font-bold">รอประมวลผล</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- แผงเชื่อมต่อตลาดมืด (Black Market Panel) -->
+                <div id="p-market-panel" class="hidden bg-slate-950 rounded-xl border border-purple-500/40 p-4 space-y-3 neon-shadow-purple shadow-2xl">
+                    <div class="flex justify-between items-center border-b border-purple-500/20 pb-2">
+                        <div class="flex items-center space-x-1.5">
+                            <i class="fa-solid fa-store text-purple-400 animate-pulse"></i>
+                            <h3 class="font-bold text-white tracking-wide text-[11px]">แผงเชื่อมต่อตลาดมืด (Black Market)</h3>
+                        </div>
+                        <span class="bg-purple-500/10 text-purple-400 text-[10px] px-2 py-0.5 rounded border border-purple-500/20 font-bold">แต้ม: <span id="p-market-score">0</span></span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-[10px]">
+                        <div class="bg-slate-900 p-2.5 rounded border border-slate-800 flex flex-col justify-between space-y-2">
+                            <div>
+                                <span class="font-bold text-purple-300 block">Chrono Over (+5s)</span>
+                                <p class="text-[9px] text-slate-400 mt-0.5">ขยายเวลาเพิ่มในข้อถัดไป 5 วินาที</p>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-yellow-400 font-bold">30 แต้ม</span>
+                                <button onclick="buyMarketItem('chrono')" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-2 py-0.5 rounded transition-all active:scale-95">ซื้อ</button>
+                            </div>
+                        </div>
+                        <div class="bg-slate-900 p-2.5 rounded border border-slate-800 flex flex-col justify-between space-y-2">
+                            <div>
+                                <span class="font-bold text-purple-300 block">Double Data (x2)</span>
+                                <p class="text-[9px] text-slate-400 mt-0.5">คูณสองคะแนนข้อถัดไปทันที</p>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-yellow-400 font-bold">50 แต้ม</span>
+                                <button onclick="buyMarketItem('double')" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-2 py-0.5 rounded transition-all active:scale-95">ซื้อ</button>
+                            </div>
+                        </div>
+                        <div class="bg-slate-900 p-2.5 rounded border border-slate-800 flex flex-col justify-between space-y-2">
+                            <div>
+                                <span class="font-bold text-purple-300 block">Emergency Defuse</span>
+                                <p class="text-[9px] text-slate-400 mt-0.5">ล้างมัลแวร์ขัดขวางทั้งหมดทันที</p>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-yellow-400 font-bold">40 แต้ม</span>
+                                <button onclick="buyMarketItem('reboot')" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-2.5 py-0.5 rounded transition-all active:scale-95">ซื้อ</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- แผง Heist (Heist Option Panel) -->
+                <div id="p-heist-panel" class="hidden bg-slate-950 rounded-xl border border-green-500/40 p-4 space-y-3 neon-shadow-green shadow-2xl">
+                    <div class="flex justify-between items-center font-bold">
+                        <div>
+                            <h3 class="font-bold text-[11px] text-green-400 neon-text-green uppercase flex items-center">
+                                <i class="fa-solid fa-sack-dollar mr-1.5 animate-bounce"></i> ช่วงเวลารูดทรัพย์เข้าพอร์ต (The Heist Time!)
+                            </h3>
+                            <p class="text-[9px] text-slate-400 font-normal">คุณตอบข้อสอบเร็วกว่าคู่ PvP ในข้อนี้! กดส่งมัลแวร์ขัดขวางหรือโจรกรรมด่วนใน 5 วินาที</p>
+                        </div>
+                        <span class="mono text-xl font-bold text-green-400 animate-pulse" id="heist-clock-lbl">5s</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-[10px]">
+                        <button onclick="executeHeistAction('hack')" class="bg-slate-900 border border-slate-800 hover:border-green-500 text-left p-2.5 rounded-lg hover:bg-green-500/10 transition-all flex flex-col justify-between min-h-[85px]">
+                            <div class="p-1 bg-green-500/10 border border-green-500/20 rounded text-green-400 w-max"><i class="fa-solid fa-user-ninja"></i></div>
+                            <div class="mt-1">
+                                <span class="font-bold text-white block">HACK: โจรกรรม</span>
+                                <span class="text-[8px] text-slate-505 mt-0.5 block">ดูดแต้มฝ่ายตรงข้าม (ฟรี)</span>
+                            </div>
+                        </button>
+                        <button onclick="executeHeistAction('smoke')" class="bg-slate-900 border border-slate-800 hover:border-purple-500 text-left p-2.5 rounded-lg hover:bg-purple-500/10 transition-all flex flex-col justify-between min-h-[85px]">
+                            <div class="p-1 bg-purple-500/10 border border-purple-500/20 rounded text-purple-400 w-max"><i class="fa-solid fa-smog"></i></div>
+                            <div class="mt-1">
+                                <span class="font-bold text-white block">SMOKE: พ่นควัน</span>
+                                <span class="text-[8px] text-slate-505 mt-0.5 block">จ่าย RAM 4GB</span>
+                            </div>
+                        </button>
+                        <button onclick="executeHeistAction('ice')" class="bg-slate-900 border border-slate-800 hover:border-blue-500 text-left p-2.5 rounded-lg hover:bg-blue-500/10 transition-all flex flex-col justify-between min-h-[85px]">
+                            <div class="p-1 bg-blue-500/10 border border-blue-500/20 rounded text-blue-400 w-max"><i class="fa-solid fa-snowflake"></i></div>
+                            <div class="mt-1">
+                                <span class="font-bold text-white block">ICE: แช่แข็งปุ่ม</span>
+                                <span class="text-[8px] text-slate-505 mt-0.5 block">จ่าย RAM 6GB</span>
+                            </div>
+                        </button>
+                        <button onclick="executeHeistAction('shield')" class="bg-slate-900 border border-slate-800 hover:border-yellow-500 text-left p-2.5 rounded-lg hover:bg-yellow-500/10 transition-all flex flex-col justify-between min-h-[85px]">
+                            <div class="p-1 bg-yellow-500/10 border border-yellow-500/20 rounded text-yellow-400 w-max"><i class="fa-solid fa-shield-halved"></i></div>
+                            <div class="mt-1">
+                                <span class="font-bold text-white block">SHIELD: บาเรีย</span>
+                                <span class="text-[8px] text-slate-505 mt-0.5 block">จ่าย RAM 2GB</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- รายงาน Logs -->
+                <div class="bg-slate-950 rounded-xl border border-slate-800 p-4 space-y-2 shadow-lg">
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">รายงานความเคลื่อนไหวทางสัญญาณ (Live Network Logs)</h3>
+                    <div id="p-battle-logs" class="space-y-1.5 text-[9px] max-h-[100px] overflow-y-auto pr-2">
+                        <!-- Dynamic logs -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- SYLLABUS KNOWLEDGE DRAWER (Side Drawer Modal) -->
+    <div id="syllabus-drawer" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex justify-end">
+        <div class="w-full max-w-md bg-slate-900 h-full border-l border-slate-800 flex flex-col justify-between shadow-2xl">
+            <div class="p-5 border-b border-slate-800 flex justify-between items-center">
+                <div class="flex items-center space-x-2 text-green-400">
+                    <i class="fa-solid fa-book-open"></i>
+                    <h3 class="font-bold text-sm text-white uppercase tracking-wider">คลังข้อมูลความรู้วิชาการ AI</h3>
+                </div>
+                <button onclick="toggleSyllabusDrawer()" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="flex-1 p-5 space-y-4 overflow-y-auto">
+                <p class="text-[11px] text-slate-400 leading-relaxed">
+                    สรุปเนื้อหาสไลด์จาก PDF "AI Co-pilot: ปัญญาประดิษฐ์เพื่อการทำงานแห่งอนาคต ม.6"
+                </p>
+                <div class="grid grid-cols-2 gap-1.5 text-[10px] font-bold">
+                    <button onclick="switchSyllabusTab('tab1')" class="syllabus-tab-btn py-2 rounded-lg text-left px-2 border" id="btn-tab1">Section 1: ประวัติ AI</button>
+                    <button onclick="switchSyllabusTab('tab2')" class="syllabus-tab-btn py-2 rounded-lg text-left px-2 border" id="btn-tab2">Section 2: Gen AI</button>
+                    <button onclick="switchSyllabusTab('tab3')" class="syllabus-tab-btn py-2 rounded-lg text-left px-2 border" id="btn-tab3">Section 3: Chatbots</button>
+                    <button onclick="switchSyllabusTab('tab4')" class="syllabus-tab-btn py-2 rounded-lg text-left px-2 border animate-pulse" id="btn-tab4">Section 5: Ethics/Bias</button>
+                    <button onclick="switchSyllabusTab('tab5')" class="syllabus-tab-btn py-2 rounded-lg text-left px-2 border col-span-2" id="btn-tab5">Section 6: ทักษะและอาชีพอนาคต</button>
+                </div>
+                <div id="syllabus-content" class="bg-slate-950 p-4 rounded-xl border border-slate-800 text-[11px] text-slate-300 leading-relaxed">
+                    <!-- Tab contents injected here -->
+                </div>
+            </div>
+
+            <div class="p-5 border-t border-slate-800 bg-slate-950/60 text-[10px] text-slate-500 text-center font-semibold">
+                ครูผู้สอน: นายธีรภัทร์ เรืองฤทธิ์ | มัธยมศึกษาปีที่ 6
+            </div>
+        </div>
+    </div>
+
+    <!-- Neon Alert Modal with action button supporting "Lobby Return" -->
+    <div id="custom-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-purple-500/60 rounded-xl p-5 max-w-sm w-full space-y-4 neon-shadow-purple text-center text-white">
+            <i class="fa-solid fa-terminal text-3xl text-purple-400 animate-pulse"></i>
+            <h4 class="text-sm font-bold text-white uppercase tracking-wider" id="modal-title">ระบบแจ้งเตือน</h4>
+            <p class="text-[11px] text-slate-300 leading-relaxed animate-fade-in" id="modal-desc">ข้อความ</p>
+            <div class="flex flex-col gap-2 justify-center" id="modal-btn-holder">
+                <button onclick="closeModal()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-5 rounded-lg text-xs uppercase tracking-wider transition-all">
+                    รับทราบรหัสผ่าน
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- REAL-TIME CLOUD CORE SCRIPT -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cyber-heist-realtime-pvp';
+        const rawConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+        
+        let db = null;
+        let auth = null;
+        let activeRoomListener = null;
+        let isOnlineMode = false;
+
+        const originalQuizzes = [
+            // 1-10
+            { q: "ในปี 1950 ใครคือผู้เสนอแนวคิด 'Turing Test' เพื่อทดสอบความฉลาดของคอมพิวเตอร์?", options: ["Alan Turing", "John McCarthy", "Ada Lovelace", "Garry Kasparov"], correct: 0 },
+            { q: "Dartmouth Workshop ในปี 1956 มีความสำคัญอย่างไรต่อวงการคอมพิวเตอร์?", options: ["ให้กำเนิดคำว่า AI อย่างเป็นทางการ", "สร้างอินเทอร์เน็ตเครื่องแรก", "ออกแบบภาษาคอมพิวเตอร์ระดับสูง", "เปิดตัวคอมพิวเตอร์พกพา"], correct: 0 },
+            { q: "แชทบอทตัวแรกของโลกที่ใช้ทฤษฎีการเลียนแบบนักจิตบำบัด มีชื่อว่าอะไร?", options: ["ELIZA", "Siri", "Deep Blue", "AlphaGo"], correct: 0 },
+            { q: "Generative AI ต่างจาก Traditional AI ในแง่ใดมากที่สุด?", options: ["เน้นสร้างข้อมูลใหม่มากกว่าวิเคราะห์/จัดกลุ่มข้อมูลเก่า", "มีความสามารถในการคำนวณเร็วกว่า", "ไม่จำเป็นต้องพึ่งพาระบบข้อมูลในการทำงาน", "มีความเสถียรปลอดภัยไร้ข้อบกพร่อง"], correct: 0 },
+            { q: "อาการ 'Hallucination' ของปัญญาประดิษฐ์ มีลักษณะอย่างไร?", options: ["AI สร้างข้อมูลเท็จขึ้นมาตอบหน้าตาเฉยอย่างสมจริง", "ตัวโมเดลทำงานช้าลงเนื่องจาก RAM เต็ม", "การแสดงผลรูปภาพผิดสีและเบลอ", "ระบบประมวลผลหยุดทำงานชั่วคราว"], correct: 0 },
+            { q: "หากต้องการตรวจสอบข้อมูลเพื่อหลีกเลี่ยงข่าวลวงจาก AI ควรยึดหลักใด?", options: ["TRIPLE CHECK ตรวจสอบซ้ำข้ามระบบเชิงมนุษย์", "เชื่อถือผลลัพธ์แรกที่สั้นที่สุด", "คัดลอกข้อความไปวางในโปรแกรมแปลภาษา", "หลีกเลี่ยงการใช้งานอินเทอร์เน็ต"], correct: 0 },
+            { q: "Google Gemini แตกต่างจาก AI Chatbots ตัวอื่นอย่างไรในระบบเชื่อมโยงข้อมูล?", options: ["มีจุดเด่นในการค้นหาข้อมูลเรียลไทม์ผ่าน Google Search", "ประมวลผลโค้ดที่ซับซ้อนโดยไม่พึ่งพาเซิร์ฟเวอร์", "ใช้พลังงานน้อยกว่าอุปกรณ์มือถือทั่วไป", "สามารถทำนายหุ้นล่วงหน้าได้อย่างแม่นยำร้อยเปอร์เซ็นต์"], correct: 0 },
+            { q: "ทักษะที่ยากต่อการถูกแทนที่โดย AI ในยุคอนาคตคือทักษะใด?", options: ["Empathy ความเข้าอกเข้าใจและการวางกลยุทธ์วัฒนธรรมเชิงลึก", "การแปลงโค้ดจากภาษาหนึ่งไปอีกภาษา", "การรวบรวมข้อมูลสถิติประชากร", "การสแกนเอกสารเข้าสู่ระบบคลาวด์"], correct: 0 },
+            { q: "ข้อใดคือเป้าหมายหลักของทักษะ 'AI Literacy'?", options: ["เข้าใจข้อจำกัด จริยธรรม และสั่ง AI สร้างสรรค์สิ่งใหม่", "การเขียนโค้ดภาษา Assembly ให้คอมพิวเตอร์ควบคุม", "การต่อชิปประมวลผลลงแผงวงจรด้วยมือ", "การทำงานทดแทน AI ทั้งหมดในออฟฟิศ"], correct: 0 },
+            { q: "บทบาทของ AI Co-pilot เปรียบเทียบได้กับสิ่งใดในการทำงาน?", options: ["ผู้ช่วยคอยแนะนำแนวทางช่วยเหลือโดยมนุษย์เป็นคนขับกุมพวงมาลัย", "หุ่นยนต์ทำความสะอาดอัจฉริยะในสำนักงาน", "ผู้บริหารระดับสูงที่มีอำนาจตัดสินใจเด็ดขาด", "ระบบสำรองไฟฟ้าอัตโนมัติเมื่อไฟตก"], correct: 0 },
+            // 11-20
+            { q: "ซูเปอร์คอมพิวเตอร์เครื่องใดของ IBM เอาชนะแชมป์โลกหมากรุก Garry Kasparov ในปี 1997?", options: ["Deep Blue", "Watson", "AlphaGo", "Blue Gene"], correct: 0 },
+            { q: "ในการประมวลผลภาพแบบ Deep Learning นิยมใช้โครงข่ายแบบใดมากที่สุด?", options: ["CNN (Convolutional Neural Network)", "RNN (Recurrent Neural Network)", "Transformer", "GAN (Generative Adversarial Network)"], correct: 0 },
+            { q: "ข้อใดคือแกนหลักสำคัญของสถาปัตยกรรม Transformer ในโมเดลภาษาขนาดใหญ่?", options: ["Attention Mechanism", "Binary Search Trees", "Genetic Algorithm", "Linear Regression"], correct: 0 },
+            { q: "คำสั่งที่ระบุบทบาท ข้อมูลอ้างอิง และตัวอย่าง เพื่อป้อนให้กับ AI ประมวลผล เรียกว่าอะไร?", options: ["Prompt", "Script", "Keyword", "Hyperlink"], correct: 0 },
+            { q: "การป้อนคำถามให้ AI ตอบทันทีโดยไม่มีการป้อนตัวอย่างล่วงหน้า เรียกว่าอะไร?", options: ["Zero-shot Prompting", "Few-shot Prompting", "Fine-tuning", "Semantic Search"], correct: 0 },
+            { q: "ข้อใดคือรูปแบบการเขียน Prompt โดยให้ AI นึกคิดวิเคราะห์เป็นขั้นตอนอย่างเป็นระบบ?", options: ["Chain-of-Thought (CoT)", "Zero-shot", "One-shot", "Auto-regression"], correct: 0 },
+            { q: "พารามิเตอร์ 'Temperature' ในการตั้งค่า AI Chatbot มีหน้าที่ควบคุมสิ่งใด?", options: ["ความสุ่มคิดสร้างสรรค์ของภาษาพอร์ตคำตอบ", "ความเร็วการอัปโหลดข้อมูล", "อุณหภูมิความร้อนของชิป GPU", "จำนวนโทเค็นสูงสุดที่ใช้งาน"], correct: 0 },
+            { q: "หากผู้ใช้ระบุชุดกฎหลักของโมเดลไว้ตั้งแต่แรกเริ่มเพื่อให้ AI ดำเนินตาม ชุดกฎนั้นเรียกว่า?", options: ["System Prompt / Instruction", "User Input", "Metadata", "Data Feed"], correct: 0 },
+            { q: "ข้อใดคือความหมายของ 'Multimodal AI' ที่สมบูรณ์ที่สุด?", options: ["ประมวลผลข้อมูลผสมผสานได้ทั้งข้อความ ภาพ เสียง และโค้ด", "โมเดลที่ทำงานได้ในระบบปฏิบัติการ Android เท่านั้น", "ระบบที่รันโมเดลภาษาพร้อมกันหลายรุ่นเพื่อแชร์ RAM", "แชทบอทที่ตอบคำถามหลายภาษาได้พร้อมกัน"], correct: 0 },
+            { q: "แนวทางการประมวลผลเสริมโดยให้ AI ไปดึงเอาฐานข้อมูลขององค์กรภายนอกมาประกอบการตอบเรียกว่าอะไร?", options: ["RAG (Retrieval-Augmented Generation)", "Fine-Tuning", "Reinforcement Learning", "Embeddings"], correct: 0 },
+            // 21-30
+            { q: "ฐานข้อมูลประเภทใดที่มีความจำเป็นต่อระบบสืบค้นค้นหาประโยคด้วยวิธี Semantic Search ของ AI?", options: ["Vector Database", "Relational Database", "NoSQL Database", "Flat File Database"], correct: 0 },
+            { q: "กระบวนการแปลงคำหรือประโยคภาษาธรรมดาให้กลายเป็นพิกัดตัวเลขในมิติเวกเตอร์ เรียกว่าอะไร?", options: ["Embedding", "Tokenization", "Parsing", "Hashing"], correct: 0 },
+            { q: "ข้อจำกัดขีดความสามารถการจำของ AI ต่อหน้าการประมวลผลข้อมูลยาวๆ ต่อหนึ่งครั้งเรียกว่าอะไร?", options: ["Context Window", "RAM Limit", "Data Cache", "Token Exhaustion"], correct: 0 },
+            { q: "สถาปัตยกรรม AI ค่ายภาพชนิดใดที่อาศัยกระบวนการเติมสัญญาณรบกวน (Noise) แล้วล้างออกจนได้ภาพสวยงาม?", options: ["Diffusion Models", "GANs", "RNNs", "Decision Trees"], correct: 0 },
+            { q: "สาเหตุที่ทำให้โมเดลปัญญาประดิษฐ์เกิดความลำเอียง (Bias) มากที่สุดคืออะไร?", options: ["ข้อมูลที่นำมาฝึกฝน (Training Data) มีความลำเอียงและไม่รอบด้าน", "อุณหภูมิเซิร์ฟเวอร์ระบบสูงเกินไป", "โมเดลถูกเขียนด้วยภาษา Python รุ่นเก่า", "ผู้ใช้เขียนภาษาคำสั่งผิดไวยากรณ์"], correct: 0 },
+            { q: "การตัดแบ่งคำหรือข้อความให้ออกเป็นชิ้นย่อย ๆ เพื่อส่งให้ AI ประมวลผลจำนวนคำนวณ เรียกว่า?", options: ["Tokenization", "Indexing", "Slicing", "Filtering"], correct: 0 },
+            { q: "คำว่า GPT ใน ChatGPT ย่อมาจากคำว่าอะไร?", options: ["Generative Pre-trained Transformer", "General Purpose Technology", "Global Processing Token", "Graphical Processing Terminal"], correct: 0 },
+            { q: "การนำโมเดลภาษาสำเร็จรูปมาปรับปรุงพฤติกรรมเรียนรู้ด้วยข้อมูลเฉพาะเจาะจงทางอุตสาหกรรมเพิ่มเรียกว่า?", options: ["Fine-Tuning", "Prompt Engineering", "Vectorization", "Zero-shot"], correct: 0 },
+            { q: "การปลอมแปลงบุคคลเคลื่อนไหวขยับใบหน้าและเสียงด้วยปัญญาประดิษฐ์ให้ดูเหมือนจริงเรียกว่าอะไร?", options: ["Deepfake", "Hologram", "Vector Mask", "Face Interpolation"], correct: 0 },
+            { q: "ข้อกฎหมายควบคุมความปลอดภัยข้อมูลส่วนบุคคลของไทยที่ต้องใส่ใจเมื่อแชร์ข้อมูลเข้า AI แชทบอทคือ?", options: ["PDPA (Personal Data Protection Act)", "ISO 27001", "CMMI", "SLA (Service Level Agreement)"], correct: 0 },
+            // 31-40
+            { q: "แนวทางปัญญาประดิษฐ์อธิบายได้ หรือเข้าใจการนึกคิดของระบบได้ง่ายขึ้นในเชิงสืบค้นเรียกว่า?", options: ["Explainable AI (XAI)", "Quantum AI", "Edge AI", "Federated Learning"], correct: 0 },
+            { q: "การจัดเก็บและประมวลผลโมเดล AI บนเครื่องหรือสมาร์ทโฟนฝั่งอุปกรณ์โดยตรงโดยไม่พึ่งเซิร์ฟเวอร์คลาวด์คือ?", options: ["Edge AI", "Cloud AI", "Centralized AI", "Hybrid Computing"], correct: 0 },
+            { q: "วิธีการเทรน AI โดยแชร์พารามิเตอร์น้ำหนักแต่ตัวข้อมูลฝึกฝนยังเก็บเป็นความลับแยกกันในแต่ละอุปกรณ์คือ?", options: ["Federated Learning", "Unsupervised Learning", "Reinforcement Learning", "Active Learning"], correct: 0 },
+            { q: "ขั้นตอนสุดท้ายของการยืนยันโมเดล AI โดยใช้ความคิดเห็นความรู้สึกของมนุษย์เข้ามาปรับแก้ขัดเกลา (RLHF) ย่อมาจากอะไร?", options: ["Reinforcement Learning from Human Feedback", "Robust Learning Hybrid Framework", "Recursive Loop Human Filtering", "Radio Link High Frequency"], correct: 0 },
+            { q: "ในการประลองแข่งบอร์ด AlphaGo ของค่าย Google ชนะแชมป์โลกมนุษย์ Lee Sedol ไปด้วยสกอร์เท่าไหร่?", options: ["4 - 1", "5 - 0", "3 - 2", "4 - 3"], correct: 0 },
+            { q: "คำใดเปรียบเทียบจุดเปลี่ยนสำคัญที่ปัญญาประดิษฐ์มีความสามารถและสติปัญญาเหนือมนุษย์ทุกมิติมวลรวม?", options: ["Singularity", "Super Intelligence", "Neural Leap", "Cyber Dawn"], correct: 0 },
+            { q: "ทักษะที่เกี่ยวข้องกับการป้อนชุดคำสั่งจัดเรียงโครงสร้างที่แม่นยำเพื่อคุยกับ Generative AI ให้สัมฤทธิผลเรียกว่า?", options: ["Prompt Engineering", "Software Engineering", "Systems Architecture", "Network Administration"], correct: 0 },
+            { q: "โมเดลภาษาประเภท Open-source ของค่าย Meta (Facebook) ที่เป็นผู้นำตลาดด้านเปิดโค้ดให้นำไปดัดแปลงคืออะไร?", options: ["LLaMA", "GPT-4o", "Claude 3.5 Sonnet", "Gemini Ultra"], correct: 0 },
+            { q: "ปัญญาประดิษฐ์ที่พัฒนาขึ้นมาเฉพาะทางสำหรับช่วยแนะและเขียนโค้ดคอมพิวเตอร์อย่างอัตโนมัติเรียกว่า?", options: ["AI Co-pilot for Coding (เช่น GitHub Copilot)", "Compiler AI", "Syntax Engine", "Debugger Assistant"], correct: 0 },
+            { q: "โมเดลปัญญาประดิษฐ์ประเภท GAN ย่อมาจากข้อใด?", options: ["Generative Adversarial Network", "General Artificial Network", "Global Analytical Node", "Graphical Action Port"], correct: 0 },
+            // 41-50
+            { q: "ข้อใดคือบทบาทของ 'Generator' ในสถาปัตยกรรมแบบ GANs?", options: ["สร้างข้อมูลจำลองเพื่อหลอกลวง Discriminator", "ตรวจสอบสถิติข้อมูลว่าจริงหรือเท็จ", "จัดพิกัดการไหล of ข้อมูลในหน่วยความจำ", "แสดงภาพกราฟิกออกสู่จอ"], correct: 0 },
+            { q: "ข้อใดคือบทบาทของ 'Discriminator' ในสถาปัตยกรรมแบบ GANs?", options: ["แยกแยะระหว่างข้อมูลจริงและข้อมูลจำลองที่ถูกสร้างขึ้น", "คำนวณพิกัดภูมิศาสตร์ในการสแกนวัตถุ", "สร้างตัวแปรภาพนามธรรมใหม่ขึ้นจากศูนย์", "ขยายความกว้างพอร์ตข้อมูล"], correct: 0 },
+            { q: "ปัญหาที่เกิดจากการที่ AI เรียนรู้จนจดจำรูปแบบของข้อมูลฝึกฝนได้ละเอียดเกินไปจนทำงานทดสอบผิดพลาด เรียกว่า?", options: ["Overfitting", "Underfitting", "Data Leakage", "Gradient Descent"], correct: 0 },
+            { q: "หากเราพยายามสร้างโมเดลทำนายราคาบ้าน แต่นำข้อมูลเก่ามาใช้น้อยเกินไปจนตั้งระบบแบบจับทางอะไรไม่ได้เลยคือ?", options: ["Underfitting", "Overfitting", "Normalization", "Pruning"], correct: 0 },
+            { q: "เพื่อความถูกต้อง โปรแกรมเมอร์แฮกเกอร์ที่ดีจะแบ่งชุดข้อมูล (Dataset) ออกเป็นสองส่วนหลักคืออะไรบ้าง?", options: ["Training Data และ Test Data", "Input Data และ Target Data", "Main Data และ Temp Data", "System Data และ User Data"], correct: 0 },
+            { q: "กระบวนการคัดกรองแปลงคุณสมบัติของข้อมูลดิบให้ออกมาเป็นหัวข้อตัวแปรที่มีประสิทธิภาพก่อนส่งให้ AI เรียกว่า?", options: ["Feature Engineering", "Data Cleaning", "Imputation", "Encoding"], correct: 0 },
+            { q: "โมเดลคำนวณที่ทำหน้าที่แบ่งแยกกลุ่มสิ่งของหรือรูปภาพออกเป็นประเภทที่กำหนดไว้ล่วงหน้า เรียกว่าอะไร?", options: ["Classification", "Regression", "Clustering", "Dimensionality Reduction"], correct: 0 },
+            { q: "การประมวลผลทำนายอุณหภูมิอากาศล่วงหน้าหรือยอดขายร้านค้าในรอบปีจัดอยู่ในโมเดลชนิดใด?", options: ["Regression", "Classification", "Anomaly Detection", "Association Rule"], correct: 0 },
+            { q: "การให้ AI สุ่มสำรวจแนะกลุ่มลูกค้าเป้าหมายโดยไม่มีการบอกป้ายคำตอบระบุกลุ่มเอาไว้ล่วงหน้าเลย จัดเป็นประเภทใด?", options: ["Clustering (Unsupervised)", "Classification (Supervised)", "Pathfinding (A*)", "Heuristic Search"], correct: 0 },
+            { q: "บทบาทอาชีพใหม่ที่มีหน้าที่กำกับคอยตรวจสอบสอดส่องคุณธรรมและจริยธรรมของระบบปัญญาประดิษฐ์คือ?", options: ["AI Ethics Advisor / Auditor", "Prompt Designer", "Database Architect", "Cloud Security Expert"], correct: 0 },
+            // 51-60
+            { q: "กระบวนการสืบค้นข้อมูลในห้องสมุด AI โดยการดูความหมายของข้อความมากกว่าตัวอักษรค้นหา เรียกว่า?", options: ["Semantic Search", "Lexical Search", "Boolean Search", "Direct Hashing"], correct: 0 },
+            { q: "โมเดล Generative AI ที่ใช้สแกนทำนายภาพจากภาพวาดลายเส้นของมนุษย์ให้กลายเป็นรูปภาพความละเอียดสูงคือ?", options: ["Image-to-Image Generation", "Text-to-Speech", "Object Detection", "Optical Character Recognition"], correct: 0 },
+            { q: "ระบบความปลอดภัยหน้าเว็บไซต์เพื่อป้องกันสแปมบอท โดยให้มนุษย์เลือกภาพตามโจทย์ท้าทาย เรียกว่าอะไร?", options: ["CAPTCHA", "Two-Factor Auth", "Encryption Gate", "SSL Handshake"], correct: 0 },
+            { q: "ในการประยุกต์ใช้ AI ในวงการแพทย์ ข้อใดถือว่ามีความเสี่ยงและต้องการมนุษย์คุม (Human-in-the-loop) มากที่สุด?", options: ["การวินิจฉัยโรคและวางแผนผ่าตัดผู้ป่วย", "การนัดหมายลงตารางคิวคนไข้", "การคำนวณสต็อกยาทางเคมีทั่วไป", "การแสดงผลประวัติการตรวจแบบไฟล์พีดีเอฟ"], correct: 0 },
+            { q: "การจำลองภาพแบบ 3 มิติเชิงเสียง สามารถนำ AI มาช่วยวิเคราะห์คลื่นเสียงสะท้อนระบุพื้นที่วัตถุเรียกว่า?", options: ["Acoustic AI Imaging", "Vocal Cloning", "Text-to-Speech", "Audio Segmentation"], correct: 0 },
+            { q: "ข้อใดจัดเป็นข้อมูลฝึกฝนสังเคราะห์ที่สร้างขึ้นโดยโปรแกรมแนะแบบไม่ต้องพึ่งพาข้อมูลคนจริง?", options: ["Synthetic Data", "Raw Data", "Cached Data", "Encrypted Data"], correct: 0 },
+            { q: "เครื่องมือวิเคราะห์หาอารมณ์ความรู้สึกจากข้อความความคิดเห็นของลูกค้าบนโลกออนไลน์ เรียกว่า?", options: ["Sentiment Analysis", "Syntax Parsing", "Token Matching", "Named Entity Recognition"], correct: 0 },
+            { q: "การตัดคำศัพท์ประเภทคำเชื่อมทั่วไปที่พบบ่อยแต่ไม่มีผลเชิงความหมายวิเคราะห์ออกก่อนประมวล NLP เรียกว่า?", options: ["Stop Words Removal", "Stemming", "Lemmatization", "Vectorization"], correct: 0 },
+            { q: "กระบวนการแปลงคำกริยา 'running' หรือ 'runs' ให้กลับไปเป็นคำรากศัพท์เบื้องต้น 'run' เรียกว่าอะไร?", options: ["Stemming / Lemmatization", "Tokenization", "Syntax Parsing", "Encoding"], correct: 0 },
+            { q: "ระบบ AI ที่ใช้สืบค้นและดึงความเคลื่อนไหวทางสัญญาณในรถไร้คนขับ โดยผสมผสานเซ็นเซอร์หลายจุดเรียกว่า?", options: ["Sensor Fusion", "Multicasting", "Load Balancing", "Mesh Networking"], correct: 0 },
+            // 61-100
+            { q: "ระบบนำทางรถไร้คนขับพึ่งพาอุปกรณ์ยิงคลื่นแสงสะท้อนวัดระยะทางวัตถุรอบข้างที่เรียกว่าอะไร?", options: ["Lidar (Light Detection and Ranging)", "Sonar", "Infrared Scanner", "Radio Transmitter"], correct: 0 },
+            { q: "ในยุค AI Literacy เสาหลักที่กล่าวถึงความตระหนักความปลอดภัยส่วนบุคคลและการใช้ข้อมูลฝึกฝนคือ?", options: ["Ethical & Safety Awareness", "Technical Fluency", "Logical Reason", "Creation Competency"], correct: 0 },
+            { q: "แชทบอทของค่าย Anthropic ที่เน้นเรื่องระเบียบความปลอดภัยเชิงลึก Constitutional AI มีชื่อว่า?", options: ["Claude.ai", "ChatGPT", "Gemini", "Perplexity"], correct: 0 },
+            { q: "เครื่องมือสืบค้นหาข้อมูลจากแอปเรียลไทม์ โดยใช้ AI สรุปและตอบพร้อมระบุลิงก์แหล่งที่มาอย่างแม่นยำคือ?", options: ["Perplexity AI", "Internet Explorer", "Wikipedia Bot", "Google Translate"], correct: 0 },
+            { q: "กระบวนการประเมินปัญญาประดิษฐ์เพื่อปรับพฤติกรรมให้เข้ากับค่านิยมมนุษย์ไม่ให้เกิดอันตราย เรียกว่า?", options: ["AI Alignment", "AI Optimization", "AI Fine-tuning", "AI Tokenization"], correct: 0 },
+            { q: "คลังข้อมูลเปิดประเภทที่นักวิจัยนำโมเดลไปพัฒนาปรับปรุงได้อย่างอิสระโดยเสรีนิยมคือตัวเลือกใด?", options: ["Open Source", "Proprietary", "Closed Source", "SaaS Patent"], correct: 0 },
+            { q: "รางวัลอันทรงเกียรติสูงสุดทางด้านวิทยาศาสตร์คอมพิวเตอร์ที่เทียบเท่ารางวัลโนเบลคือรางวัลใด?", options: ["Turing Award", "Nobel prize of Computing", "Ada Lovelace Medal", "Von Neumann Prize"], correct: 0 },
+            { q: "ปัญญาประดิษฐ์ที่วิเคราะห์และเรียนรู้การเล่นเกมอารีน่าอย่าง StarCraft II หรือ Dota 2 จนเอาชนะผู้เล่นมนุษย์คือ?", options: ["AlphaStar / OpenAI Five", "Deep Blue", "Watson", "ELIZA"], correct: 0 },
+            { q: "ข้อใดจัดเป็น AI ระดับแคบ (Narrow AI) ที่เชี่ยวชาญการประมวลผลเรื่องเฉพาะทางเรื่องเดียว?", options: ["ระบบแนะนำสินค้าบนแอปช็อปปิ้ง", "หุ่นยนต์ที่มีความรู้สึกนึกคิดเทียบเท่าคน", "ปัญญาประดิษฐ์ระดับพระเจ้าคุมทุกพอร์ตดาวเทียม", "สมองกลไซบอร์กไร้ขีดจำกัด"], correct: 0 },
+            { q: "ในแง่ของลิขสิทธิ์ รูปภาพที่เจนโดย Generative AI จาก Prompt ล้วน ๆ ในปัจจุบันจัดเป็นอย่างไรตามสิทธิ์สากล?", options: ["เป็นงานที่ขาดผู้สร้างสรรค์เชิงมนุษย์ ไม่ได้รับการคุ้มครองลิขสิทธิ์ทันที", "ลิขสิทธิ์เป็นของโปรแกรมจัดทำพอร์ตเบราว์เซอร์", "ลิขสิทธิ์เป็นของผู้คิดค้นภาษา Python", "เป็นของสาธารณะแบบจดทะเบียนการค้าทันที"], correct: 0 },
+            { q: "ข้อใดไม่ใช่ความสามารถหลักของโมเดล Generative AI?", options: ["การคำนวณสมดุลโครงสร้างตึกเชิงกลศาสตร์โดยไร้สมมติฐาน", "การสร้างรูปภาพสไตล์ภาพวาดสีน้ำมันใหม่", "การเขียนบทกลอนแนะนำตัว", "การถอดความภาษาจากข้อความยาว"], correct: 0 },
+            { q: "โมเดลปัญญาประดิษฐ์ที่ถูกฝึกฝนด้วยวัตถุประสงค์เพื่อทำนายคำถัดไป (Next-token prediction) คือระบบใด?", options: ["Large Language Model (LLM)", "Generative Adversarial Network (GAN)", "Decision Tree", "Linear Classifier"], correct: 0 },
+            { q: "การระบายความร้อนของเซิร์ฟเวอร์คอมพิวเตอร์ที่รัน AI ช่วยให้ระบบทำงานได้อย่างต่อเนื่องสัมพันธ์กับอุปกรณ์ใด?", options: ["Cooling Fan / Liquid Cooling", "GPU Chip core", "RAM Registry", "Mainboard Bus"], correct: 0 },
+            { q: "บริษัท OpenAI มีสำนักงานใหญ่อยู่ที่ประเทศใด?", options: ["สหรัฐอเมริกา", "สหราชอาณาจักร", "ญี่ปุ่น", "เกาหลีใต้"], correct: 0 },
+            { q: "แอปพลิเคชันคีย์บอร์ดที่แนะนำคำถัดไปตามการพิมพ์ของระบบผู้ใช้อาศัยทฤษฎีประเภทใดประมวลผล?", options: ["Predictive Text (Markov Chain / NLP)", "Binary Search Tree", "Quick Sort", "Direct Memory Access"], correct: 0 },
+            { q: "โมเดลใดเปิดตัวขึ้นเป็นผู้นำด้านการสร้างสรรค์คลิปวิดีโอสมจริงระดับภาพยนตร์จากสถาปัตยกรรมค่ายภาพ?", options: ["Sora (OpenAI)", "ChatGPT", "Claude 3 Sonnet", "AlphaGo"], correct: 0 },
+            { q: "ระบบคัดแยกอีเมลขยะ (Spam Filter) จัดเป็นการทำงานด้านใดของปัญญาประดิษฐ์?", options: ["Classification", "Regression", "Clustering", "Reinforcement Learning"], correct: 0 },
+            { q: "กระบวนการแปลงไฟล์รูปภาพลายเซ็นหรือเอกสารสแกนให้ออกมาเป็นข้อความตัวหนังสือ เรียกว่า?", options: ["OCR (Optical Character Recognition)", "NLP", "Speech-to-Text", "Image Compression"], correct: 0 },
+            { q: "ข้อจำกัดข้อใดทำให้ AI ไม่สามารถเข้าอกเข้าใจผู้ป่วยได้เหมือนแพทย์ที่เป็นคนจริง ๆ?", options: ["ขาดความตระหนักรู้และจิตวิญญาณแห่งความเห็นอกเห็นใจ (Empathy)", "ไม่มีหน่วยความจำถาวรสำรองข้อมูล", "ไม่มีความสามารถในการสแกนไฟล์เอกสารทางการแพทย์", "ความเร็วการตอบช้ากว่าปกติเมื่อเซิร์ฟเวอร์เต็ม"], correct: 0 },
+            { q: "การบิดเบือนข้อมูลหรือสร้างเอกสารแอบอ้างโดย AI มีผลทางกฎหมายเรื่องใดมากที่สุดบนไซเบอร์สเปซ?", options: ["พระราชบัญญัติว่าด้วยการกระทำความผิดเกี่ยวกับคอมพิวเตอร์ (พ.ร.บ. คอมพิวเตอร์)", "กฎหมายลิขสิทธิ์ทรัพย์สินทางปัญญา", "PDPA ข้อมูลส่วนบุคคล", "ประมวลกฎหมายอาญาเรื่องโจรกรรมวัตถุ"], correct: 0 },
+            { q: "ข้อใดคือความหมาย of คำว่า Token ในการประมวลผลภาษาของโมเดลขนาดใหญ่?", options: ["หน่วยย่อยของคำหรือข้อความที่โมเดลใช้ในการคำนวณ", "เหรียญดิจิทัลเพื่อใช้ปลดล็อกสิทธิใช้งานระดับสูง", "ไฟล์ความปลอดภัยเพื่อล็อกเอาต์ออกจากหน้าเว็บ", "ชิปฮาร์ดแวร์ประมวลผลสเปกแรง"], correct: 0 },
+            { q: "หากแฮกเกอร์ป้อน Prompt ที่ล่อลวงให้ AI แตกแผงข้อจำกัดความปลอดภัยออกเพื่อคายข้อมูลลับ เรียกว่าอะไร?", options: ["Prompt Injection / Jailbreaking", "SQL Injection", "Buffer Overflow", "Phishing Attack"], correct: 0 },
+            { q: "ในการวิเคราะห์โมเดล AI ข้อมูลกลุ่มตัวอย่างส่วนที่นำมาทดสอบความถูกต้องห้ามเอาไปทำอะไร?", options: ["ห้ามนำมาใช้ในขั้นตอนการฝึกฝนระบบ (Training Phase) เด็ดขาด", "ห้ามแปลงให้อยู่ในรูปแบบตัวเลขเวกเตอร์", "ห้ามเซฟจัดเก็บบนระบบคลาวด์", "ห้ามลบไฟล์ทิ้งออกจากถังขยะคอมพิวเตอร์"], correct: 0 },
+            { q: "ข้อใดจัดเป็นเครื่องมือแปลภาษาที่มีการผสานโครงข่ายประสาทเทียมของ Google ประสิทธิภาพสูง?", options: ["Google Neural Machine Translation", "Babelfish Engine", "Word-to-Word Dictionary", "Regular Expression Translator"], correct: 0 },
+            { q: "การโจมตีทางไซเบอร์ที่เจาะเข้าระบบคอมพิวเตอร์โรงพยาบาลแล้วจับพอร์ตข้อมูลเรียกค่าไถ่คือมัลแวร์ใด?", options: ["Ransomware", "Trojan Horse", "Spyware", "Adware"], correct: 0 },
+            { q: "ในการประเมินประสิทธิภาพโมเดล ตารางที่แจกแจงจำนวนข้อทำนายถูกและทำนายผิดในแต่ละหมวดหมู่เรียกว่า?", options: ["Confusion Matrix", "Data Table", "Spreadsheet", "Decision Tree Board"], correct: 0 },
+            { q: "การที่รถยนต์ขับเคลื่อนอัตโนมัติสามารถจดจำได้ว่าวัตถุตรงหน้าคือเสาไฟหรือมนุษย์ อาศัยทักษะประเภทใด?", options: ["Object Detection / Computer Vision", "Speech Recognition", "Sentiment Analysis", "Expert System"], correct: 0 },
+            { q: "พอร์ตที่ใช้เชื่อมต่อส่งผ่านการประมวลภาพคุณภาพสูงไปยังชิปเร่งความเร็วโมเดล AI ในปัจจุบันนิยมเชื่อมต่อแบบใด?", options: ["PCIe Gen 5 / NVLink", "USB 2.0", "Serial Port", "SATA Connection"], correct: 0 },
+            { q: "แนวทางจริยธรรมปัญญาประดิษฐ์ที่มุ่งเน้นการปฏิบัติต่อนักพัฒนาผู้สร้างและข้อมูลอย่างยุติธรรมเรียกว่า?", options: ["AI Fairness", "AI Overclocking", "AI Fine-tuning", "AI Tokenization"], correct: 0 },
+            { q: "หากนักเรียนต้องการหลีกเลี่ยงข่าวปลอมที่แต่งโดย AI ในระดับโรงเรียน ควรฝึกฝนทักษะข้อใด?", options: ["Critical Thinking & Information Literacy (การคิดวิเคราะห์ข้อมูลข่าวสาร)", "การพิมพ์สัมผัสให้ไวกว่าเดิม", "การก๊อบปี้ลิงก์เก็บไว้ในโน้ต", "การติดตั้งโปรแกรมสแกนภาพสีทั่วไป"], correct: 0 },
+            { q: "เครื่องมือที่ใช้สลับตรวจสอบรหัสดึงสัญญาณพอร์ตข้อมูลเรียลไทม์เพื่อแรนดอมลำดับในเกมจัดเป็นฟังก์ชันประเภทใด?", options: ["Fisher-Yates Shuffle Algorithm", "Bubble Sort", "Binary Search", "Depth-First Search"], correct: 0 },
+            { q: "ชิปประมวลผลที่มีสถาปัตยกรรมคอร์หลักจำนวนมาก เหมาะอย่างยิ่งสำหรับการทำจีพียูและเทรนโมเดลขนาดใหญ่คือ?", options: ["GPU (Graphics Processing Unit)", "CPU", "SRAM", "Optical Drive"], correct: 0 },
+            { q: "การเรียนรู้ของปัญญาประดิษฐ์เพื่อหาแนวทางตอบปัญหาโดยใช้การให้คะแนนรางวัล (Reward) และบทลงโทษคือ?", options: ["Reinforcement Learning (การเรียนรู้แบบเสริมกำลัง)", "Supervised Learning", "Unsupervised Learning", "Clustering"], correct: 0 },
+            { q: "ปัญญาประดิษฐ์ค่ายเสียงที่เลียนแบบคัดลอกเสียงคนธรรมดาให้ออกมาเหมือนเป็นผู้ออกคำสั่งเอง เรียกว่าอะไร?", options: ["Voice Cloning", "Vocal Isolation", "Sound Segmentation", "Noise Cancellation"], correct: 0 },
+            { q: "ระบบคลาวด์จัดเก็บพิกัดข้อมูลแบบเอกสารที่แชร์ความเคลื่อนไหวสัมพันธ์กับผู้ใช้งานแบบเรียลไทม์นิยมใช้ตัวใด?", options: ["Google Cloud Firestore", "Local Storage TXT", "Excel Online", "Vector DB Core"], correct: 0 },
+            { q: "ทัศนคติที่ดีของมนุษย์ในการพร้อมเรียนรู้และปรับตัวก้าวไปคู่กับระบบอัตโนมัติของ AI เรียกว่า?", options: ["Growth Mindset in AI Era", "Fixed Mindset", "Digital Avoidance", "Legacy Thinking"], correct: 0 },
+            { q: "พารามิเตอร์สูงสุดในระบบ Transformer ที่คุมคำที่สามารถเรียกคืนได้เพื่อประเมินความสัมพันธ์เรียกว่า?", options: ["Context Window (ขอบข่ายบริบทการสืบค้น)", "Max Token per word", "Bus Width", "Interface Gate"], correct: 0 },
+            { q: "สถาปัตยกรรมแบบใดอนุญาตให้คอมพิวเตอร์เขียนรหัสควบคุมคอมพิวเตอร์ย่อยได้เองอย่างมีจุดประสงค์เรียกว่า?", options: ["AI Agents", "Compiler", "Interpreters", "Macros"], correct: 0 },
+            { q: "พิกัดคะแนนความมั่นคงปลอดภัยสูงสุดทางไซเบอร์ที่ได้ผลลัพธ์ผ่านการกางบาเรียสะท้อนมัลแวร์คือการกระทำข้อใด?", options: ["SHIELD Defense Activation", "HACK Intrusion", "SMOKE Blindness", "ICE System Lock"], correct: 0 },
+            { q: "การสืบค้นข้อมูลเชิงมนุษย์ในการถามซ้ำ แซะแนวคิดของ AI บอท เพื่อคัดเอาคำตอบที่มีคุณภาพที่สุดคือ?", options: ["Iterative Prompting (การป้อนคำถามซ้ำแบบสะท้อนกลับ)", "Single prompt execution", "Direct Translation", "Automatic Copy-paste"], correct: 0 }
+        ];
+
+        // Endless target threshold
+        const WIN_TARGET_SCORE = 1000;
+
+        let skillCooldowns = { smoke: 0, ice: 0, shield: 0 };
+
+        // Start local skill cooldown timer clock decrement
+        setInterval(() => {
+            let hasUpdate = false;
+            Object.keys(skillCooldowns).forEach(key => {
+                if (skillCooldowns[key] > 0) {
+                    skillCooldowns[key]--;
+                    hasUpdate = true;
+                }
+            });
+            if (hasUpdate) {
+                updateSkillsCooldownUI();
+            }
+        }, 1000);
+
+        function updateSkillsCooldownUI() {
+            Object.keys(skillCooldowns).forEach(key => {
+                const el = document.getElementById(`cooldown-${key}`);
+                if (el) {
+                    if (skillCooldowns[key] > 0) {
+                        el.classList.remove('hidden');
+                        el.classList.add('flex');
+                        el.innerText = `CD: ${skillCooldowns[key]}s`;
+                    } else {
+                        el.classList.add('hidden');
+                        el.classList.remove('flex');
+                    }
+                }
+            });
+        }
+
+        // Cast active disruptive skill during live active answer round
+        window.castActiveSkill = async function(skillName) {
+            const player = localRoomState.players[myUserId];
+            if (!player || localRoomState.status !== 'active') {
+                logBattle("⚠️ สามารถปล่อยสกิลก่อกวนพอร์ตได้เฉพาะเวลาที่มีสัญญาณโจทย์ถามสดเท่านั้น!");
+                return;
+            }
+
+            if (skillCooldowns[skillName] > 0) {
+                logBattle(`⏳ ซอฟต์แวร์กำลังรีบูตคูลดาวน์พอร์ตพรีเมียมเหลืออีก ${skillCooldowns[skillName]}s!`);
+                return;
+            }
+
+            let ramCost = 0;
+            if (skillName === 'smoke') ramCost = player.class === 'engineer' ? 3 : 4;
+            else if (skillName === 'ice') ramCost = player.class === 'engineer' ? 5 : 6;
+            else if (skillName === 'shield') ramCost = player.class === 'engineer' ? 1 : 2;
+
+            if (player.ram < ramCost) {
+                logBattle("⚠️ ระดับ RAM สัญญาณเครื่องหลักของคุณต่ำเกินไปสำหรับการยิงซอฟต์แวร์แกล้งนี้!");
+                return;
+            }
+
+            const currentMatch = localRoomState.matchups.find(m => m.p1 === myUserId || m.p2 === myUserId);
+            if (!currentMatch) return;
+            const oppId = currentMatch.p1 === myUserId ? currentMatch.p2 : currentMatch.p1;
+            const opponent = localRoomState.players[oppId];
+
+            let cdDuration = 15;
+            if (skillName === 'smoke') cdDuration = 15;
+            else if (skillName === 'ice') cdDuration = 20;
+            else if (skillName === 'shield') cdDuration = 15;
+
+            skillCooldowns[skillName] = cdDuration;
+            updateSkillsCooldownUI();
+
+            const updatedRam = player.ram - ramCost;
+            let logText = "";
+
+            if (skillName === 'shield') {
+                const playerEffects = player.activeEffects || [];
+                if (!playerEffects.includes('shield')) playerEffects.push('shield');
+                logText = `🛡️ [ACTIVE SKILL] กาง Firewall สะท้อนคลื่นรบกวน 1 รอบ!`;
+                Sound.playShield();
+
+                if (isOnlineMode) {
+                    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                    await updateDoc(roomRef, {
+                        [`players.${myUserId}.ram`]: updatedRam,
+                        [`players.${myUserId}.activeEffects`]: playerEffects
+                    });
+                } else {
+                    player.ram = updatedRam;
+                    player.activeEffects = playerEffects;
+                    handleCentralStateUpdate(localRoomState);
+                }
+            } else if (opponent) {
+                const targetHasShield = (opponent.activeEffects || []).includes('shield');
+                if (targetHasShield) {
+                    const opponentEffects = (opponent.activeEffects || []).filter(e => e !== 'shield');
+                    const playerEffects = player.activeEffects || [];
+                    if (!playerEffects.includes(skillName)) playerEffects.push(skillName);
+
+                    logText = `🛡️ บาเรียพอร์ตของ ${opponent.name} แผ่ออกกั้น! ส่งผลให้ไวรัส ${skillName.toUpperCase()} สะท้อนเข้าตัวคุณเอง!`;
+                    Sound.playExplosion();
+
+                    if (isOnlineMode) {
+                        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                        await updateDoc(roomRef, {
+                            [`players.${myUserId}.ram`]: updatedRam,
+                            [`players.${myUserId}.activeEffects`]: playerEffects,
+                            [`players.${oppId}.activeEffects`]: opponentEffects
+                        });
+                    } else {
+                        player.ram = updatedRam;
+                        player.activeEffects = playerEffects;
+                        opponent.activeEffects = opponentEffects;
+                        handleCentralStateUpdate(localRoomState);
+                    }
+                } else {
+                    const opponentEffects = opponent.activeEffects || [];
+                    if (!opponentEffects.includes(skillName)) opponentEffects.push(skillName);
+
+                    if (skillName === 'smoke') {
+                        logText = `🔌 [ACTIVE SKILL] พ่นม่านควันคลื่นดำบังจอของ ${opponent.name} เรียลไทม์!`;
+                        Sound.playSmoke();
+                    } else if (skillName === 'ice') {
+                        logText = `❄️ [ACTIVE SKILL] บอร์ด Trojan แช่ตัวเลือกแป้นพิมพ์ของ ${opponent.name} ทันที!`;
+                        Sound.playIce();
+                    }
+
+                    if (isOnlineMode) {
+                        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                        await updateDoc(roomRef, {
+                            [`players.${myUserId}.ram`]: updatedRam,
+                            [`players.${oppId}.activeEffects`]: opponentEffects
+                        });
+                    } else {
+                        player.ram = updatedRam;
+                        opponent.activeEffects = opponentEffects;
+                        handleCentralStateUpdate(localRoomState);
+                    }
+                }
+            }
+
+            logBattle(logText);
+            triggerClassVfx(player.class);
+        };
+
+        if (rawConfig) {
+            try {
+                const firebaseConfig = JSON.parse(rawConfig);
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                isOnlineMode = true;
+            } catch (e) {
+                console.error("Firebase config parsing error, falling back to Sandbox Local simulation:", e);
+            }
+        }
+
+        // Custom alert guard
+        window.alert = function(msg) {
+            showModal("SYSTEM WARN", msg);
+        };
+
+        async function authenticate() {
+            if (!isOnlineMode) {
+                document.getElementById('cloud-ping-dot').className = "inline-block w-2 h-2 bg-amber-400 rounded-full animate-pulse";
+                document.getElementById('connection-status-text').innerText = "ทำงานในโหมดจำลองส่วนตัว (Offline Sandbox Mode)";
+                return;
+            }
+            try {
+                const customToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : undefined;
+                if (customToken) {
+                    await signInWithCustomToken(auth, customToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                document.getElementById('cloud-ping-dot').className = "inline-block w-2 h-2 bg-green-400 rounded-full animate-ping";
+                document.getElementById('connection-status-text').innerText = `เชื่อมต่อระบบคลาวด์เรียลไทม์สำเร็จ (UID: ${auth.currentUser.uid})`;
+            } catch (err) {
+                console.error("Auth error, fallback to Sandbox:", err);
+                isOnlineMode = false;
+                document.getElementById('cloud-ping-dot').className = "inline-block w-2 h-2 bg-amber-400 rounded-full animate-pulse";
+                document.getElementById('connection-status-text').innerText = "คลาวด์ปิดกั้นชั่วคราว ดำเนินการโหมดจำลองส่วนตัว";
+            }
+        }
+
+        // Expanded Premium Sound System (Synthesizer Waveform Engine)
+        const Sound = {
+            ctx: null,
+            enabled: false,
+            init() {
+                if (!this.ctx && this.enabled) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            playSynth(freqs, type, duration, gainStart = 0.08) {
+                if (!this.enabled) return;
+                this.init();
+                try {
+                    const now = this.ctx.currentTime;
+                    freqs.forEach((f, idx) => {
+                        const osc = this.ctx.createOscillator();
+                        const gainNode = this.ctx.createGain();
+                        osc.type = type;
+                        osc.frequency.setValueAtTime(f, now + idx * 0.06);
+                        gainNode.gain.setValueAtTime(gainStart, now + idx * 0.06);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + duration);
+                        osc.connect(gainNode);
+                        gainNode.connect(this.ctx.destination);
+                        osc.start(now + idx * 0.06);
+                        osc.stop(now + idx * 0.06 + duration);
+                    });
+                } catch(e) { console.log(e); }
+            },
+            playBeep(freq = 440, type = 'sine', duration = 0.1) {
+                this.playSynth([freq], type, duration);
+            },
+            playExplosion() {
+                this.playSynth([160, 110, 60, 30], 'sawtooth', 0.5, 0.18);
+            },
+            playParry() {
+                this.playSynth([660, 990, 1320], 'triangle', 0.18, 0.1);
+            },
+            playSmoke() {
+                this.playSynth([300, 220, 140, 90], 'triangle', 0.4, 0.12);
+            },
+            playIce() {
+                this.playSynth([2000, 2500, 3000, 3500], 'sine', 0.35, 0.06);
+            },
+            playShield() {
+                this.playSynth([350, 520, 700, 1050], 'sine', 0.5, 0.1);
+            },
+            playHack() {
+                this.playSynth([900, 1350, 1800, 2200], 'square', 0.18, 0.07);
+            },
+            playBlackout() {
+                this.playSynth([90, 70, 50, 30], 'sawtooth', 0.6, 0.2);
+            },
+            playOverdrive() {
+                this.playSynth([1500, 1200, 1500, 1200], 'square', 0.3, 0.08);
+            },
+            playBounty() {
+                this.playSynth([440, 380, 440, 380], 'sawtooth', 0.4, 0.12);
+            },
+            playKick() {
+                this.playSynth([500, 250, 100], 'sawtooth', 0.8, 0.25);
+            }
+        };
+
+        window.toggleSound = function() {
+            Sound.enabled = !Sound.enabled;
+            const btn = document.getElementById('sound-btn');
+            if (Sound.enabled) {
+                btn.innerHTML = `<i class="fa-solid fa-volume-high text-green-400"></i>`;
+                Sound.init();
+                Sound.playBeep(600, 'sine', 0.15);
+            } else {
+                btn.innerHTML = `<i class="fa-solid fa-volume-xmark"></i>`;
+            }
+        };
+
+        // Syllabus Data Summary
+        const syllabusData = {
+            tab1: `<strong>Section 1: เส้นทางการเดินทางของ AI</strong><br>• <strong>1950: Alan Turing</strong> เสนอแนวคิด <strong>"Turing Test"</strong> เพื่อทดสอบว่าเครื่องจักรแสดงพฤทีพัทธ์ประพฤติตามมนุษย์ได้หรือไม่<br>• <strong>1956: Dartmouth Workshop</strong> กำเนิดคำว่า "Artificial Intelligence" (AI) เป็นครั้งแรกอย่างเป็นทางการ<br>• <strong>1966: ELIZA</strong> แชทบอทบำบัดตัวแรก ใช้การจับคู่แบบ Pattern Matching<br>• <strong>1997: Deep Blue</strong> ซูเปอร์คอมพิวเตอร์เอาชนะแชมป์โลกหมากรุก Garry Kasparov<br>• <strong>2016: AlphaGo</strong> เอาชนะแชมป์โลกหมากล้อมด้วยโครงข่ายประสาทเทียมระดับลึก (Deep Learning)<br>• <strong>2022: ChatGPT</strong> การปฏิวัติ Gen AI คาดเดาคำอย่างทรงประสิทธิภาพ`,
+            tab2: `<strong>Section 2: ทำความรู้จัก Gen AI</strong><br>• <strong>Generative AI:</strong> สร้างสรรค์ข้อมูลใหม่ (Content Creation) จากฐานเรียนรู้<br>• <strong>Traditional AI:</strong> เน้นการ ค้นหา จัดกลุ่ม หรือ ทำนายผล ตามชุดกฎเดิม<br>• <strong>Neural Networks:</strong> โครงข่ายจำลองเซลล์ประสาท เพื่อประมวลผลคำนวณสถิติคำสำคัญ<br>• <strong>Co-pilot vs Autopilot:</strong> AI ไม่ใช่คนขับรถแทนทั้งหมด (Autopilot) แต่คือระบบหนุนช่วยแนะนำความมั่นคง (Co-pilot) ปลอดภัย`,
+            tab3: `<strong>Section 3: ผู้นำแห่งยุค AI Chatbots</strong><br>• <strong>ChatGPT:</strong> จุดเด่นด้าน Logic, โครงสร้างโค้ด ยืดหยุ่นสูงสุด<br>• <strong>Google Gemini:</strong> ค้นข้อมูลผ่าน Real-time Google Search และประสานงาน Google Workspace<br>• <strong>Claude.ai:</strong> ละเอียดอ่อนเชิงจริยธรรม เข้าใจความสัมพันธ์และสไลด์วิเคราะห์แบบยาวเด่นดี<br>• <strong>Multimodal Era:</strong> ฟังตอบเสียงธรรมชาติ เจนภาพ อ่านพิกัดกล้องไปในตัว`,
+            tab4: `<strong>Section 5: Ethics & Hallucination</strong><br>• <strong>Hallucination (อาการหลอน):</strong> AI ปั้นแต่งเรื่องเท็จขึ้นมาอย่างสมจริงเหมือนเป็นความจริง<br>• <strong>TRIPLE CHECK:</strong> 1. เช็คเว็บหลัก 2. ถามเปรียบต่าง AI แบรนด์อื่น 3. ความสมเหตุผลเชิงมนุษย์<br>• <strong>Bias:</strong> ความลำเอียงของข้อมูลที่ป้อนให้ AI เรียนรู้ มนุษย์ผู้คุมต้องตรวจสอบความบิดเบี้ยวนี้`,
+            tab5: `<strong>Section 6: ทักษะ & อาชีพในอนาคต</strong><br>• <strong>4 เสาหลัก AI Literacy:</strong> รู้จุดจำกัด, รู้วิธีสั่ง Prompt, ใส่ใจจริยธรรม, สร้างสิ่งใหม่<br>• <strong>ทักษะที่ยากต่อการทดแทน:</strong> Empathy (ความเข้าใจจิตใจ) และ Strategy (การวางกลยุทธ์เชิงลึกทางวัฒนธรรม)<br>• <strong>อาชีพใหม่:</strong> Prompt Engineer (นักออกแบบชุดคำสั่ง), AI Ethics Advisor (ผู้คุมจริยธรรมปัญญาประดิษฐ์)`
+        };
+
+        window.toggleSyllabusDrawer = function() {
+            const drawer = document.getElementById('syllabus-drawer');
+            if (drawer.classList.contains('hidden')) {
+                drawer.classList.remove('hidden');
+                switchSyllabusTab('tab1');
+            } else {
+                drawer.classList.add('hidden');
+            }
+            Sound.playBeep(500, 'sine', 0.1);
+        };
+
+        window.switchSyllabusTab = function(tabId) {
+            document.querySelectorAll('.syllabus-tab-btn').forEach(btn => {
+                btn.className = "syllabus-tab-btn bg-slate-950 border border-slate-800 text-slate-500 py-2 rounded-lg text-left px-2";
+            });
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            if (activeBtn) {
+                activeBtn.className = "syllabus-tab-btn bg-slate-900 border border-green-500/40 text-green-400 py-2 rounded-lg text-left px-2 font-bold";
+            }
+            document.getElementById('syllabus-content').innerHTML = syllabusData[tabId];
+            Sound.playBeep(450, 'sine', 0.08);
+        };
+
+        const localRoomState = {
+            roomId: "HEIST88",
+            status: "lobby", // lobby, active, heist, market, ended
+            currentRound: 1,
+            maxRounds: 10,
+            timer: 20,
+            activeEvent: null,
+            centralVault: 0,
+            players: {},
+            matchups: [],
+            currentShuffledQuiz: null,
+            roundStartTime: 0,
+            autoProgressCountdown: 0
+        };
+
+        let myUserId = crypto.randomUUID();
+        let myRoomId = "HEIST88";
+        let localTimerId = null;
+        let autoLoopTimerId = null;
+
+        let selectedAvatar = 'user-ninja';
+        let selectedClass = 'spy';
+        let smokeHitsLeft = 3;
+        let iceMeltTimerLeft = 30;
+        let pActiveEffects = [];
+        let myHardware = { cpu: 1, fan: 1, antenna: 1 };
+
+        window.setAvatar = function(id) {
+            selectedAvatar = id;
+            Sound.playBeep(480, 'sine', 0.08);
+            document.querySelectorAll('.avatar-opt').forEach(btn => {
+                const bId = btn.getAttribute('data-id');
+                if (bId === id) {
+                    btn.className = "avatar-opt p-2.5 rounded-xl bg-green-500/10 border-2 border-green-500 text-green-400";
+                } else {
+                    btn.className = "avatar-opt p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 hover:text-green-400";
+                }
+            });
+        };
+
+        window.selectLoginRole = function(role) {
+            const btnPlayer = document.getElementById('btn-tab-login-player');
+            const btnHost = document.getElementById('btn-tab-login-host');
+            const formPlayer = document.getElementById('form-login-player');
+            const formHost = document.getElementById('form-login-host');
+
+            if (role === 'player') {
+                btnPlayer.className = "py-2.5 rounded-lg transition-all text-green-400 bg-slate-950 border border-green-500/30";
+                btnHost.className = "py-2.5 rounded-lg transition-all text-slate-400 hover:text-white";
+                formPlayer.classList.remove('hidden');
+                formHost.classList.add('hidden');
+            } else {
+                btnHost.className = "py-2.5 rounded-lg transition-all text-green-400 bg-slate-950 border border-green-500/30";
+                btnPlayer.className = "py-2.5 rounded-lg transition-all text-slate-400 hover:text-white";
+                formHost.classList.remove('hidden');
+                formPlayer.classList.add('hidden');
+            }
+            Sound.playBeep(400, 'sine', 0.1);
+        };
+
+        async function startRealTimeRoomSync(roomId, userRole) {
+            if (activeRoomListener) activeRoomListener(); 
+            myRoomId = roomId.toUpperCase();
+
+            // RULE 1: STRICT PATH
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+
+            if (isOnlineMode) {
+                const docSnap = await getDoc(roomRef);
+                if (!docSnap.exists() && userRole === 'host') {
+                    await setDoc(roomRef, {
+                        roomId: myRoomId,
+                        status: "lobby",
+                        currentRound: 1,
+                        maxRounds: 9999, // Endless mode
+                        timer: 20,
+                        activeEvent: null,
+                        centralVault: 0,
+                        players: {},
+                        matchups: [],
+                        currentShuffledQuiz: null,
+                        roundStartTime: Date.now(),
+                        autoProgressCountdown: 0
+                    });
+                }
+
+                activeRoomListener = onSnapshot(roomRef, (snapshot) => {
+                    if (snapshot.exists()) {
+                        const data = snapshot.data();
+                        handleCentralStateUpdate(data);
+                    }
+                }, (error) => {
+                    console.error("Room sync error:", error);
+                    isOnlineMode = false;
+                });
+            } else {
+                handleCentralStateUpdate(localRoomState);
+            }
+        }
+
+        function handleCentralStateUpdate(roomState) {
+            Object.assign(localRoomState, roomState);
+
+            const activeStudents = Object.values(localRoomState.players).filter(p => p.isReal && !p.isKicked);
+
+            // KICK-OUT LISTENER FOR PLAYER
+            const me = localRoomState.players[myUserId];
+            if (me && me.isKicked) {
+                handleBeingKickedOut();
+                return;
+            }
+
+            // Check if anyone has crossed WIN_TARGET_SCORE to end game
+            const winners = Object.values(localRoomState.players).filter(p => p.score >= WIN_TARGET_SCORE);
+            if (winners.length > 0 && localRoomState.status !== 'ended') {
+                triggerEndgameSequence(winners);
+            }
+
+            // HOST VIEW RE-RENDERS
+            document.getElementById('host-code-display').innerText = localRoomState.roomId;
+            document.getElementById('host-joined-count').innerText = `${activeStudents.length} คน`;
+            document.getElementById('host-online-count-sub').innerText = activeStudents.length;
+            document.getElementById('host-round-display').innerText = `ข้อที่ ${localRoomState.currentRound} (ชิงแชมป์ 1000 PTS)`;
+            document.getElementById('host-vault-display').innerText = `${localRoomState.centralVault} แต้ม`;
+            
+            // Render Live Countdown Indicator for Hands-Free Mode
+            const progressPanel = document.getElementById('host-auto-progress-panel');
+            if (localRoomState.autoProgressCountdown > 0) {
+                progressPanel.classList.remove('hidden');
+                document.getElementById('host-auto-countdown-lbl').innerText = `${localRoomState.autoProgressCountdown}s`;
+            } else {
+                progressPanel.classList.add('hidden');
+            }
+
+            const roomStatusText = localRoomState.status === 'lobby' ? "สแตนด์บายใน Lobby" : 
+                                   localRoomState.status === 'active' ? "กำลังทำโจทย์ PvP" : 
+                                   localRoomState.status === 'heist' ? "กำลังโจรกรรม (Heist Phase)" : 
+                                   localRoomState.status === 'market' ? "ตลาดมืดเปิดทำการ" : "จบบทเรียน";
+            document.getElementById('host-room-status-lbl').innerText = roomStatusText;
+
+            if (localRoomState.status === 'lobby') {
+                document.getElementById('host-start-btn').classList.remove('hidden');
+            } else {
+                document.getElementById('host-start-btn').classList.add('hidden');
+            }
+
+            // Sync visual feedback for active Teacher Events
+            const bodyEl = document.getElementById('game-body');
+            if (localRoomState.activeEvent === 'blackout') {
+                bodyEl.className = "min-h-screen flex flex-col justify-between blackout-active";
+            } else if (localRoomState.activeEvent === 'overdrive') {
+                bodyEl.className = "min-h-screen flex flex-col justify-between overdrive-active";
+            } else {
+                bodyEl.className = "min-h-screen flex flex-col justify-between";
+            }
+
+            // Render lists
+            renderHostOnlineList(activeStudents);
+            renderHostLeaderboard();
+            renderHostMatchupsGrid();
+
+            // LOBBY VIEW RE-RENDERS
+            renderLobbyInterface(activeStudents);
+
+            // PLAYER VIEW RE-RENDERS
+            renderPlayerInterface();
+
+            // AI BOT RESPONSE ENGINE (กรณีคู่ต่อสู้เป็นบอทเพื่อทดสอบระบบได้ราบรื่น)
+            if (gameStateView === 'player' && localRoomState.status === 'active') {
+                const currentMatch = localRoomState.matchups.find(m => m.p1 === myUserId || m.p2 === myUserId);
+                if (currentMatch) {
+                    const oppId = currentMatch.p1 === myUserId ? currentMatch.p2 : currentMatch.p1;
+                    const opponent = localRoomState.players[oppId];
+                    if (opponent && !opponent.isReal && opponent.curAnswer === null) {
+                        if (!opponent.botScheduled) {
+                            opponent.botScheduled = true;
+                            const delay = 1500 + Math.random() * 3500; // บอทส่งสัญญาณตอบกลับเร็วขึ้น 1.5 - 5 วินาที
+                            setTimeout(async () => {
+                                if (localRoomState.status === 'active' && opponent.curAnswer === null) {
+                                    const randomAns = Math.floor(Math.random() * 4);
+                                    opponent.curAnswer = randomAns;
+                                    opponent.curTime = Date.now();
+                                    opponent.botScheduled = false; // Reset สำหรับข้อถัดไป
+                                    
+                                    if (isOnlineMode) {
+                                        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                                        await updateDoc(roomRef, {
+                                            [`players.${oppId}.curAnswer`]: randomAns,
+                                            [`players.${oppId}.curTime`]: opponent.curTime
+                                        });
+                                    } else {
+                                        handleCentralStateUpdate(localRoomState);
+                                    }
+                                }
+                            }, delay);
+                        }
+                    }
+                }
+            }
+
+            // IMMEDIATE ANSWER EVALUATION (หากตอบเสร็จทั้งคู่ ตัดประเมินทันที ไม่ต้องรอคูลดาวน์)
+            if (gameStateView === 'player' && localRoomState.status === 'active') {
+                const currentMatch = localRoomState.matchups.find(m => m.p1 === myUserId || m.p2 === myUserId);
+                if (currentMatch) {
+                    const p1 = localRoomState.players[currentMatch.p1];
+                    const p2 = localRoomState.players[currentMatch.p2];
+                    if (p1 && p2 && p1.curAnswer !== null && p2.curAnswer !== null) {
+                        if (localTimerId) {
+                            clearInterval(localTimerId);
+                            localTimerId = null;
+                        }
+                        evaluateRoundResults();
+                    }
+                }
+            }
+        }
+
+        async function triggerEndgameSequence(winners) {
+            const sortedWinners = [...winners].sort((a,b) => b.score - a.score);
+            const absoluteChampion = sortedWinners[0];
+
+            if (gameStateView === 'host') {
+                Sound.playBounty();
+                // 💥 เพิ่มหน้าสรุปชัยชนะที่มีปุ่ม "กลับหน้า Lobby" สำหรับคุณครู 💥
+                showWinnerModal("👑 แฮกเกอร์ผู้พิชิตคะแนนเป้าหมาย!", `จอมโจรแฮกเกอร์ "${absoluteChampion.name}" ทำคะแนนสะสมทะลุผ่าน 1,000 PTS คนแรกสำเร็จ! คว้าตำแหน่ง Chief AI Architect ประจำคาบเรียนนี้ไปครอง!`, true);
+            } else if (gameStateView === 'player') {
+                if (absoluteChampion.id === myUserId) {
+                    Sound.playSynth([800, 1000, 1200, 1500, 1800], 'sine', 0.8, 0.2);
+                    showWinnerModal("🏆 ชัยชนะครั้งยิ่งใหญ่!", "ยินดีด้วย! คุณสามารถทำลายขีดพอร์ตคะแนนขยับเข้า 1,000 แต้มคนแรกของห้อง ดับสัญญาณแฮกทั้งหมดสำเร็จ!", false);
+                } else {
+                    Sound.playExplosion();
+                    showWinnerModal("🏁 สัญญาณถูกปิดกั้น!", `เกมจบลงแล้ว! แฮกเกอร์ "${absoluteChampion.name}" ชิงแฮกข้อมูลครบรอบพอร์ต 1,000 แต้มคนแรกสำเร็จ`, false);
+                }
+            }
+
+            if (isOnlineMode && auth && auth.currentUser) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                await updateDoc(roomRef, { status: "ended", autoProgressCountdown: 0 });
+            } else {
+                localRoomState.status = "ended";
+                localRoomState.autoProgressCountdown = 0;
+            }
+        }
+
+        // 💥 แสดง Modal แจ้งจบเกมพร้อมปุ่มลื่นไหล 💥
+        function showWinnerModal(title, desc, showReturnBtn) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-desc').innerText = desc;
+            
+            const btnHolder = document.getElementById('modal-btn-holder');
+            btnHolder.innerHTML = '';
+            
+            if (showReturnBtn) {
+                const returnBtn = document.createElement('button');
+                returnBtn.className = "bg-green-600 hover:bg-green-500 text-slate-950 font-bold py-2.5 px-5 rounded-lg text-xs uppercase tracking-wider transition-all shadow-md mt-2";
+                returnBtn.innerHTML = `<i class="fa-solid fa-house-chimney mr-1.5"></i>กลับสู่หน้า Lobby (เริ่มรอบถัดไป)`;
+                returnBtn.onclick = function() {
+                    closeModal();
+                    hostReturnToLobby();
+                };
+                btnHolder.appendChild(returnBtn);
+            } else {
+                const ackBtn = document.createElement('button');
+                ackBtn.className = "bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-5 rounded-lg text-xs uppercase tracking-wider transition-all";
+                ackBtn.innerText = "รับทราบพอร์ตสเตตัส";
+                ackBtn.onclick = closeModal;
+                btnHolder.appendChild(ackBtn);
+            }
+            
+            document.getElementById('custom-modal').classList.remove('hidden');
+        }
+
+        // 💥 คืนแต้มและรีเซ็ตทุกอย่างกลับมาสแตนด์บาย Lobby 💥
+        window.hostReturnToLobby = async function() {
+            if (autoLoopTimerId) clearInterval(autoLoopTimerId);
+            
+            // เคลียร์สายจับคู่ คะแนนนักเรียน และคิวคำถามเพื่อเตรียมรันเกมชุดถัดไป
+            const updatedPlayers = { ...localRoomState.players };
+            Object.keys(updatedPlayers).forEach(id => {
+                updatedPlayers[id].score = 0;
+                updatedPlayers[id].ram = updatedPlayers[id].maxRam || 8;
+                updatedPlayers[id].curAnswer = null;
+                updatedPlayers[id].curTime = null;
+                updatedPlayers[id].activeEffects = [];
+            });
+
+            if (isOnlineMode) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                await updateDoc(roomRef, {
+                    status: "lobby",
+                    currentRound: 1,
+                    players: updatedPlayers,
+                    matchups: [],
+                    currentShuffledQuiz: null,
+                    autoProgressCountdown: 0,
+                    activeEvent: null
+                });
+            } else {
+                Object.assign(localRoomState, {
+                    status: "lobby",
+                    currentRound: 1,
+                    players: updatedPlayers,
+                    matchups: [],
+                    currentShuffledQuiz: null,
+                    autoProgressCountdown: 0,
+                    activeEvent: null
+                });
+                handleCentralStateUpdate(localRoomState);
+            }
+            
+            Sound.playBeep(880, 'sine', 0.25);
+            logBattle("🔄 ระบบหลัก: ทำการรีเซ็ตพอร์ตล้างคะแนน นำนักเรียนเข้าสู่ Lobby เตรียมแรนดอมบทเรียนต่อไป");
+        };
+
+        window.hostKickPlayer = async function(playerId) {
+            const playerToKick = localRoomState.players[playerId];
+            if (!playerToKick) return;
+
+            Sound.playKick();
+            logBattle(`🚨 สั่งปิดกั้นและเตะพอร์ตแฮกเกอร์ "${playerToKick.name}" ออกจากเซสชันห้องเรียนหลัก`);
+
+            if (isOnlineMode) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                await updateDoc(roomRef, {
+                    [`players.${playerId}.isKicked`]: true
+                });
+            } else {
+                localRoomState.players[playerId].isKicked = true;
+                handleCentralStateUpdate(localRoomState);
+            }
+        };
+
+        // 💥 ฟังก์ชันสั่งปิดสัญญาณพอร์ตและล้างกระดานเตะทุกคนออก 💥
+        window.hostKickAllPlayers = async function() {
+            const realPlayers = Object.values(localRoomState.players).filter(p => p.isReal);
+            if (realPlayers.length === 0) {
+                showModal("ข้อมูลว่างเปล่า", "ไม่มีนักเรียนออนไลน์อยู่ในเซสชันเครือข่ายปัจจุบัน");
+                return;
+            }
+
+            Sound.playExplosion();
+            logBattle("🚨 สัญญาณแม่สั่ง DISCONNECT: บังคับตัดสัญญาณพอร์ตนักเรียนทุกคนออกจากห้องเรียนสด");
+
+            if (isOnlineMode) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                const batchUpdates = {};
+                realPlayers.forEach(p => {
+                    batchUpdates[`players.${p.id}.isKicked`] = true;
+                });
+                await updateDoc(roomRef, batchUpdates);
+            } else {
+                realPlayers.forEach(p => {
+                    localRoomState.players[p.id].isKicked = true;
+                });
+                handleCentralStateUpdate(localRoomState);
+            }
+        };
+
+        function handleBeingKickedOut() {
+            if (localTimerId) clearInterval(localTimerId);
+            if (autoLoopTimerId) clearInterval(autoLoopTimerId);
+            
+            Sound.playExplosion();
+            showModal("🚨 พอร์ตถูกตัดสัญญาณ!", "คุณถูกคุณครูแบนสัญญาณพอร์ตและเตะออกจากสมรภูมิ!");
+            
+            setTimeout(() => {
+                closeModal();
+                switchViewDirectly('entrance');
+                myUserId = crypto.randomUUID();
+            }, 4000);
+        }
+
+        function renderHostOnlineList(activeStudents) {
+            const container = document.getElementById('host-online-students-list');
+            if (!container) return;
+            container.innerHTML = '';
+            if (activeStudents.length === 0) {
+                container.innerHTML = `
+                    <div class="text-[9px] text-slate-500 text-center py-3 bg-slate-900/40 rounded border border-slate-800 border-dashed animate-pulse">
+                        <i class="fa-solid fa-user-secret mr-1 animate-pulse"></i>ยังไม่มีแฮกเกอร์เชื่อมต่อพอร์ตเข้าห้อง
+                    </div>
+                `;
+            } else {
+                activeStudents.forEach(student => {
+                    const hasShield = (student.activeEffects || []).includes('shield');
+                    const row = document.createElement('div');
+                    row.className = `flex justify-between items-center p-2 rounded bg-slate-900 border text-xs transition-all ${hasShield ? 'shield-glow' : 'border-green-500/30'}`;
+                    row.innerHTML = `
+                        <div class="flex items-center space-x-2 truncate mr-2">
+                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping shrink-0"></span>
+                            <i class="fa-solid fa-${student.avatar} ${hasShield ? 'text-yellow-400' : 'text-green-400'} shrink-0"></i>
+                            <span class="font-bold text-slate-200 truncate">${student.name}</span>
+                            <span class="text-[8px] bg-slate-950 text-slate-500 px-1 rounded uppercase font-bold shrink-0">${student.class}</span>
+                        </div>
+                        <div class="flex items-center space-x-2 shrink-0">
+                            <span class="mono text-green-400 font-bold mr-1">${student.score} PTS</span>
+                            <button onclick="hostKickPlayer('${student.id}')" class="bg-red-600/80 hover:bg-red-500 text-white font-bold px-2 py-1 rounded text-[8px] transition-all hover:scale-105 active:scale-95">
+                                <i class="fa-solid fa-user-slash mr-1"></i>เตะ
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(row);
+                });
+            }
+        }
+
+        function renderHostLeaderboard() {
+            const leaderboard = document.getElementById('host-leaderboard');
+            if (!leaderboard) return;
+            leaderboard.innerHTML = '';
+            const sorted = Object.values(localRoomState.players).filter(p => !p.isKicked).sort((a, b) => b.score - a.score);
+            sorted.forEach((p, idx) => {
+                let medal = `<span class="mono text-slate-500">${idx + 1}</span>`;
+                if (idx === 0) medal = `<i class="fa-solid fa-crown text-yellow-500 animate-bounce"></i>`;
+                else if (idx === 1) medal = `<i class="fa-solid fa-medal text-slate-300"></i>`;
+                else if (idx === 2) medal = `<i class="fa-solid fa-medal text-amber-700"></i>`;
+
+                const isTopAndBounty = (idx === 0) && (localRoomState.activeEvent === 'bounty');
+
+                const div = document.createElement('div');
+                div.className = `flex justify-between items-center p-2 rounded-lg border transition-all ${isTopAndBounty ? 'bounty-pulse' : (p.isReal ? 'bg-indigo-500/10 border-indigo-500/40' : 'bg-slate-900/60 border-slate-800' )}`;
+                div.innerHTML = `
+                    <div class="flex items-center space-x-2 text-[11px] truncate mr-2">
+                        <div class="w-5 text-center shrink-0">${medal}</div>
+                        <span class="font-bold truncate ${p.isReal ? 'text-green-400' : 'text-slate-200'}">${p.name}</span>
+                        ${isTopAndBounty ? '<span class="text-[8px] bg-red-600/30 text-red-400 px-1.5 rounded font-bold animate-pulse"><i class="fa-solid fa-crosshairs"></i> BOUNTY</span>' : ''}
+                    </div>
+                    <span class="mono font-bold text-slate-200 text-xs shrink-0">${p.score} / ${WIN_TARGET_SCORE}</span>
+                `;
+                leaderboard.appendChild(div);
+            });
+        }
+
+        function renderHostMatchupsGrid() {
+            const arena = document.getElementById('host-matchups-grid');
+            if (!arena) return;
+            arena.innerHTML = '';
+            if (localRoomState.matchups.length === 0) {
+                arena.innerHTML = `
+                    <div class="col-span-1 sm:col-span-2 text-center text-slate-500 p-4 bg-slate-900/40 rounded-xl border border-slate-800 border-dashed">
+                        รอคุณครูกดปล่อยตัวเพื่อสร้างสายแข่ง PvP อัตโนมัติ...
+                    </div>
+                `;
+                return;
+            }
+            localRoomState.matchups.forEach(match => {
+                const p1 = localRoomState.players[match.p1] || { name: 'Offline User', score: 0, avatar: 'ghost', isReal: false, isKicked: false };
+                const p2 = localRoomState.players[match.p2] || { name: 'Offline User', score: 0, avatar: 'ghost', isReal: false, isKicked: false };
+                
+                if (p1.isKicked || p2.isKicked) return;
+
+                const p1Sub = p1.curAnswer !== null ? '<span class="text-green-400 font-bold">ตอบแล้ว</span>' : '<span class="text-amber-500 animate-pulse">กำลังคิด...</span>';
+                const p2Sub = p2.curAnswer !== null ? '<span class="text-green-400 font-bold">ตอบแล้ว</span>' : '<span class="text-amber-500 animate-pulse">กำลังคิด...</span>';
+
+                const div = document.createElement('div');
+                div.className = `border rounded-xl p-3 flex flex-col justify-between space-y-2 transition-all ${p1.isReal || p2.isReal ? 'bg-indigo-950/20 border-indigo-500/50 neon-shadow-purple' : 'bg-slate-900 border-slate-800'}`;
+                div.innerHTML = `
+                    <div class="flex justify-between items-center text-[9px] text-slate-500 font-bold uppercase">
+                        <span>📡 คู่แบนด์วิดท์ระบบ</span>
+                        <span class="text-amber-400">${p1.isReal || p2.isReal ? '⚡ ห้องของเราดวลอยู่!' : 'คู่จำลอง'}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs gap-1">
+                        <div class="text-left w-5/12 truncate">
+                            <p class="font-bold text-slate-200 truncate">${p1.name}</p>
+                            <p class="text-[9px] text-slate-400 mt-0.5">${p1.score} PTS (${p1Sub})</p>
+                        </div>
+                        <span class="text-xs font-bold text-slate-700 w-2/12 text-center">VS</span>
+                        <div class="text-right w-5/12 truncate">
+                            <p class="font-bold text-slate-200 truncate">${p2.name}</p>
+                            <p class="text-[9px] text-slate-400 mt-0.5">${p2.score} PTS (${p2Sub})</p>
+                        </div>
+                    </div>
+                `;
+                arena.appendChild(div);
+            });
+        }
+
+        function renderLobbyInterface(activeStudents) {
+            const player = localRoomState.players[myUserId];
+            if (!player) return;
+
+            document.getElementById('lobby-player-name').innerText = player.name;
+            document.getElementById('lobby-player-class').innerText = `คลาสหลัก: ${player.class.toUpperCase()} Class`;
+            document.getElementById('lobby-avatar-icon').className = `fa-solid fa-${player.avatar}`;
+
+            // Sync transitions
+            if (localRoomState.status !== 'lobby' && gameStateView === 'lobby') {
+                logBattle("🚀 ได้รับคิวสัญญาณตอบรับ! นำจอมโจรสแตนด์บายเข้าสมรภูมิ");
+                switchViewDirectly('player');
+                return;
+            }
+
+            const grid = document.getElementById('lobby-students-grid');
+            if (grid) {
+                grid.innerHTML = '';
+                activeStudents.forEach(p => {
+                    const block = document.createElement('div');
+                    block.className = `p-3 rounded-xl border flex items-center space-x-2 text-xs transition-all ${p.id === myUserId ? 'bg-green-500/10 border-green-500/50 text-green-400 font-semibold animate-pulse' : 'bg-slate-900 border-slate-800 text-slate-400'}`;
+                    block.innerHTML = `
+                        <div class="p-1.5 bg-slate-950 rounded-lg shrink-0"><i class="fa-solid fa-${p.avatar}"></i></div>
+                        <div class="truncate">
+                            <p class="truncate font-semibold">${p.name}</p>
+                            <p class="text-[9px] uppercase tracking-wider text-slate-500">${p.class}</p>
+                        </div>
+                    `;
+                    grid.appendChild(block);
+                });
+            }
+        }
+
+        function renderPlayerInterface() {
+            const player = localRoomState.players[myUserId];
+            if (!player) return;
+
+            const currentMatch = localRoomState.matchups.find(m => m.p1 === myUserId || m.p2 === myUserId);
+            let opponent = null;
+            if (currentMatch) {
+                const oppId = currentMatch.p1 === myUserId ? currentMatch.p2 : currentMatch.p1;
+                opponent = localRoomState.players[oppId];
+            }
+
+            // Sync scores, ram
+            document.getElementById('p-display-score').innerText = player.score;
+            document.getElementById('p-display-ram').innerText = player.ram;
+            document.getElementById('p-ram-bar').style.width = `${(player.ram / player.maxRam) * 100}%`;
+            document.getElementById('p-display-name').innerText = player.name;
+            document.getElementById('p-display-class').innerText = `${player.class.toUpperCase()} CLASS`;
+
+            const desc = document.getElementById('p-display-skill');
+            if (player.class === 'spy') desc.innerText = "ทักษะ: คูณสปีดตอบถูก และสปายเห็นม่านควัน";
+            else if (player.class === 'guardian') desc.innerText = "ทักษะ: ต้านผลแกล้ง ดึงม่านควันลดลง 50%";
+            else if (player.class === 'engineer') desc.innerText = "ทักษะ: ขัดขวางจ่าย RAM ประหยัดลง";
+
+            // Sync upgrades UI
+            document.getElementById('lvl-cpu').innerText = `Lv.${myHardware.cpu}`;
+            document.getElementById('lvl-fan').innerText = `Lv.${myHardware.fan}`;
+            document.getElementById('lvl-antenna').innerText = `Lv.${myHardware.antenna}`;
+            document.getElementById('cost-cpu').innerText = myHardware.cpu * 50;
+            document.getElementById('cost-fan').innerText = myHardware.fan * 60;
+            document.getElementById('cost-antenna').innerText = myHardware.antenna * 45;
+
+            if (opponent) {
+                document.getElementById('opp-display-name').innerText = opponent.name;
+                document.getElementById('opp-display-score').innerText = `คะแนน: ${opponent.score} แต้ม`;
+                document.getElementById('opp-display-avatar-ico').innerHTML = `<i class="fa-solid fa-${opponent.avatar}"></i>`;
+            } else {
+                document.getElementById('opp-display-name').innerText = "รอจัดคู่ต่อสู้...";
+                document.getElementById('opp-display-score').innerText = "คะแนน: 0 แต้ม";
+            }
+
+            // Active Shield glow visualization on avatar holders
+            const hasShield = (player.activeEffects || []).includes('shield');
+            const oppHasShield = opponent ? (opponent.activeEffects || []).includes('shield') : false;
+
+            document.getElementById('p-pvp-avatar-holder').className = `w-14 h-14 rounded-full bg-green-500/10 border-2 flex items-center justify-center text-green-400 text-2xl shadow-lg relative transition-all ${hasShield ? 'shield-glow' : 'border-green-500'}`;
+            document.getElementById('p-avatar-card').className = `bg-slate-950 rounded-xl border p-5 relative overflow-hidden shadow-xl transition-all ${hasShield ? 'shield-glow' : 'border-slate-800'}`;
+            
+            if (opponent) {
+                document.getElementById('opp-pvp-avatar-holder').className = `w-14 h-14 rounded-full bg-red-500/10 border-2 flex items-center justify-center text-red-400 text-2xl shadow-lg relative transition-all ${oppHasShield ? 'shield-glow' : 'border-red-500'}`;
+            }
+
+            // Effects UI Rendering
+            pActiveEffects = player.activeEffects || [];
+            const container = document.getElementById('p-display-effects');
+            if (container) {
+                container.innerHTML = '';
+                if (pActiveEffects.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-[9px] text-slate-500 text-center py-2 bg-slate-900/40 rounded border border-slate-800 shadow-inner">
+                            <i class="fa-solid fa-shield-halved text-green-500/70 mr-1"></i>พอร์ตความปลอดภัยมั่นคง ไม่มีไวรัสรบกวน
+                        </div>
+                    `;
+                } else {
+                    pActiveEffects.forEach(eff => {
+                        const block = document.createElement('div');
+                        block.className = "flex justify-between items-center p-1.5 rounded bg-red-950/20 border border-red-500/30 text-red-400 text-[9px] mb-1 shadow-md";
+                        let effT = "", effD = "";
+                        if (eff === 'smoke') { effT = "🔌 ควันบังจอ"; effD = "ควันหนาทึบบดบังคำถามและปุ่มคำตอบ"; }
+                        else if (eff === 'ice') { effT = "❄️ ไวรัสล็อกแป้น"; effD = "แป้นยืนยันตัวถูกหน่วงสัญญาณกดยาก"; }
+                        else if (eff === 'shield') { effT = "🛡️ คลื่นบาเรีย"; effD = "สะท้อนผลแฮกเกอร์โจรกรรมกลับทันที"; }
+                        block.innerHTML = `<div><span class="font-bold">${effT}</span> - ${effD}</div>`;
+                        container.appendChild(block);
+                    });
+                }
+            }
+
+            // Synchronize Overlays (Ice, Smoke)
+            if (localRoomState.status === "active") {
+                if (pActiveEffects.includes('smoke')) {
+                    document.getElementById('p-smoke-overlay').classList.remove('hidden');
+                } else {
+                    document.getElementById('p-smoke-overlay').classList.add('hidden');
+                }
+
+                if (pActiveEffects.includes('ice')) {
+                    document.getElementById('p-ice-overlay').classList.remove('hidden');
+                    runIceMeltLogic();
+                } else {
+                    document.getElementById('p-ice-overlay').classList.add('hidden');
+                }
+            } else {
+                document.getElementById('p-smoke-overlay').classList.add('hidden');
+                document.getElementById('p-ice-overlay').classList.add('hidden');
+            }
+
+            // Sync Arena UI
+            document.getElementById('pvp-round-badge').innerText = `ข้อที่ ${localRoomState.currentRound}`;
+            document.getElementById('pvp-name-p').innerText = player.name;
+            document.getElementById('pvp-name-opp').innerText = opponent ? opponent.name : "คู่ดวล";
+            document.getElementById('p-display-avatar').className = `fa-solid fa-${player.avatar}`;
+            document.getElementById('pvp-avatar-p').className = `fa-solid fa-${player.avatar}`;
+            document.getElementById('pvp-avatar-opp').className = `fa-solid fa-${opponent ? opponent.avatar : 'user-astronaut'}`;
+
+            const totalSum = Math.max(1, player.score + (opponent ? opponent.score : 0));
+            document.getElementById('pvp-health-p').style.width = `${(player.score / totalSum) * 100}%`;
+            document.getElementById('pvp-health-opp').style.width = `${((opponent ? opponent.score : 0) / totalSum) * 100}%`;
+
+            // Battle quiz terminal
+            document.getElementById('p-round-lbl').innerText = `ข้อที่ ${localRoomState.currentRound}`;
+            
+            const pQuizTxt = document.getElementById('p-quiz-question');
+            const pGrid = document.getElementById('p-options-grid');
+            const eventTag = document.getElementById('p-overclock-tag');
+
+            const isBlackout = localRoomState.activeEvent === 'blackout';
+
+            if (localRoomState.status === "lobby") {
+                pQuizTxt.innerText = "รอรับรหัสประมวลผลโจทย์จากคุณครูหน้าห้องหลัก...";
+                pGrid.classList.add('opacity-45', 'pointer-events-none');
+                eventTag.classList.add('hidden');
+            } else if (localRoomState.status === "active") {
+                pGrid.classList.remove('opacity-45', 'pointer-events-none');
+                
+                if (localRoomState.currentShuffledQuiz) {
+                    pQuizTxt.innerText = isBlackout ? "🔌 [🚨 คลื่นความถี่โดนระงับ Blackout ครูปิดการสื่อสารคำถาม] 🔌" : localRoomState.currentShuffledQuiz.q;
+                    
+                    localRoomState.currentShuffledQuiz.options.forEach((opt, idx) => {
+                        const btn = document.getElementById(`p-opt-${idx}`);
+                        const spanTxt = btn.querySelector('.opt-txt');
+                        spanTxt.innerText = isBlackout ? "รหัสลับประมวลผล Blackout" : opt;
+
+                        btn.className = "p-option-btn text-left p-3 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 hover:border-slate-700 transition-all focus:outline-none flex items-start space-x-2 text-[11px] relative overflow-hidden";
+
+                        if (player.curAnswer !== null) {
+                            btn.classList.add('pointer-events-none');
+                            if (player.curAnswer === idx) {
+                                btn.className = "p-option-btn text-left p-3 rounded-lg border-blue-500/60 bg-blue-900/20 text-blue-300 transition-all flex items-start space-x-2 text-[11px] relative overflow-hidden";
+                            }
+                        }
+                    });
+                }
+
+                if (localRoomState.activeEvent) {
+                    eventTag.classList.remove('hidden');
+                    eventTag.innerText = `EVENT: ${localRoomState.activeEvent.toUpperCase()}`;
+                } else {
+                    eventTag.classList.add('hidden');
+                }
+            } else if (localRoomState.status === "heist") {
+                pQuizTxt.innerText = "กำลังประเมินอัตราความเร็วตอบถูกพอร์ต... สแตนด์บายรอกู้ภัย Heist ดวลสวนกลับ";
+                pGrid.classList.add('opacity-45', 'pointer-events-none');
+            } else if (localRoomState.status === "market") {
+                pQuizTxt.innerText = "🛒 ตลาดมืดเชื่อมโยงสำเร็จแล้ว! เชิญคุณอัปเกรดความมั่นคงหรือติดตั้งการ์ดทวีคูณ";
+                pGrid.classList.add('opacity-45', 'pointer-events-none');
+            } else if (localRoomState.status === "ended") {
+                pQuizTxt.innerText = "🏁 ดวลสดเสร็จสิ้นเรียบร้อย! ขอบคุณที่ร่วมประลองปฏิวัติการแฮกเกอร์สายวิชาการ AI";
+                pGrid.classList.add('opacity-45', 'pointer-events-none');
+            }
+
+            // Submission labels
+            const pSubLbl = document.getElementById('p-submit-lbl');
+            if (player.curAnswer !== null) {
+                pSubLbl.innerHTML = `<span class="text-green-400 font-bold"><i class="fa-solid fa-circle-check mr-1 animate-pulse"></i>ส่งพอร์ตคำตอบสำเร็จ</span>`;
+            } else {
+                pSubLbl.innerText = "สถานะ: รอวิเคราะห์ช้อยส์ที่ถูกต้อง...";
+            }
+
+            const pOppSubLbl = document.getElementById('p-opp-submit-lbl');
+            if (opponent) {
+                if (opponent.curAnswer !== null) {
+                    pOppSubLbl.innerHTML = `<span class="text-green-400 font-bold">ส่งแล้ว</span>`;
+                } else {
+                    pOppSubLbl.innerHTML = `<span class="text-slate-500 animate-pulse"><i class="fa-solid fa-circle-notch animate-spin mr-1"></i>กำลังพิมพ์</span>`;
+                }
+            } else {
+                pOppSubLbl.innerText = "สแตนด์บาย";
+            }
+
+            // Sync Market panel state
+            if (localRoomState.status === "market") {
+                document.getElementById('p-market-panel').classList.remove('hidden');
+                document.getElementById('p-market-score').innerText = player.score;
+            } else {
+                document.getElementById('p-market-panel').classList.add('hidden');
+            }
+
+            // AUTO-RESTART QUIZ TIMER FOR SUBSEQUENT ROUNDS
+            if (gameStateView === 'player' && localRoomState.status === 'active') {
+                if (!localTimerId) {
+                    startLocalRoundTimer();
+                }
+            } else {
+                if (localTimerId) {
+                    clearInterval(localTimerId);
+                    localTimerId = null;
+                }
+            }
+        }
+
+        window.selectOption = async function(idx) {
+            const player = localRoomState.players[myUserId];
+            if (!player || player.curAnswer !== null || localRoomState.status !== 'active') return;
+
+            if (pActiveEffects.includes('ice')) {
+                logBattle("❌ คลื่นสัญญาณถูกปิดกั้นชั่วคราวจากผลน้ำแข็งเกาะแป้นพิมพ์!");
+                return;
+            }
+
+            player.curAnswer = idx;
+            player.curTime = Date.now();
+            Sound.playBeep(650, 'sine', 0.1);
+
+            // Trigger Class-specific visual pulse overlay
+            triggerClassVfx(player.class);
+
+            if (isOnlineMode) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                await updateDoc(roomRef, {
+                    [`players.${myUserId}.curAnswer`]: idx,
+                    [`players.${myUserId}.curTime`]: player.curTime
+                });
+            } else {
+                handleCentralStateUpdate(localRoomState);
+            }
+        };
+
+        function triggerClassVfx(className) {
+            const avatarBox = document.getElementById('p-avatar-box');
+            if (!avatarBox) return;
+
+            // Remove previous anim classes
+            avatarBox.classList.remove('skill-cast-spy', 'skill-cast-guardian', 'skill-cast-engineer');
+            void avatarBox.offsetWidth; // Force CSS repaint to re-trigger anim
+
+            let badgeHtml = "";
+            if (className === 'spy') {
+                avatarBox.classList.add('skill-cast-spy');
+                Sound.playBeep(850, 'sine', 0.15);
+                badgeHtml = `<span class="floating-skill-popup bg-green-950/80 border border-green-500 text-green-400 px-3 py-1.5 rounded-lg text-[10px] font-bold shadow-lg flex items-center gap-1.5"><i class="fa-solid fa-satellite animate-pulse"></i> SPY: SPEED BOOST RADAR</span>`;
+            } else if (className === 'guardian') {
+                avatarBox.classList.add('skill-cast-guardian');
+                Sound.playBeep(350, 'triangle', 0.3);
+                badgeHtml = `<span class="floating-skill-popup bg-yellow-950/80 border border-yellow-500 text-yellow-400 px-3 py-1.5 rounded-lg text-[10px] font-bold shadow-lg flex items-center gap-1.5"><i class="fa-solid fa-shield-halved"></i> GUARDIAN: SOLID WALL</span>`;
+            } else if (className === 'engineer') {
+                avatarBox.classList.add('skill-cast-engineer');
+                Sound.playBeep(1100, 'square', 0.2);
+                badgeHtml = `<span class="floating-skill-popup bg-blue-950/80 border border-blue-500 text-blue-400 px-3 py-1.5 rounded-lg text-[10px] font-bold shadow-lg flex items-center gap-1.5"><i class="fa-solid fa-bolt animate-bounce"></i> ENGINEER: OVERCLOCK POWER</span>`;
+            }
+
+            const popHolder = document.getElementById('skill-cast-overlay');
+            if (popHolder && badgeHtml) {
+                const el = document.createElement('div');
+                el.innerHTML = badgeHtml;
+                popHolder.appendChild(el.firstChild);
+                setTimeout(() => {
+                    if (popHolder && popHolder.firstChild) popHolder.removeChild(popHolder.firstChild);
+                }, 1500);
+            }
+        }
+
+        // Synchronized Client-Side Timer
+        function startLocalRoundTimer() {
+            if (localTimerId) clearInterval(localTimerId);
+            localTimerId = setInterval(() => {
+                const roundDuration = localRoomState.activeEvent === 'overdrive' ? 10 : 20;
+                const elapsedSeconds = Math.floor((Date.now() - localRoomState.roundStartTime) / 1000);
+                const timeLeft = Math.max(0, roundDuration - elapsedSeconds);
+
+                localRoomState.timer = timeLeft;
+                document.getElementById('p-clock-display').innerText = `${timeLeft}s`;
+
+                // If time runs out, evaluate round locally or via teacher host
+                if (timeLeft <= 0 && localRoomState.status === "active") {
+                    clearInterval(localTimerId);
+                    localTimerId = null;
+                    evaluateRoundResults();
+                }
+            }, 1000);
+        }
+
+        function triggerRealtimeBattleAnimation(winnerIsMe) {
+            const pvpPBox = document.getElementById('pvp-p-box');
+            const pvpOppBox = document.getElementById('pvp-opp-box');
+            const canvas = document.getElementById('laser-vfx-canvas');
+            const line = document.getElementById('laser-vfx-line');
+
+            if (!pvpPBox || !pvpOppBox || !canvas || !line) return;
+
+            // Reset lines
+            line.setAttribute('class', '');
+            canvas.style.display = 'block';
+
+            // Find center coords of both avatars relative to canvas container
+            const r1 = pvpPBox.getBoundingClientRect();
+            const r2 = pvpOppBox.getBoundingClientRect();
+            const rContainer = document.getElementById('pvp-arena-panel').getBoundingClientRect();
+
+            const x1 = (r1.left + r1.right) / 2 - rContainer.left;
+            const y1 = (r1.top + r1.bottom) / 2 - rContainer.top;
+            const x2 = (r2.left + r2.right) / 2 - rContainer.left;
+            const y2 = (r2.top + r2.bottom) / 2 - rContainer.top;
+
+            line.setAttribute('x1', x1);
+            line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2);
+            line.setAttribute('y2', y2);
+
+            if (winnerIsMe) {
+                // Flash green laser beam
+                line.setAttribute('class', 'laser-line-p');
+                triggerPointsFloater("+100 PTS", pvpOppBox, true);
+            } else {
+                // Flash red laser beam
+                line.setAttribute('class', 'laser-line-opp');
+                triggerPointsFloater("PARRY QTE!", pvpPBox, false);
+            }
+
+            // Play laser hit sound
+            Sound.playBeep(winnerIsMe ? 1200 : 800, 'sawtooth', 0.15);
+
+            setTimeout(() => {
+                canvas.style.display = 'none';
+            }, 600);
+        }
+
+        // Floating points and damage popups
+        function triggerPointsFloater(text, targetEl, isCorrect) {
+            const container = document.getElementById('vfx-damage-container');
+            if (!container || !targetEl) return;
+
+            const rect = targetEl.getBoundingClientRect();
+            const mainRect = document.querySelector('main').getBoundingClientRect();
+
+            const x = (rect.left + rect.right) / 2 - mainRect.left;
+            const y = (rect.top + rect.bottom) / 2 - mainRect.top;
+
+            const floater = document.createElement('div');
+            floater.className = `absolute text-sm font-extrabold z-40 ${isCorrect ? 'damage-pop-green' : 'damage-pop-red'}`;
+            floater.style.left = `${x}px`;
+            floater.style.top = `${y}px`;
+            floater.innerText = text;
+
+            container.appendChild(floater);
+            setTimeout(() => {
+                if (floater.parentNode) container.removeChild(floater);
+            }, 1200);
+        }
+
+        async function evaluateRoundResults() {
+            if (localRoomState.status !== "active") return;
+            
+            // ใช้ Heist คั่นชั่วคราวเพื่อป้องกันการกดซ้ำซ้อน
+            localRoomState.status = "heist";
+
+            const player = localRoomState.players[myUserId];
+            const currentMatch = localRoomState.matchups.find(m => m.p1 === myUserId || m.p2 === myUserId);
+            if (!player || !currentMatch) return;
+
+            const oppId = currentMatch.p1 === myUserId ? currentMatch.p2 : currentMatch.p1;
+            const opponent = localRoomState.players[oppId];
+
+            const currentQuiz = localRoomState.currentShuffledQuiz;
+            if (!currentQuiz) return;
+
+            const myCorrect = player.curAnswer === currentQuiz.correct;
+            const oppCorrect = opponent ? (opponent.curAnswer === currentQuiz.correct) : false;
+
+            let myEarnedPoints = 0;
+            let matchWinnerId = null;
+
+            if (myCorrect && oppCorrect) {
+                if (player.curTime < opponent.curTime) {
+                    myEarnedPoints = 100;
+                    matchWinnerId = myUserId;
+                } else {
+                    myEarnedPoints = 50;
+                    matchWinnerId = oppId;
+                }
+            } else if (myCorrect) {
+                myEarnedPoints = 100;
+                matchWinnerId = myUserId;
+            } else if (oppCorrect) {
+                matchWinnerId = oppId;
+            }
+
+            // Apply Antenna Hardware boost
+            if (myCorrect) {
+                myEarnedPoints = Math.floor(myEarnedPoints * (1 + (myHardware.antenna - 1) * 0.12));
+            }
+
+            // Apply Double point card boost
+            if (player.activeEffects && player.activeEffects.includes('double')) {
+                myEarnedPoints *= 2;
+                player.activeEffects = player.activeEffects.filter(e => e !== 'double');
+            }
+
+            // Apply Teacher active event Inflation boost
+            if (localRoomState.activeEvent === 'inflation') {
+                myEarnedPoints *= 2;
+            }
+
+            // Update player scores
+            const newScore = player.score + myEarnedPoints;
+
+            if (isOnlineMode) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                await updateDoc(roomRef, {
+                    [`players.${myUserId}.score`]: newScore,
+                    [`players.${myUserId}.activeEffects`]: player.activeEffects || [],
+                    [`status`]: "heist"
+                });
+            } else {
+                player.score = newScore;
+                localRoomState.status = "heist";
+                handleCentralStateUpdate(localRoomState);
+            }
+
+            // SFX & VFX trigger based on speed outcome
+            if (matchWinnerId === myUserId) {
+                // Answered correctly and faster: Strike!
+                document.getElementById('pvp-p-box').classList.add('anim-strike-p');
+                setTimeout(() => document.getElementById('pvp-p-box').classList.remove('anim-strike-p'), 400);
+
+                triggerRealtimeBattleAnimation(true);
+
+                document.getElementById('p-heist-panel').classList.remove('hidden');
+                logBattle("🎉 สำเร็จ! คุณวิเคราะห์ตอบโจทย์ไวกว่าฝ่ายตรงข้าม กำลังควบคุมเวลาแฮกเจาะแต้ม...");
+
+                let countdown = 5;
+                document.getElementById('heist-clock-lbl').innerText = `${countdown}s`;
+                const timer = setInterval(() => {
+                    countdown--;
+                    document.getElementById('heist-clock-lbl').innerText = `${countdown}s`;
+                    if (countdown <= 0) {
+                        clearInterval(timer);
+                        if (!document.getElementById('p-heist-panel').classList.contains('hidden')) {
+                            executeHeistAction('hack');
+                        }
+                    }
+                }, 1000);
+            } else if (opponent && matchWinnerId === oppId) {
+                // Opponent won: Defensive Parry test!
+                document.getElementById('pvp-opp-box').classList.add('anim-strike-opp');
+                setTimeout(() => document.getElementById('pvp-opp-box').classList.remove('anim-strike-opp'), 400);
+
+                triggerRealtimeBattleAnimation(false);
+
+                // Receive automated parry test
+                triggerParryQte();
+            } else {
+                logBattle("💥 ข้อวิเคราะห์: ผิดพลาดสัญญาณบิดเบือน ไม่มีผู้ใดได้แต้มสิทธิ์เจาะพอร์ตในข้อนี้");
+                // ย้ายข้อถัดไป
+                const isMarketCycle = localRoomState.currentRound % 3 === 0;
+                
+                if (isOnlineMode) {
+                    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                    await updateDoc(roomRef, {
+                        status: isMarketCycle ? "market" : "heist"
+                    });
+                } else {
+                    localRoomState.status = isMarketCycle ? "market" : "heist";
+                    handleCentralStateUpdate(localRoomState);
+                }
+                startAutoNextRoundTimer(isMarketCycle ? 8 : 3);
+            }
+        }
+
+        window.executeHeistAction = async function(action) {
+            document.getElementById('p-heist-panel').classList.add('hidden');
+            
+            const player = localRoomState.players[myUserId];
+            const currentMatch = localRoomState.matchups.find(m => m.p1 === myUserId || m.p2 === myUserId);
+            if (!player || !currentMatch) return;
+
+            const oppId = currentMatch.p1 === myUserId ? currentMatch.p2 : currentMatch.p1;
+            const opponent = localRoomState.players[oppId];
+
+            let ramCost = 0;
+            if (action === 'smoke') ramCost = player.class === 'engineer' ? 3 : 4;
+            else if (action === 'ice') ramCost = player.class === 'engineer' ? 5 : 6;
+            else if (action === 'shield') ramCost = player.class === 'engineer' ? 1 : 2;
+
+            if (player.ram < ramCost) {
+                logBattle("⚠️ พิกัดค่า RAM ต่ำเกินไป! สลับเป็นแฮกพอร์ตดูดคะแนนความปลอดภัยแบบตรง ๆ");
+                action = 'hack';
+            }
+
+            const updatedRam = player.ram - ramCost;
+            let logText = "";
+
+            let hackAmt = localRoomState.activeEvent === 'inflation' ? 100 : 50;
+            const targetHasShield = opponent ? (opponent.activeEffects || []).includes('shield') : false;
+
+            if (action === 'hack' && opponent) {
+                if (targetHasShield) {
+                    const opponentEffects = (opponent.activeEffects || []).filter(e => e !== 'shield');
+                    logText = `🛡️ แย่แล้ว! บาเรียสะท้อนพอร์ตของ ${opponent.name} แผ่ออกสะท้อน! คุณสูญเสียแต้มสะสม (-${hackAmt} แต้ม)`;
+                    Sound.playExplosion();
+
+                    if (isOnlineMode) {
+                        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                        await updateDoc(roomRef, {
+                            [`players.${myUserId}.score`]: Math.max(0, player.score - hackAmt),
+                            [`players.${myUserId}.ram`]: updatedRam,
+                            [`players.${oppId}.score`]: opponent.score + hackAmt,
+                            [`players.${oppId}.activeEffects`]: opponentEffects
+                        });
+                    }
+                } else {
+                    logText = `💰 เจาะแผงดูดแต้มสำเร็จ! ทำการแฮกแต้มจาก ${opponent.name} เข้ามาพอร์ตเรา (+${hackAmt} แต้ม)`;
+                    Sound.playHack(); 
+
+                    if (isOnlineMode) {
+                        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                        await updateDoc(roomRef, {
+                            [`players.${myUserId}.score`]: player.score + hackAmt,
+                            [`players.${myUserId}.ram`]: updatedRam,
+                            [`players.${oppId}.score`]: Math.max(0, opponent.score - hackAmt)
+                        });
+                    }
+                }
+            } else if (action === 'smoke' && opponent) {
+                const opponentEffects = opponent.activeEffects || [];
+                opponentEffects.push('smoke');
+                logText = `🔌 ยิงมัลแวร์พ่นควันดำสำเร็จ! สัญญาณความเร็วพัดโบกปิดทับหน้าจอของ ${opponent.name}`;
+                Sound.playSmoke(); 
+
+                if (isOnlineMode) {
+                    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                    await updateDoc(roomRef, {
+                        [`players.${myUserId}.ram`]: updatedRam,
+                        [`players.${oppId}.activeEffects`]: opponentEffects
+                    });
+                }
+            } else if (action === 'ice' && opponent) {
+                const opponentEffects = opponent.activeEffects || [];
+                opponentEffects.push('ice');
+                logText = `❄️ ส่งรหัสแช่แข็งสำเร็จ! หน่วงคลื่นความถี่บอร์ดตัวเลือกของ ${opponent.name}`;
+                Sound.playIce(); 
+
+                if (isOnlineMode) {
+                    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                    await updateDoc(roomRef, {
+                        [`players.${myUserId}.ram`]: updatedRam,
+                        [`players.${oppId}.activeEffects`]: opponentEffects
+                    });
+                }
+            } else if (action === 'shield') {
+                const playerEffects = player.activeEffects || [];
+                playerEffects.push('shield');
+                logText = `🛡️ ดำเนินการสแตนด์บายกางคลื่นบาเรียคุ้มกันพอร์ตตนเองจากการโดนดูดแต้มในรอบถัดไป`;
+                Sound.playShield(); 
+
+                if (isOnlineMode) {
+                    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                    await updateDoc(roomRef, {
+                        [`players.${myUserId}.ram`]: updatedRam,
+                        [`players.${myUserId}.activeEffects`]: playerEffects
+                    });
+                }
+            }
+
+            logBattle(logText);
+
+            // คำนวณตลาดมืด (เปิดทุก 3 รอบ)
+            const isMarketCycle = localRoomState.currentRound % 3 === 0;
+            const delayValue = isMarketCycle ? 8 : 4; 
+            
+            if (isOnlineMode) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                await updateDoc(roomRef, {
+                    status: isMarketCycle ? "market" : "heist"
+                });
+            } else {
+                localRoomState.status = isMarketCycle ? "market" : "heist";
+                handleCentralStateUpdate(localRoomState);
+            }
+            startAutoNextRoundTimer(delayValue);
+        };
+
+        // Parry QTE Engine for real-time deflection
+        let isQteActive = false;
+        let qteDirection = 'up';
+        let qteTimerId = null;
+
+        function triggerParryQte() {
+            isQteActive = true;
+            const dirs = ['up', 'down', 'left', 'right'];
+            const syms = { up: '▲', down: '▼', left: '◀', right: '▶' };
+            qteDirection = dirs[Math.floor(Math.random() * dirs.length)];
+
+            document.getElementById('qte-symbol-lbl').innerText = syms[qteDirection];
+            document.getElementById('p-qte-overlay').classList.remove('hidden');
+            Sound.playBeep(990, 'sine', 0.3);
+
+            if (qteTimerId) clearTimeout(qteTimerId);
+            qteTimerId = setTimeout(async () => {
+                if (isQteActive) {
+                    isQteActive = false;
+                    document.getElementById('p-qte-overlay').classList.add('hidden');
+                    logBattle("⚠️ PARRY FAILED! สัญญาณเจาะเข้าพอร์ตสำเร็จ สูญเสียคะแนนสะสม");
+                    shakeBattleTerminal();
+                    Sound.playExplosion();
+
+                    const isMarketCycle = localRoomState.currentRound % 3 === 0;
+                    if (isOnlineMode) {
+                        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                        await updateDoc(roomRef, {
+                            status: isMarketCycle ? "market" : "heist"
+                        });
+                    } else {
+                        localRoomState.status = isMarketCycle ? "market" : "heist";
+                        handleCentralStateUpdate(localRoomState);
+                    }
+                    startAutoNextRoundTimer(isMarketCycle ? 8 : 4);
+                }
+            }, 1800);
+        }
+
+        window.pressQte = async function(dir) {
+            if (!isQteActive) return;
+            isQteActive = false;
+            clearTimeout(qteTimerId);
+            document.getElementById('p-qte-overlay').classList.add('hidden');
+
+            if (dir === qteDirection) {
+                logBattle("🛡️ PARRY SUCCESS! คุณต้านทานและแก้สัญญาณแฮกโจรกรรมกลับได้หมดสิ้น!");
+                Sound.playParry(); 
+            } else {
+                logBattle("⚠️ PARRY FAILED! คุณแก้รหัสเบี่ยงสัญญาณพอร์ตผิดพลาด มัลแวร์เข้าพังระบบพอร์ต");
+                shakeBattleTerminal();
+                Sound.playExplosion();
+            }
+
+            // ย้ายข้อถัดไปหลัง QTE
+            const isMarketCycle = localRoomState.currentRound % 3 === 0;
+            if (isOnlineMode) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                await updateDoc(roomRef, {
+                    status: isMarketCycle ? "market" : "heist"
+                });
+            } else {
+                localRoomState.status = isMarketCycle ? "market" : "heist";
+                handleCentralStateUpdate(localRoomState);
+            }
+            startAutoNextRoundTimer(isMarketCycle ? 8 : 4);
+        };
+
+        window.startAutoNextRoundTimer = function(seconds) {
+            let remain = seconds;
+            localRoomState.autoProgressCountdown = remain;
+            handleCentralStateUpdate(localRoomState);
+
+            if (autoLoopTimerId) clearInterval(autoLoopTimerId);
+            autoLoopTimerId = setInterval(async () => {
+                remain--;
+                localRoomState.autoProgressCountdown = remain;
+
+                if (isOnlineMode) {
+                    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                    await updateDoc(roomRef, { autoProgressCountdown: remain });
+                } else {
+                    handleCentralStateUpdate(localRoomState);
+                }
+
+                if (remain <= 0) {
+                    clearInterval(autoLoopTimerId);
+                    // ป้องกันการทับซ้อนและกระโดดข้ามข้อ: เฉพาะ Host หรือ P1 ของสายจับคู่เท่านั้นที่เป็นผู้เปลี่ยนข้อถัดไปบน Firestore
+                    const isHost = (gameStateView === 'host');
+                    if (!isOnlineMode) {
+                        hostTriggerNextRound();
+                    } else {
+                        if (isHost) {
+                            hostTriggerNextRound();
+                        } else {
+                            // กรณีไม่มีหน้าจอ Host เปิดค้างไว้ ให้ผู้เล่นคนแรกของสายแข่งนำรันข้อถัดไป
+                            const firstMatch = localRoomState.matchups[0];
+                            if (firstMatch && firstMatch.p1 === myUserId) {
+                                hostTriggerNextRound();
+                            }
+                        }
+                    }
+                }
+            }, 1000);
+        }
+
+        // Action helpers
+        window.wipeSmokeScreen = async function() {
+            smokeHitsLeft--;
+            document.getElementById('smoke-hits-lbl').innerText = smokeHitsLeft;
+            Sound.playBeep(450, 'sine', 0.1);
+
+            if (smokeHitsLeft <= 0) {
+                document.getElementById('p-smoke-overlay').classList.add('hidden');
+                smokeHitsLeft = 3;
+                
+                const player = localRoomState.players[myUserId];
+                if (player) {
+                    player.activeEffects = (player.activeEffects || []).filter(e => e !== 'smoke');
+                    
+                    if (isOnlineMode) {
+                        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                        await updateDoc(roomRef, {
+                            [`players.${myUserId}.activeEffects`]: player.activeEffects
+                        });
+                    }
+                }
+                logBattle("🧹 เช็ดหน้าจอขจัดม่านควันดำสำเร็จ!");
+                Sound.playParry();
+            }
+        };
+
+        // CPU Ice Melt Decay Loop
+        let isIceMeltLoopRunning = false;
+        function runIceMeltLogic() {
+            if (isIceMeltLoopRunning) return;
+            isIceMeltLoopRunning = true;
+            
+            const player = localRoomState.players[myUserId];
+            iceMeltTimerLeft = myHardware.cpu === 1 ? 30 : (myHardware.cpu === 2 ? 22 : 15);
+
+            const timer = setInterval(async () => {
+                iceMeltTimerLeft--;
+                const lbl = document.getElementById('p-ice-decay-lbl');
+                if (lbl) {
+                    lbl.innerText = `หน่วงคลื่นความหนาวละลาย: ${(iceMeltTimerLeft / 10).toFixed(1)}s`;
+                }
+
+                if (iceMeltTimerLeft <= 0) {
+                    clearInterval(timer);
+                    isIceMeltLoopRunning = false;
+                    document.getElementById('p-ice-overlay').classList.add('hidden');
+
+                    if (player) {
+                        player.activeEffects = (player.activeEffects || []).filter(e => e !== 'ice');
+                        
+                        if (isOnlineMode) {
+                            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                            await updateDoc(roomRef, {
+                                [`players.${myUserId}.activeEffects`]: player.activeEffects
+                            });
+                        }
+                    }
+                    logBattle("❄️ หลอมละลายสัญญาณบอร์ดตัวเลือกยืนยันเสร็จสมบูรณ์!");
+                    Sound.playParry();
+                }
+            }, 100);
+        }
+
+        // RPG Hardware Upgrades
+        window.upgradeSystem = async function(hw) {
+            const player = localRoomState.players[myUserId];
+            if (!player) return;
+
+            let cost = 0;
+            if (hw === 'cpu') cost = myHardware.cpu * 50;
+            else if (hw === 'fan') cost = myHardware.fan * 60;
+            else if (hw === 'antenna') cost = myHardware.antenna * 45;
+
+            if (player.score < cost) {
+                showModal("คะแนนสะสมไม่พอ", "โปรดตอบถูกและไวขึ้นเพื่อตุนแต้มให้พอกับการประมวลชิปวงจร!");
+                return;
+            }
+
+            const updatedScore = player.score - cost;
+            const vaultContrib = Math.floor(cost * 0.1);
+
+            if (hw === 'cpu') {
+                myHardware.cpu++;
+                logBattle(`💾 ประมวลผลสำเร็จ! ข้อมูล CPU เลเวลสูงขึ้นเป็น Lv.${myHardware.cpu} อัตราการปลดล็อกละลายไวน้ำแข็งสปีดแรง 35%`);
+                Sound.playBeep(800, 'sine', 0.2);
+            } else if (hw === 'fan') {
+                myHardware.fan++;
+                player.maxRam += 2;
+                player.ramRegen += 1;
+                logBattle(`💨 ติดพัดลมถาวร! พัดระบายลมเลเวลขยับเป็น Lv.${myHardware.fan} เพิ่มขีด RAM สูงสุด และเร่ง RAM คืนรอบละ +3GB`);
+                Sound.playBeep(900, 'sine', 0.2);
+            } else if (hw === 'antenna') {
+                myHardware.antenna++;
+                logBattle(`🛰️ ขยายคลื่นวิเคราะห์! เสารหัสความถี่ Antenna เลเวลขยับเป็น Lv.${myHardware.antenna} รับโบนัสความไวตัวคูณข้อสอบ`);
+                Sound.playBeep(1000, 'sine', 0.2);
+            }
+
+            if (isOnlineMode) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                await updateDoc(roomRef, {
+                    [`players.${myUserId}.score`]: updatedScore,
+                    [`players.${myUserId}.maxRam`]: player.maxRam,
+                    [`players.${myUserId}.ramRegen`]: player.ramRegen,
+                    [`centralVault`]: localRoomState.centralVault + vaultContrib
+                });
+            } else {
+                player.score = updatedScore;
+                localRoomState.centralVault += vaultContrib;
+                handleCentralStateUpdate(localRoomState);
+            }
+
+            Sound.playParry();
+        };
+
+        // Dark Market Purchases
+        window.buyMarketItem = async function(item) {
+            const player = localRoomState.players[myUserId];
+            if (!player) return;
+
+            let cost = 0;
+            if (item === 'chrono') cost = 30;
+            else if (item === 'double') cost = 50;
+            else if (item === 'reboot') cost = 40;
+
+            if (player.score < cost) {
+                logBattle("⚠️ แต้มสะสมระบบคัดกรองไม่เพียงพอกับการปลดล็อกดีเลอร์ตลาดมืด!");
+                return;
+            }
+
+            const updatedScore = player.score - cost;
+            const vaultContrib = Math.floor(cost * 0.1);
+
+            if (item === 'chrono') {
+                logBattle("🔌 พอร์ตขยายเวลาสำเร็จ! รอบประมวลตัวเลือกข้อสอบชิ้นหน้าเพิ่มเวลาขึ้นอีก 5 วินาที");
+            } else if (item === 'double') {
+                player.activeEffects.push('double');
+                logBattle("💰 ตลาดมืดมอบคลื่น: ดำเนินการติดตั้งตัวคูณ double x2 ข้อยืนยันถัดไป");
+            } else if (item === 'reboot') {
+                player.activeEffects = [];
+                logBattle("🔧 รีเซ็ตรหัสกู้คืน: ทำลายไวรัส ขจัดควัน บิดเบือนแช่แข็งแป้นล้างออกเกลี้ยงตัว");
+            }
+
+            if (isOnlineMode) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                await updateDoc(roomRef, {
+                    [`players.${myUserId}.score`]: updatedScore,
+                    [`players.${myUserId}.activeEffects`]: player.activeEffects,
+                    [`centralVault`]: localRoomState.centralVault + vaultContrib
+                });
+            } else {
+                player.score = updatedScore;
+                localRoomState.centralVault += vaultContrib;
+                handleCentralStateUpdate(localRoomState);
+            }
+
+            Sound.playParry();
+        };
+
+        // PLAYER ENTERS THE ROOM
+        window.enterAsPlayer = async function() {
+            const name = document.getElementById('join-name').value.trim();
+            const roomIn = document.getElementById('join-room').value.trim();
+
+            if (!name) {
+                showModal("ข้อมูลขาดหาย", "กรุณาระบุชื่อรหัสจอมโจรแฮกเกอร์ของคุณก่อนเชื่อมสัญญาณ!");
+                return;
+            }
+
+            myRoomId = roomIn.toUpperCase();
+            document.getElementById('nav-room-badge').classList.remove('hidden');
+            document.getElementById('nav-room-id').innerText = myRoomId;
+
+            // Prepare player document state mapping
+            const localProfile = {
+                id: myUserId,
+                name: name,
+                avatar: selectedAvatar,
+                class: selectedClass,
+                score: 0,
+                ram: 8,
+                maxRam: 8,
+                ramRegen: 2,
+                isReal: true,
+                curAnswer: null,
+                curTime: null,
+                activeEffects: [],
+                isKicked: false
+            };
+
+            await authenticate();
+            await startRealTimeRoomSync(myRoomId, 'player');
+
+            if (isOnlineMode) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                await updateDoc(roomRef, {
+                    [`players.${myUserId}`]: localProfile
+                });
+            } else {
+                localRoomState.players[myUserId] = localProfile;
+                handleCentralStateUpdate(localRoomState);
+            }
+
+            gameStateView = 'lobby';
+            switchViewDirectly('lobby');
+            Sound.playBeep(600, 'sine', 0.2);
+            logBattle(`📡 บัญชีแฮกเกอร์ "${name}" สแตนด์บายพอร์ตห้องเรียน ${myRoomId} เรียบร้อยแล้ว!`);
+        };
+
+        // TEACHER ENTERS AS HOST
+        window.enterAsHost = async function() {
+            const roomIn = document.getElementById('host-room-id-input').value.trim();
+            myRoomId = roomIn.toUpperCase();
+
+            document.getElementById('nav-room-badge').classList.remove('hidden');
+            document.getElementById('nav-room-id').innerText = myRoomId;
+
+            await authenticate();
+            await startRealTimeRoomSync(myRoomId, 'host');
+
+            gameStateView = 'host';
+            switchViewDirectly('host');
+            Sound.playBeep(700, 'sine', 0.2);
+            logBattle(`🖥️ แผงคุณครูเปิดใช้งานเครือข่ายห้อง ${myRoomId} พร้อมมอนิเตอร์แล้ว`);
+        };
+
+        window.hostTriggerStartGame = async function() {
+            const realPlayers = Object.values(localRoomState.players).filter(p => p.isReal && !p.isKicked);
+            
+            // Create dynamic pairing
+            const matchups = [];
+            const shuffledPlayers = [...realPlayers];
+
+            if (shuffledPlayers.length === 0) {
+                showModal("ไม่มีแฮกเกอร์จริง", "กรุณาเชื่อมโทรศัพท์สมาร์ทโฟนของนักเรียนเข้าสู่ระบบห้องหลักก่อนปล่อยคิวประลอง!");
+                return;
+            }
+
+            for (let i = shuffledPlayers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledPlayers[i], shuffledPlayers[j]] = [shuffledPlayers[j], shuffledPlayers[i]];
+            }
+
+            while (shuffledPlayers.length > 1) {
+                const p1 = shuffledPlayers.pop();
+                const p2 = shuffledPlayers.pop();
+                matchups.push({ p1: p1.id, p2: p2.id, winner: null });
+            }
+
+            // If odd student remains, spin up a simulated AI Bot opponent
+            if (shuffledPlayers.length === 1) {
+                const lastPlayer = shuffledPlayers.pop();
+                const botId = `bot_${crypto.randomUUID().substring(0, 6)}`;
+                const botNames = ["หน้ากากเหล็ก", "ไซเบอร์แฮก", "AI บอทแฮกเกอร์", "เน็ตไร้เงา", "ผู้รอนสิทธิ์"];
+                const botName = botNames[Math.floor(Math.random() * botNames.length)] + " (BOT)";
+                
+                const botProfile = {
+                    id: botId,
+                    name: botName,
+                    avatar: 'robot',
+                    class: 'guardian',
+                    score: 120 + Math.floor(Math.random() * 80),
+                    ram: 8,
+                    maxRam: 8,
+                    ramRegen: 2,
+                    isReal: false,
+                    curAnswer: null,
+                    curTime: null,
+                    activeEffects: []
+                };
+
+                localRoomState.players[botId] = botProfile;
+                matchups.push({ p1: lastPlayer.id, p2: botId, winner: null });
+            }
+
+            // Pick a completely random question from the massive 100 library
+            const randomQuizIndex = Math.floor(Math.random() * originalQuizzes.length);
+            const originalQuiz = originalQuizzes[randomQuizIndex];
+            
+            // Randomize options for this round
+            let optionsWithIndices = originalQuiz.options.map((opt, idx) => ({ text: opt, wasCorrect: idx === originalQuiz.correct }));
+            for (let i = optionsWithIndices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [optionsWithIndices[i], optionsWithIndices[j]] = [optionsWithIndices[j], optionsWithIndices[i]];
+            }
+
+            const currentShuffledQuiz = {
+                q: originalQuiz.q,
+                options: optionsWithIndices.map(o => o.text),
+                correct: optionsWithIndices.findIndex(o => o.wasCorrect)
+            };
+
+            // Reset player answer states for round start
+            const updatedPlayers = { ...localRoomState.players };
+            Object.keys(updatedPlayers).forEach(id => {
+                updatedPlayers[id].curAnswer = null;
+                updatedPlayers[id].curTime = null;
+            });
+
+            if (isOnlineMode) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                await updateDoc(roomRef, {
+                    status: "active",
+                    currentRound: 1,
+                    maxRounds: 9999, // Endless
+                    matchups: matchups,
+                    currentShuffledQuiz: currentShuffledQuiz,
+                    roundStartTime: Date.now(),
+                    players: updatedPlayers,
+                    autoProgressCountdown: 0
+                });
+            } else {
+                localRoomState.status = "active";
+                localRoomState.currentRound = 1;
+                localRoomState.maxRounds = 9999;
+                localRoomState.matchups = matchups;
+                localRoomState.currentShuffledQuiz = currentShuffledQuiz;
+                localRoomState.roundStartTime = Date.now();
+                handleCentralStateUpdate(localRoomState);
+            }
+
+            Sound.playParry();
+        };
+
+        window.hostTriggerNextRound = async function() {
+            // Check if there is any winner before starting next round
+            const winners = Object.values(localRoomState.players).filter(p => p.score >= WIN_TARGET_SCORE);
+            if (winners.length > 0) {
+                triggerEndgameSequence(winners);
+                return;
+            }
+
+            // Pick a completely random question from the massive 100 library
+            const randomQuizIndex = Math.floor(Math.random() * originalQuizzes.length);
+            const originalQuiz = originalQuizzes[randomQuizIndex];
+
+            let optionsWithIndices = originalQuiz.options.map((opt, idx) => ({ text: opt, wasCorrect: idx === originalQuiz.correct }));
+            for (let i = optionsWithIndices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [optionsWithIndices[i], optionsWithIndices[j]] = [optionsWithIndices[j], optionsWithIndices[i]];
+            }
+
+            const currentShuffledQuiz = {
+                q: originalQuiz.q,
+                options: optionsWithIndices.map(o => o.text),
+                correct: optionsWithIndices.findIndex(o => o.wasCorrect)
+            };
+
+            // Clear answer tracks and restore RAM recovery rate
+            const updatedPlayers = { ...localRoomState.players };
+            Object.keys(updatedPlayers).forEach(id => {
+                const p = updatedPlayers[id];
+                p.curAnswer = null;
+                p.curTime = null;
+                
+                // คืนค่า RAM และขจัดคลื่นก่อกวน (ควัน, น้ำแข็ง) ที่เป็นปัญหาล้าหลังออกจากตัวเมื่อผ่านข้อ
+                p.activeEffects = (p.activeEffects || []).filter(e => e === 'double' || e === 'shield');
+                
+                const bonusRegen = p.class === 'engineer' ? 3 : 2;
+                p.ram = Math.min(p.maxRam, p.ram + p.ramRegen + bonusRegen);
+            });
+
+            if (isOnlineMode) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                await updateDoc(roomRef, {
+                    status: "active",
+                    currentRound: localRoomState.currentRound + 1,
+                    currentShuffledQuiz: currentShuffledQuiz,
+                    roundStartTime: Date.now(),
+                    players: updatedPlayers,
+                    autoProgressCountdown: 0
+                });
+            } else {
+                localRoomState.status = "active";
+                localRoomState.currentRound += 1;
+                localRoomState.currentShuffledQuiz = currentShuffledQuiz;
+                localRoomState.roundStartTime = Date.now();
+                localRoomState.autoProgressCountdown = 0;
+                handleCentralStateUpdate(localRoomState);
+            }
+
+            Sound.playParry();
+        };
+
+        // Teacher releases active event disruption to all synchronized clients
+        window.hostTriggerEvent = async function(event) {
+            localRoomState.activeEvent = event;
+            
+            // SFX บิดเบือนคู่วิเคราะห์ทางเสียงในแต่ละเหตุการณ์
+            if (event === 'blackout') Sound.playBlackout();
+            else if (event === 'overdrive') Sound.playOverdrive();
+            else if (event === 'bounty') Sound.playBounty();
+            else if (event === 'inflation') Sound.playSynth([500, 750, 1000, 1250], 'square', 0.4);
+
+            if (isOnlineMode) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                await updateDoc(roomRef, { activeEvent: event });
+            } else {
+                handleCentralStateUpdate(localRoomState);
+            }
+        };
+
+        window.clearHostEvent = async function() {
+            localRoomState.activeEvent = null;
+            if (isOnlineMode) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                await updateDoc(roomRef, { activeEvent: null });
+            } else {
+                handleCentralStateUpdate(localRoomState);
+            }
+            // เล่นเสียงแจ้งเตือนยกเลิกระดับสัญญาณรบกวนครู
+            Sound.playBeep(330, 'triangle', 0.4);
+        };
+
+        // Reset whole session
+        window.resetGameSession = async function() {
+            if (autoLoopTimerId) clearInterval(autoLoopTimerId);
+            if (isOnlineMode) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomId);
+                await setDoc(roomRef, {
+                    roomId: myRoomId,
+                    status: "lobby",
+                    currentRound: 1,
+                    maxRounds: 9999, // Endless
+                    timer: 20,
+                    activeEvent: null,
+                    centralVault: 0,
+                    players: {},
+                    matchups: [],
+                    currentShuffledQuiz: null,
+                    roundStartTime: Date.now(),
+                    autoProgressCountdown: 0
+                });
+            } else {
+                Object.assign(localRoomState, {
+                    status: "lobby",
+                    currentRound: 1,
+                    players: {},
+                    matchups: [],
+                    currentShuffledQuiz: null,
+                    autoProgressCountdown: 0,
+                    activeEvent: null
+                });
+                handleCentralStateUpdate(localRoomState);
+            }
+            Sound.playExplosion();
+            showModal("ล้างรหัสสำเร็จ", "ทำการเคลียร์พอร์ตเครือข่ายเรียบร้อย ย้อนสู่โหมดเตรียมพร้อมที่ Lobby");
+        };
+
+        // UI View switches
+        let gameStateView = 'entrance';
+        window.switchViewDirectly = function(targetView) {
+            gameStateView = targetView;
+            document.getElementById('screen-entrance').classList.add('hidden');
+            document.getElementById('screen-lobby').classList.add('hidden');
+            document.getElementById('screen-host').classList.add('hidden');
+            document.getElementById('screen-player').classList.add('hidden');
+
+            if (targetView === 'entrance') {
+                document.getElementById('screen-entrance').classList.remove('hidden');
+            } else if (targetView === 'host') {
+                document.getElementById('screen-host').classList.remove('hidden');
+            } else if (targetView === 'lobby') {
+                document.getElementById('screen-lobby').classList.remove('hidden');
+            } else if (targetView === 'player') {
+                document.getElementById('screen-player').classList.remove('hidden');
+                startLocalRoundTimer();
+            }
+        };
+
+        // Safe Alert Modal Controls
+        window.showModal = function(title, desc) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-desc').innerText = desc;
+            
+            // รีเซ็ตปุ่มเริ่มต้นให้เป็นตกลงทั่วไป
+            const btnHolder = document.getElementById('modal-btn-holder');
+            btnHolder.innerHTML = `
+                <button onclick="closeModal()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-5 rounded-lg text-xs uppercase tracking-wider transition-all">
+                    รับทราบพอร์ตสเตตัส
+                </button>
+            `;
+            document.getElementById('custom-modal').classList.remove('hidden');
+        };
+
+        window.closeModal = function() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        };
+
+        // Log actions down the battle screen
+        function logBattle(msg) {
+            const logsDiv = document.getElementById('p-battle-logs');
+            if (logsDiv) {
+                const now = new Date();
+                const timeStr = `[${now.toTimeString().split(' ')[0]}]`;
+                const logItem = document.createElement('div');
+                logItem.className = "text-slate-400 font-mono text-[9px] md:text-[10px]";
+                logItem.innerHTML = `<span class="text-green-500">${timeStr}</span> ${msg}`;
+                logsDiv.appendChild(logItem);
+                logsDiv.scrollTop = logsDiv.scrollHeight;
+            }
+        }
+
+        function shakeBattleTerminal() {
+            const terminal = document.getElementById('p-battle-box');
+            if (terminal) {
+                terminal.classList.add('anim-damage');
+                setTimeout(() => terminal.classList.remove('anim-damage'), 450);
+            }
+        }
+
+        // Initialize view states on boot up
+        window.onload = function() {
+            setAvatar('user-ninja');
+            authenticate();
+        };
+
+    </script>
+</body>
+</html>
