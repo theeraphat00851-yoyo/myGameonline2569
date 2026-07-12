@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>แกลเลอรีภาพ - ลิงก์รูปภาพ</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500&display=swap');
+  html, body { margin:0; padding:0; width:100%; height:100%; background:#000; overflow:hidden; }
+  .gg-title { font-family: 'Fraunces', serif; }
+  .gg-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  #scene-inner { transform-style: preserve-3d; }
+  .card-slot { transform-style: preserve-3d; backface-visibility: visible; }
+  .card-layer { backface-visibility: hidden; }
+  .chrome-ui { opacity: 0.5; transition: opacity .25s ease; }
+  #app:hover .chrome-ui, .chrome-ui:focus-within { opacity: 1; }
+  .bg-video { transition: opacity 1000ms ease-in-out; }
+  @keyframes train-bob {
+    0%, 100% { transform: translateY(0) scale(1.03); }
+    50% { transform: translateY(-6px) scale(1.03); }
+  }
+  .bg-overlay-img { animation: train-bob 3s ease-in-out infinite; }
+  .open-link-btn { width: 26px; height: 26px; }
+  .open-link-btn svg { width: 13px; height: 13px; }
+</style>
+</head>
+<body>
+<div id="app" class="absolute inset-0 bg-transparent text-white flex items-center justify-center overflow-hidden select-none" style="position:absolute; inset:0;">
+
+  <!-- cinematic animated background -->
+  <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+    <video class="bg-video absolute inset-0 w-full h-full object-cover opacity-100" autoplay muted loop playsinline
+      src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260702_081127_0992a171-d3c6-4978-8213-0ec5df8b6d63.mp4"></video>
+    <video class="bg-video absolute inset-0 w-full h-full object-cover opacity-0" autoplay muted loop playsinline
+      src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260702_092026_dd05b805-ea0f-40b2-8c52-332b88502592.mp4"></video>
+    <video class="bg-video absolute inset-0 w-full h-full object-cover opacity-0" autoplay muted loop playsinline
+      src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260702_081042_df7202bf-bd80-4b2b-bbc6-1f09ba2870e9.mp4"></video>
+    <video class="bg-video absolute inset-0 w-full h-full object-cover opacity-0" autoplay muted loop playsinline
+      src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260702_080959_4cac5234-3573-464e-a5b7-76b94b8a7d61.mp4"></video>
+
+    <img class="bg-overlay-img absolute inset-0 w-full h-full object-cover"
+      src="https://soft-zoom-63098134.figma.site/_assets/v11/0b4a435b2df2747593c43d7a1c9b4578f7d8d90c.png" alt="" />
+
+    <div class="absolute inset-0 bg-black/35"></div>
+  </div>
+
+  <!-- top bar -->
+  <div class="chrome-ui absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-5 sm:px-8 py-4 pointer-events-none">
+    <div class="pointer-events-auto flex items-center gap-2.5 opacity-90">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="9" stroke="white" stroke-width="1" opacity="0.5"></circle>
+        <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1" opacity="0.8"></circle>
+        <circle cx="12" cy="12" r="1.2" fill="white"></circle>
+      </svg>
+      <span class="gg-title text-[15px] sm:text-[17px] tracking-wide">แกลเลอรีภาพ</span>
+    </div>
+    <button id="settingsBtn" class="pointer-events-auto w-9 h-9 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-center" aria-label="ตั้งค่า">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6">
+        <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"></path>
+        <path d="M19.4 13.5a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1.04 1.56V20a2 2 0 11-4 0v-.09A1.7 1.7 0 008.9 18.35a1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.7 1.7 0 00.34-1.87 1.7 1.7 0 00-1.56-1.04H2.9a2 2 0 110-4h.09A1.7 1.7 0 004.5 8.9a1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06a1.7 1.7 0 001.87.34H9a1.7 1.7 0 001.04-1.56V2.9a2 2 0 114 0v.09c.02.68.42 1.29 1.04 1.56.62.27 1.34.15 1.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06c-.49.53-.61 1.25-.34 1.87.27.6.87 1 1.55 1.04h.09a2 2 0 110 4h-.09a1.7 1.7 0 00-1.56 1.04z"></path>
+      </svg>
+    </button>
+  </div>
+
+  <!-- settings panel -->
+  <div id="settingsPanel" class="hidden absolute top-16 right-5 sm:right-8 z-50 pointer-events-auto w-[340px] rounded-2xl bg-[#0d0d0d]/95 border border-white/10 p-4 backdrop-blur-xl shadow-2xl">
+    <div class="gg-title text-[15px] mb-3">เพิ่มลิงก์</div>
+
+    <label class="block text-[11px] text-white/50 mb-1 gg-mono">วางลิงก์รูปภาพหรือลิงก์เว็บเพจแล้วกด Enter หรือปุ่มเพิ่ม</label>
+    <div class="flex gap-2 mb-2">
+      <input id="linkInput" placeholder="https://example.com" class="flex-1 min-w-0 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-[12px] gg-mono outline-none focus:border-white/30" />
+      <button id="addLinkBtn" class="px-3 py-2 rounded-lg bg-white/10 border border-white/15 text-[12px] text-white/80 hover:bg-white/20 transition-colors shrink-0">เพิ่ม</button>
+    </div>
+
+    <div id="linksList" class="mb-2 max-h-40 overflow-y-auto space-y-1 pr-1"></div>
+    <div class="flex items-center justify-between mb-3">
+      <span id="linksCount" class="gg-mono text-[11px] text-white/40">ยังไม่มีลิงก์</span>
+      <button id="clearLinksBtn" class="gg-mono text-[11px] text-white/40 hover:text-white/70 transition-colors">ล้างทั้งหมด</button>
+    </div>
+
+    <p class="text-[11px] leading-relaxed text-white/40 mb-3">
+      ลิงก์รูปภาพ (.jpg .png ฯลฯ) หรือลิงก์แชร์ Google Drive จะแสดงเป็นรูปภาพ ส่วนลิงก์เว็บเพจอื่นๆ จะดึงภาพหน้าจอตัวอย่างมาแสดง (ผ่านบริการภายนอก อาจใช้เวลาสักครู่ในการโหลดครั้งแรก) กดไอคอนมุมขวาบนของการ์ดเพื่อเปิดหน้าเว็บจริงในแท็บใหม่เสมอ
+    </p>
+
+    <div class="flex gap-2">
+      <button id="loadBtn" class="flex-1 py-2 rounded-lg bg-white text-black text-[13px] font-medium hover:bg-white/90 transition-colors">แสดงในแกลเลอรี</button>
+      <button id="closeSettingsBtn" class="px-3 py-2 rounded-lg border border-white/15 text-[13px] text-white/70 hover:bg-white/5 transition-colors">ปิด</button>
+    </div>
+  </div>
+
+  <!-- status / empty state -->
+  <div id="statusOverlay" class="absolute inset-0 z-10 flex items-center justify-center pointer-events-none px-6">
+    <div class="text-center max-w-md">
+      <div id="statusText" class="gg-mono text-[13px] text-white/40 whitespace-pre-line text-left"></div>
+    </div>
+  </div>
+  <div id="loadingText" class="hidden absolute top-20 left-1/2 -translate-x-1/2 z-10 gg-mono text-[12px] text-white/40 pointer-events-none">กำลังแสดงรูปภาพ...</div>
+
+  <!-- 3D scene -->
+  <div id="perspectiveWrap" class="relative z-10 w-full h-full flex items-center justify-center pointer-events-none" style="perspective:1350px;">
+    <div id="scene-inner" class="absolute"></div>
+  </div>
+
+  <!-- bottom nav -->
+  <div class="chrome-ui absolute bottom-0 left-0 right-0 z-40 flex items-center justify-center gap-8 pb-6 pointer-events-none">
+    <button id="prevBtn" class="pointer-events-auto w-9 h-9 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-center" aria-label="ก่อนหน้า">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M15 18l-6-6 6-6"></path></svg>
+    </button>
+    <span id="countText" class="gg-mono text-[11px] text-white/40"></span>
+    <button id="nextBtn" class="pointer-events-auto w-9 h-9 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-center" aria-label="ถัดไป">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"></path></svg>
+    </button>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  const PLACEHOLDER_COUNT = 5;
+  const AUTO_SPEED = 0.0016;
+  const RESUME_DELAY = 4200;
+  const STORAGE_KEY = 'gdrive-gallery-config';
+  const thicknessLayers = [-1.47, -0.73, 0, 0.73, 1.47];
+
+  let images = [];
+  let metrics = { cardW: 336, cardH: 211 };
+  let progress = 0;
+  let userTarget = null;
+  let lastInteraction = 0;
+  let mouse = { x: 0, y: 0, targetX: 0, targetY: 0 };
+  let cardEls = [];
+
+  const sceneInner = document.getElementById('scene-inner');
+  const settingsBtn = document.getElementById('settingsBtn');
+  const settingsPanel = document.getElementById('settingsPanel');
+  const linkInput = document.getElementById('linkInput');
+  const addLinkBtn = document.getElementById('addLinkBtn');
+  const linksList = document.getElementById('linksList');
+  const linksCount = document.getElementById('linksCount');
+  const clearLinksBtn = document.getElementById('clearLinksBtn');
+  const loadBtn = document.getElementById('loadBtn');
+  const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+  const statusOverlay = document.getElementById('statusOverlay');
+  const statusText = document.getElementById('statusText');
+  const loadingText = document.getElementById('loadingText');
+  const countText = document.getElementById('countText');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  let linkItems = [];
+
+  function extractDriveFileId(url) {
+    let m = url.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+    if (m) return m[1];
+    m = url.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+    if (m) return m[1];
+    return null;
+  }
+  function isDirectImageUrl(url) {
+    return /\.(jpe?g|png|gif|webp|bmp|svg)(\?.*)?$/i.test(url) || /googleusercontent\.com/i.test(url);
+  }
+  // Classifies one raw link the user entered:
+  // - direct image URL or Google Drive share link -> shown as an image
+  // - anything else -> shown as a live webpage preview (iframe) and can be opened
+  function classifyLink(raw) {
+    const url = raw.trim();
+    if (!url) return null;
+
+    if (/drive\.google\.com/.test(url)) {
+      const id = extractDriveFileId(url);
+      if (id) return { type: 'image', url: `https://lh3.googleusercontent.com/d/${id}=w1600`, openUrl: url };
+    }
+
+    if (isDirectImageUrl(url)) return { type: 'image', url: bumpThumbSize(url), openUrl: url };
+
+    return { type: 'webpage', url, openUrl: url };
+  }
+
+  function getDisplayName(url, index) {
+    try {
+      const host = new URL(url).hostname.replace(/^www\./, '');
+      return host;
+    } catch (e) {
+      return 'ลิงก์ที่ ' + String(index + 1).padStart(2, '0');
+    }
+  }
+
+  function buildScreenshotUrl(pageUrl) {
+    // Uses Microlink's free screenshot API, which responds with a redirect
+    // straight to a PNG of the rendered page — this works as a plain <img>
+    // even for pages that refuse to be embedded in an iframe.
+    return 'https://api.microlink.io/?url=' + encodeURIComponent(pageUrl) +
+      '&screenshot=true&meta=false&embed=screenshot.url';
+  }
+
+  function bumpThumbSize(url) {
+    if (!url) return url;
+    if (/=s\d+/.test(url)) return url.replace(/=s\d+/, '=s1600');
+    if (/=w\d+/.test(url)) return url.replace(/=w\d+(-h\d+)?/, '=w1600');
+    return url;
+  }
+  // ---------- persisted config ----------
+  function loadConfig() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const cfg = JSON.parse(raw);
+        if (Array.isArray(cfg.links) && cfg.links.length) {
+          linkItems = cfg.links.slice();
+          renderLinksList();
+          return true;
+        }
+      }
+    } catch (e) {}
+    return false;
+  }
+  function saveConfig() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ links: linkItems })); } catch (e) {}
+  }
+
+  // ---------- link list UI ----------
+  function renderLinksList() {
+    linksList.innerHTML = '';
+    linkItems.forEach((link, idx) => {
+      const row = document.createElement('div');
+      row.className = 'flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg bg-white/5 border border-white/10';
+      const span = document.createElement('span');
+      span.className = 'gg-mono text-[11px] text-white/70 truncate';
+      span.textContent = link;
+      span.title = link;
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = '×';
+      removeBtn.setAttribute('aria-label', 'ลบลิงก์นี้');
+      removeBtn.className = 'shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-colors';
+      removeBtn.addEventListener('click', () => {
+        linkItems.splice(idx, 1);
+        renderLinksList();
+      });
+      row.appendChild(span);
+      row.appendChild(removeBtn);
+      linksList.appendChild(row);
+    });
+    linksCount.textContent = linkItems.length ? `${linkItems.length} ลิงก์` : 'ยังไม่มีลิงก์';
+  }
+
+  function addLinksFromInput() {
+    const raw = linkInput.value.trim();
+    if (!raw) return;
+    raw.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean).forEach((s) => linkItems.push(s));
+    linkInput.value = '';
+    renderLinksList();
+  }
+
+  function loadFromLinks(links) {
+    const items = links.map(classifyLink).filter(Boolean);
+
+    if (items.length === 0) {
+      images = [];
+      showStatus('กรุณาเพิ่มลิงก์อย่างน้อย 1 ลิงก์');
+      return;
+    }
+
+    images = items.map((item, i) => ({
+      id: 'item-' + i,
+      name: getDisplayName(item.openUrl, i),
+      url: item.url,
+      openUrl: item.openUrl,
+      type: item.type,
+    }));
+    statusOverlay.classList.add('hidden');
+    buildCards();
+  }
+
+  function truncateMiddle(str, max) {
+    if (str.length <= max) return str;
+    const half = Math.floor((max - 3) / 2);
+    return str.slice(0, half) + '...' + str.slice(str.length - half);
+  }
+
+  function showStatus(msg) {
+    statusText.textContent = msg;
+    statusOverlay.classList.remove('hidden');
+    buildCards();
+  }
+
+  // ---------- build DOM cards ----------
+  function buildCards() {
+    sceneInner.innerHTML = '';
+    cardEls = [];
+    const count = images.length > 0 ? images.length : PLACEHOLDER_COUNT;
+    const hasImages = images.length > 0;
+
+    sceneInner.style.width = metrics.cardW + 'px';
+    sceneInner.style.height = metrics.cardH + 'px';
+
+    for (let i = 0; i < count; i++) {
+      const img = hasImages ? images[i] : null;
+      const slot = document.createElement('div');
+      slot.className = 'absolute inset-0 pointer-events-auto cursor-pointer card-slot';
+      slot.style.width = metrics.cardW + 'px';
+      slot.style.height = metrics.cardH + 'px';
+      slot.addEventListener('click', () => jumpTo(i, count));
+
+      thicknessLayers.forEach((zOffset, layerIdx) => {
+        const isFront = layerIdx === thicknessLayers.length - 1;
+        const isBack = layerIdx === 0;
+        const layer = document.createElement('div');
+
+        if (!isFront && !isBack) {
+          layer.className = 'absolute inset-0 rounded-[16px] border border-[#808080] pointer-events-none overflow-hidden';
+          layer.style.backgroundColor = '#808080';
+          layer.style.transform = `translateZ(${zOffset}px)`;
+          slot.appendChild(layer);
+          return;
+        }
+
+        if (isFront) {
+          layer.className = 'absolute inset-0 rounded-[16px] border border-white/15 pointer-events-none overflow-hidden card-layer';
+          layer.style.backgroundColor = '#0f0f0f';
+          layer.style.transform = `translateZ(${zOffset}px)`;
+          layer.style.boxShadow = 'inset 0 1px 1px rgba(255,255,255,0.15)';
+
+          if (img && img.type === 'webpage') {
+            const previewWrap = document.createElement('div');
+            previewWrap.className = 'absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center bg-gradient-to-br from-white/[0.06] to-white/[0.01]';
+
+            const fallback = document.createElement('div');
+            fallback.className = 'flex flex-col items-center gap-2 text-white/30';
+            fallback.innerHTML = `
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"></path></svg>
+              <span class="gg-mono text-[11px]">กำลังโหลดตัวอย่าง...</span>
+            `;
+            previewWrap.appendChild(fallback);
+
+            const shotImg = document.createElement('img');
+            shotImg.src = buildScreenshotUrl(img.url);
+            shotImg.alt = img.name;
+            shotImg.draggable = false;
+            shotImg.className = 'absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300';
+            shotImg.onload = () => { shotImg.style.opacity = '1'; };
+            shotImg.onerror = () => {
+              shotImg.remove();
+              fallback.innerHTML = `
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"></path></svg>
+                <span class="gg-mono text-[11px]">ไม่สามารถแสดงตัวอย่างได้ กดไอคอนเพื่อเปิด</span>
+              `;
+            };
+            previewWrap.appendChild(shotImg);
+
+            layer.appendChild(previewWrap);
+          } else if (img) {
+            const imageEl = document.createElement('img');
+            imageEl.src = img.url;
+            imageEl.alt = img.name;
+            imageEl.draggable = false;
+            imageEl.className = 'absolute inset-0 w-full h-full object-cover rounded-[16px]';
+            imageEl.onerror = () => { imageEl.style.opacity = '0.15'; };
+            layer.appendChild(imageEl);
+          } else {
+            const ph = document.createElement('div');
+            ph.className = 'absolute inset-0 bg-gradient-to-br from-white/[0.04] to-white/[0.01] animate-pulse';
+            layer.appendChild(ph);
+          }
+
+          const grad = document.createElement('div');
+          grad.className = 'absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/70 to-transparent pointer-events-none';
+          layer.appendChild(grad);
+
+          const capRow = document.createElement('div');
+          capRow.className = 'cap-row absolute left-4 right-4 bottom-3 flex items-end justify-between pointer-events-none';
+          capRow.innerHTML = `
+            <span class="cap-name gg-mono text-white/85 truncate max-w-[70%]">${img ? escapeHtml(img.name) : '—'}</span>
+            <span class="cap-index gg-mono text-white/50">N&deg;${String(i + 1).padStart(2, '0')}</span>
+          `;
+          layer.appendChild(capRow);
+
+          if (img) {
+            const openBtn = document.createElement('button');
+            openBtn.className = 'open-link-btn absolute top-2 right-2 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 border border-white/20 pointer-events-auto transition-colors';
+            openBtn.setAttribute('aria-label', 'เปิดลิงก์นี้ในแท็บใหม่');
+            openBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path><path d="M15 3h6v6"></path><path d="M10 14L21 3"></path></svg>';
+            openBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              window.open(img.openUrl || img.url, '_blank', 'noopener');
+            });
+            layer.appendChild(openBtn);
+          }
+
+          ['top-2 left-2 border-t border-l', 'bottom-2 left-2 border-b border-l'].forEach((pos) => {
+            const bracket = document.createElement('div');
+            bracket.className = `corner-bracket absolute ${pos} border-white/40 pointer-events-none`;
+            layer.appendChild(bracket);
+          });
+
+          slot.appendChild(layer);
+          return;
+        }
+
+        // back face
+        layer.className = 'absolute inset-0 rounded-[16px] border border-white/15 pointer-events-none overflow-hidden card-layer';
+        layer.style.backgroundColor = '#0f0f0f';
+        layer.style.transform = `translateZ(${zOffset}px) rotateX(180deg)`;
+        layer.style.boxShadow = 'inset 0 1px 1px rgba(255,255,255,0.15)';
+
+        if (img && img.type !== 'webpage') {
+          const blurWrap = document.createElement('div');
+          blurWrap.className = 'absolute inset-0 pointer-events-none';
+          blurWrap.style.filter = 'blur(18px)';
+          blurWrap.style.transform = 'scale(1.15)';
+          const bImg = document.createElement('img');
+          bImg.src = img.url;
+          bImg.draggable = false;
+          bImg.className = 'absolute inset-0 w-full h-full object-cover';
+          blurWrap.appendChild(bImg);
+          layer.appendChild(blurWrap);
+        }
+        const dim = document.createElement('div');
+        dim.className = 'absolute inset-0 bg-black/35 pointer-events-none';
+        layer.appendChild(dim);
+
+        const aperture = document.createElement('div');
+        aperture.className = 'back-aperture absolute right-4 bottom-4 opacity-70 pointer-events-none';
+        aperture.innerHTML = `
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9.5" stroke="white" stroke-width="0.8"></circle>
+            <circle cx="12" cy="12" r="6" stroke="white" stroke-width="0.8"></circle>
+            <circle cx="12" cy="12" r="2.4" fill="white"></circle>
+          </svg>`;
+        layer.appendChild(aperture);
+
+        const backLabel = document.createElement('div');
+        backLabel.className = 'back-label absolute left-4 top-4 gg-mono text-white/40 pointer-events-none';
+        backLabel.textContent = `N°${String(i + 1).padStart(2, '0')} / ${String(count).padStart(2, '0')}`;
+        layer.appendChild(backLabel);
+
+        slot.appendChild(layer);
+      });
+
+      sceneInner.appendChild(slot);
+      cardEls.push(slot);
+    }
+
+    countText.textContent = hasImages ? `${count} รายการ` : '';
+    applyCardTypography();
+  }
+
+  function applyCardTypography() {
+    // Dampened scale so text/icons grow with the bigger cards without
+    // becoming cartoonishly large at big screen sizes.
+    const s = Math.min(1.9, 1 + ((metrics.scale || 1) - 1) * 0.7);
+
+    document.querySelectorAll('.cap-name').forEach((el) => { el.style.fontSize = (12 * s).toFixed(1) + 'px'; });
+    document.querySelectorAll('.cap-index').forEach((el) => { el.style.fontSize = (10.5 * s).toFixed(1) + 'px'; });
+    document.querySelectorAll('.back-label').forEach((el) => { el.style.fontSize = (10 * s).toFixed(1) + 'px'; });
+    document.querySelectorAll('.corner-bracket').forEach((el) => {
+      const sz = (14 * s).toFixed(1) + 'px';
+      el.style.width = sz; el.style.height = sz;
+    });
+    document.querySelectorAll('.back-aperture svg').forEach((el) => {
+      const sz = (26 * s).toFixed(1);
+      el.setAttribute('width', sz); el.setAttribute('height', sz);
+    });
+    document.querySelectorAll('.open-link-btn').forEach((el) => {
+      const sz = (26 * s).toFixed(1) + 'px';
+      el.style.width = sz; el.style.height = sz;
+    });
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ---------- interaction ----------
+  function step(delta) {
+    lastInteraction = performance.now();
+    const base = userTarget !== null ? userTarget : Math.round(progress);
+    userTarget = base + delta;
+  }
+  function jumpTo(i, count) {
+    lastInteraction = performance.now();
+    let best = i, bestDiff = Infinity;
+    for (let k = -2; k <= 2; k++) {
+      const cand = i + k * count;
+      const diff = Math.abs(cand - progress);
+      if (diff < bestDiff) { bestDiff = diff; best = cand; }
+    }
+    userTarget = best;
+  }
+
+  window.addEventListener('mousemove', (e) => {
+    const rx = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
+    const ry = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+    mouse.targetX = Math.max(-1, Math.min(1, rx));
+    mouse.targetY = Math.max(-1, Math.min(1, ry));
+  });
+  document.addEventListener('mouseleave', () => { mouse.targetX = 0; mouse.targetY = 0; });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight') step(1);
+    if (e.key === 'ArrowLeft') step(-1);
+  });
+
+  const REF_CARD_W = 336; // reference size the original 3D geometry (gap/peek/depth) was tuned for
+
+  function handleResize() {
+    const w = window.innerWidth, h = window.innerHeight;
+
+    // Big, presentation-first sizing: the card fills a large, balanced share
+    // of the viewport instead of staying small and letting chrome dominate.
+    let cardH = h * 0.50;
+    let cardW = cardH * 1.5925;
+
+    // Don't let it blow out sideways on narrow/tall screens
+    const maxW = w * 0.66;
+    if (cardW > maxW) {
+      cardW = maxW;
+      cardH = cardW / 1.5925;
+    }
+
+    cardW = Math.round(Math.min(760, Math.max(220, cardW)));
+    cardH = Math.round(cardW / 1.5925);
+
+    metrics = { cardW, cardH, scale: cardW / REF_CARD_W };
+    sceneInner.style.width = cardW + 'px';
+    sceneInner.style.height = cardH + 'px';
+    cardEls.forEach((el) => { el.style.width = cardW + 'px'; el.style.height = cardH + 'px'; });
+    const wrap = document.getElementById('perspectiveWrap');
+    if (wrap) wrap.style.perspective = Math.round(1350 * metrics.scale) + 'px';
+    applyCardTypography();
+  }
+  window.addEventListener('resize', handleResize);
+
+  // ---------- render loop ----------
+  function renderLoop() {
+    const now = performance.now();
+    if (userTarget !== null) {
+      const diff = userTarget - progress;
+      progress += diff * 0.12;
+      if (Math.abs(diff) < 0.0015) progress = userTarget;
+      if (now - lastInteraction > RESUME_DELAY) userTarget = null;
+    } else {
+      progress += AUTO_SPEED;
+    }
+
+    mouse.x += (mouse.targetX - mouse.x) * 0.08;
+    mouse.y += (mouse.targetY - mouse.y) * 0.08;
+
+    const h = window.innerHeight;
+    const cardH = metrics.cardH;
+    const count = cardEls.length || PLACEHOLDER_COUNT;
+
+    const roundedIndex = Math.round(progress);
+    const diffFromRound = progress - roundedIndex;
+    const easedDiff = Math.sign(diffFromRound) * Math.pow(Math.abs(diffFromRound) * 2, 4.2) / 2;
+    const virtualActiveIndex = roundedIndex + easedDiff;
+
+    for (let i = 0; i < count; i++) {
+      const card = cardEls[i];
+      if (!card) continue;
+
+      let offset = i - virtualActiveIndex;
+      const halfCount = count / 2;
+      while (offset > halfCount) offset -= count;
+      while (offset < -halfCount) offset += count;
+
+      const absOffset = Math.abs(offset);
+      const sign = Math.sign(offset);
+
+      if (absOffset > 3.0) { card.style.visibility = 'hidden'; continue; }
+      card.style.visibility = 'visible';
+
+      const gscale = metrics.scale || 1;
+      const gap = 36 * gscale, peekAmount = -55 * gscale, D = 1350 * gscale;
+      let y = 0, z = 0, rot = 0;
+
+      if (absOffset <= 1) {
+        const t = absOffset, easedT = t * t * (3 - 2 * t);
+        const targetY = cardH + gap;
+        y = -sign * (easedT * targetY);
+        z = 400 * gscale + easedT * (220 * gscale - 400 * gscale);
+        rot = easedT * 132;
+      } else if (absOffset <= 2) {
+        const t = absOffset - 1, easedT = t * t * (3 - 2 * t);
+        const yStart = cardH + gap, zStart = 220 * gscale, rotStart = 132;
+        const zEnd = -60 * gscale, rotEnd = 175;
+        const sEnd = D / (D - zEnd);
+        const yEnd = (h / 2 - peekAmount) / sEnd - (cardH / 2);
+        const currentY = yStart + easedT * (yEnd - yStart);
+        y = -sign * currentY;
+        z = zStart + easedT * (zEnd - zStart);
+        rot = rotStart + easedT * (rotEnd - rotStart);
+      } else {
+        const t = Math.min(absOffset - 2, 1), easedT = t * t * (3 - 2 * t);
+        const zStart = -60 * gscale, rotStart = 175, zEnd3 = -250 * gscale, rotEnd3 = 195;
+        const sEnd2 = D / (D - zStart);
+        const yEnd2 = (h / 2 - peekAmount) / sEnd2 - (cardH / 2);
+        const sEnd3 = D / (D - zEnd3);
+        const yEnd3 = (h / 2 + 100 * gscale) / sEnd3 + (cardH / 2);
+        const currentY = yEnd2 + easedT * (yEnd3 - yEnd2);
+        y = -sign * currentY;
+        z = zStart + easedT * (zEnd3 - zStart);
+        rot = rotStart + easedT * (rotEnd3 - rotStart);
+      }
+
+      const localCardRotation = -sign * rot;
+      const centerFactor = Math.max(0, 1 - absOffset);
+      const maxTiltY = 15, maxTiltX = 12;
+      const activeTiltX = -mouse.y * maxTiltX * centerFactor;
+      const activeTiltY = mouse.x * maxTiltY * centerFactor;
+      const totalRotX = localCardRotation + activeTiltX;
+      const totalRotY = activeTiltY;
+
+      card.style.zIndex = Math.round(z).toString();
+      card.style.opacity = '1';
+      card.style.transform = `translateY(${y.toFixed(2)}px) translateZ(${z.toFixed(2)}px) rotateX(${totalRotX.toFixed(2)}deg) rotateY(${totalRotY.toFixed(2)}deg) rotateZ(-3deg)`;
+    }
+
+    requestAnimationFrame(renderLoop);
+  }
+
+  // ---------- cinematic background auto-cycle ----------
+  const bgVideos = document.querySelectorAll('.bg-video');
+  let activeBg = 0;
+  let bgTransitioning = false;
+  function cycleBg() {
+    if (bgTransitioning || bgVideos.length < 2) return;
+    bgTransitioning = true;
+    const next = (activeBg + 1) % bgVideos.length;
+    bgVideos[next].currentTime = 0;
+    bgVideos[next].play().catch(() => {});
+    bgVideos[activeBg].classList.remove('opacity-100');
+    bgVideos[activeBg].classList.add('opacity-0');
+    bgVideos[next].classList.remove('opacity-0');
+    bgVideos[next].classList.add('opacity-100');
+    activeBg = next;
+    setTimeout(() => { bgTransitioning = false; }, 1000);
+  }
+  setInterval(cycleBg, 8000);
+
+  // ---------- wiring ----------
+  settingsBtn.addEventListener('click', () => settingsPanel.classList.toggle('hidden'));
+  closeSettingsBtn.addEventListener('click', () => settingsPanel.classList.add('hidden'));
+  addLinkBtn.addEventListener('click', addLinksFromInput);
+  linkInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); addLinksFromInput(); }
+  });
+  clearLinksBtn.addEventListener('click', () => { linkItems = []; renderLinksList(); });
+  loadBtn.addEventListener('click', () => {
+    addLinksFromInput(); // catch anything still sitting in the input box
+    if (linkItems.length === 0) { showStatus('กรุณาเพิ่มลิงก์อย่างน้อย 1 ลิงก์'); return; }
+    saveConfig();
+    settingsPanel.classList.add('hidden');
+    loadFromLinks(linkItems);
+  });
+  prevBtn.addEventListener('click', () => step(-1));
+  nextBtn.addEventListener('click', () => step(1));
+
+  // ---------- init ----------
+  handleResize();
+  buildCards();
+  const hadConfig = loadConfig();
+  if (hadConfig) {
+    loadFromLinks(linkItems);
+  } else {
+    statusText.textContent = 'วางลิงก์รูปภาพหรือลิงก์เว็บเพจที่ปุ่มตั้งค่ามุมขวาบน เพื่อแสดงในแกลเลอรี';
+    settingsPanel.classList.remove('hidden');
+  }
+  requestAnimationFrame(renderLoop);
+})();
+</script>
+</body>
+</html>
