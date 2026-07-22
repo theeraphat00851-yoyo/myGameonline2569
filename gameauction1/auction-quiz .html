@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ห้องประมูลความรู้ | Knowledge Auction House</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chonburi&family=Chakra+Petch:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Firebase (compat, no build step needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+
+<!-- SheetJS for reading Excel/CSV question files -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- QR code generator for the join link -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+/* ============================================================
+   ห้องประมูลความรู้ — Knowledge Auction House
+   Theme: an auction saleroom after hours — deep aubergine dark,
+   a single spotlight cone, brass gavel + paddle-number motifs.
+   ============================================================ */
+:root{
+  --bg-deep:#150f1e;
+  --bg-panel:#1f1730;
+  --bg-panel-2:#251c39;
+  --line: rgba(212,175,106,0.18);
+  --gold:#d4af6a;
+  --gold-bright:#f2cf87;
+  --cream:#f4ead9;
+  --cream-dim: rgba(244,234,217,0.62);
+  --wine:#8a3542;
+  --wine-bright:#c65a67;
+  --sage:#8fae63;
+  --sage-bright:#b7d488;
+  --shadow: 0 20px 60px rgba(0,0,0,0.55);
+  --radius: 18px;
+  --font-display:'Chonburi', 'Sarabun', sans-serif;
+  --font-mono:'Chakra Petch', 'Sarabun', sans-serif;
+  --font-body:'Sarabun', sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(ellipse 900px 600px at 50% -10%, rgba(212,175,106,0.16), transparent 60%),
+    radial-gradient(ellipse 1200px 800px at 50% 110%, rgba(138,53,66,0.12), transparent 60%),
+    var(--bg-deep);
+  color:var(--cream);
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:"";
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    repeating-linear-gradient(90deg, rgba(212,175,106,0.02) 0px, rgba(212,175,106,0.02) 1px, transparent 1px, transparent 80px);
+}
+h1,h2,h3{font-family:var(--font-display); font-weight:400; letter-spacing:0.01em; margin:0;}
+.mono{font-family:var(--font-mono);}
+.screen{display:none; position:relative; z-index:1; min-height:100vh; padding:20px;}
+.screen.active{display:flex; flex-direction:column;}
+.wrap{max-width:920px; margin:0 auto; width:100%;}
+.wrap-wide{max-width:1240px; margin:0 auto; width:100%;}
+
+/* Spotlight cone used behind hero moments */
+.spotlight{
+  position:relative;
+}
+.spotlight::before{
+  content:"";
+  position:absolute; left:50%; top:-120px; transform:translateX(-50%);
+  width:520px; height:420px;
+  background: radial-gradient(ellipse at top, rgba(242,207,135,0.20), rgba(242,207,135,0) 68%);
+  pointer-events:none; z-index:0;
+}
+
+/* Panels / cards */
+.panel{
+  background:linear-gradient(180deg, var(--bg-panel), var(--bg-panel-2));
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:28px;
+}
+.eyebrow{
+  font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.18em;
+  font-size:12.5px; color:var(--gold); margin-bottom:8px; display:flex; align-items:center; gap:10px;
+}
+.eyebrow::before{content:"◆"; font-size:9px;}
+
+/* Buttons */
+button{font-family:var(--font-body); cursor:pointer; border:none; outline:none;}
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  padding:14px 26px; border-radius:12px; font-size:16px; font-weight:700;
+  transition:transform .12s ease, box-shadow .12s ease, filter .12s ease;
+}
+.btn:active{transform:translateY(1px) scale(0.99);}
+.btn-gold{ background:linear-gradient(180deg, var(--gold-bright), var(--gold)); color:#241706; box-shadow:0 8px 22px rgba(212,175,106,0.28);}
+.btn-gold:hover{filter:brightness(1.06);}
+.btn-ghost{ background:transparent; color:var(--cream); border:1.5px solid var(--line);}
+.btn-ghost:hover{border-color:var(--gold);}
+.btn-wine{ background:linear-gradient(180deg, var(--wine-bright), var(--wine)); color:#fff0ee;}
+.btn-sage{ background:linear-gradient(180deg, var(--sage-bright), var(--sage)); color:#12210a;}
+.btn:disabled{opacity:0.4; cursor:not-allowed; filter:none; transform:none;}
+.btn-block{width:100%;}
+.btn-lg{padding:18px 30px; font-size:19px; border-radius:14px;}
+
+/* Inputs */
+.field{margin-bottom:18px;}
+.field label{display:block; font-size:13.5px; color:var(--cream-dim); margin-bottom:7px; font-weight:600;}
+input[type=text], input[type=number], input[type=password]{
+  width:100%; padding:13px 15px; border-radius:10px; border:1.5px solid var(--line);
+  background:rgba(0,0,0,0.22); color:var(--cream); font-family:var(--font-mono); font-size:16px;
+}
+input:focus{border-color:var(--gold); outline:none;}
+.hint{font-size:12.5px; color:var(--cream-dim); margin-top:6px; line-height:1.5;}
+.row{display:flex; gap:14px; flex-wrap:wrap;}
+.row > *{flex:1; min-width:160px;}
+
+/* Auction paddle number badge */
+.paddle{
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:44px; height:44px; padding:0 10px; border-radius:10px;
+  background:linear-gradient(180deg, var(--gold-bright), var(--gold)); color:#241706;
+  font-family:var(--font-mono); font-weight:700; font-size:17px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.3);
+}
+
+/* Header bar (shared) */
+.topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:10px;}
+.brand{display:flex; align-items:center; gap:12px;}
+.brand svg{width:34px; height:34px;}
+.brand-name{font-family:var(--font-display); font-size:20px; color:var(--gold-bright);}
+.room-chip{
+  font-family:var(--font-mono); background:rgba(212,175,106,0.1); border:1px solid var(--line);
+  padding:8px 14px; border-radius:10px; font-size:14px; letter-spacing:0.06em;
+}
+
+/* Countdown ring */
+.timer-wrap{display:flex; flex-direction:column; align-items:center; gap:6px;}
+.timer-num{font-family:var(--font-mono); font-size:44px; font-weight:700; color:var(--gold-bright);}
+.timer-num.low{color:var(--wine-bright); animation:pulse 0.6s infinite;}
+@keyframes pulse{0%,100%{opacity:1;} 50%{opacity:0.45;}}
+
+/* Gavel signature element */
+.gavel-flash{
+  position:fixed; inset:0; z-index:50; pointer-events:none;
+  display:flex; align-items:center; justify-content:center; opacity:0;
+}
+.gavel-flash.show{animation:flashIn 900ms ease forwards;}
+.gavel-flash svg{width:180px; height:180px; filter:drop-shadow(0 0 40px rgba(242,207,135,0.9));}
+@keyframes flashIn{
+  0%{opacity:0; transform:scale(0.6) rotate(-25deg);}
+  18%{opacity:1; transform:scale(1.08) rotate(8deg);}
+  30%{transform:scale(1) rotate(0deg);}
+  75%{opacity:1;}
+  100%{opacity:0;}
+}
+.ring-burst{position:fixed; inset:0; z-index:49; pointer-events:none; display:flex; align-items:center; justify-content:center;}
+.ring-burst span{
+  position:absolute; width:40px; height:40px; border-radius:50%; border:2px solid var(--gold-bright); opacity:0;
+}
+.ring-burst.show span{animation:ringOut 900ms ease forwards;}
+.ring-burst.show span:nth-child(2){animation-delay:0.08s;}
+.ring-burst.show span:nth-child(3){animation-delay:0.16s;}
+@keyframes ringOut{
+  0%{width:40px; height:40px; opacity:0.9;}
+  100%{width:640px; height:640px; opacity:0;}
+}
+
+/* Leaderboard */
+.lb-row{
+  display:flex; align-items:center; gap:14px; padding:12px 14px; border-radius:12px;
+  background:rgba(0,0,0,0.18); margin-bottom:8px; border:1px solid transparent;
+}
+.lb-row.me{border-color:var(--gold); background:rgba(212,175,106,0.10);}
+.lb-rank{font-family:var(--font-mono); font-weight:700; color:var(--gold); width:28px;}
+.lb-name{flex:1; font-weight:600;}
+.lb-score{font-family:var(--font-mono); font-weight:700; color:var(--gold-bright);}
+.lb-sub{font-size:12px; color:var(--cream-dim);}
+
+/* Bid ticker list (teacher view) */
+.bid-item{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 14px; border-radius:10px; background:rgba(0,0,0,0.2); margin-bottom:6px;
+  font-family:var(--font-mono);
+}
+.bid-item.top{background:rgba(212,175,106,0.16); border:1px solid var(--gold);}
+
+/* Choices grid (student answering) */
+.choices{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:18px;}
+@media (max-width:560px){.choices{grid-template-columns:1fr;}}
+.choice-btn{
+  text-align:left; padding:18px; border-radius:14px; background:rgba(0,0,0,0.22);
+  border:1.5px solid var(--line); color:var(--cream); font-size:16px; font-weight:600; line-height:1.4;
+  display:flex; gap:12px; align-items:flex-start;
+}
+.choice-btn:hover{border-color:var(--gold);}
+.choice-btn .k{font-family:var(--font-mono); color:var(--gold); font-weight:700;}
+.choice-btn.correct{background:rgba(143,174,99,0.22); border-color:var(--sage-bright);}
+.choice-btn.wrong{background:rgba(138,53,66,0.28); border-color:var(--wine-bright);}
+.choice-btn:disabled{cursor:default;}
+
+/* Status pill */
+.pill{
+  display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:999px;
+  background:rgba(212,175,106,0.12); border:1px solid var(--line); font-size:13px; font-weight:600;
+}
+.pill.live{color:var(--sage-bright); border-color:rgba(143,174,99,0.4);}
+.pill.wine{color:var(--wine-bright); border-color:rgba(198,90,103,0.4);}
+
+/* misc */
+.center{text-align:center;}
+.muted{color:var(--cream-dim);}
+.big{font-size:28px;}
+.mb8{margin-bottom:8px;} .mb14{margin-bottom:14px;} .mb20{margin-bottom:20px;} .mb28{margin-bottom:28px;}
+.divider{height:1px; background:var(--line); margin:22px 0;}
+a{color:var(--gold-bright);}
+.tag-file{font-size:13px; color:var(--cream-dim); margin-top:6px;}
+.grow{flex:1;}
+.qr-box{background:#fff; padding:14px; border-radius:12px; display:inline-block;}
+.toast{
+  position:fixed; bottom:26px; left:50%; transform:translateX(-50%); z-index:60;
+  background:var(--bg-panel-2); border:1px solid var(--gold); padding:12px 22px; border-radius:12px;
+  font-size:14px; opacity:0; transition:opacity .25s ease; pointer-events:none;
+}
+.toast.show{opacity:1;}
+.table-clean{width:100%; border-collapse:collapse; font-size:14px;}
+.table-clean th, .table-clean td{padding:8px 10px; border-bottom:1px solid var(--line); text-align:left;}
+.table-clean th{color:var(--gold); font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:0.05em;}
+.qlist-row{display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); font-size:14px;}
+.footer-note{text-align:center; font-size:12px; color:var(--cream-dim); margin-top:30px; padding-bottom:20px;}
+</style>
+</head>
+<body>
+
+<!-- ======================= SIGNATURE FX LAYERS ======================= -->
+<div class="gavel-flash" id="gavelFlash">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <g fill="none" stroke="#f2cf87" stroke-width="4" stroke-linecap="round">
+      <rect x="52" y="10" width="34" height="16" rx="4" transform="rotate(45 69 18)" fill="#d4af6a" stroke="none"/>
+      <rect x="60" y="24" width="10" height="34" rx="3" transform="rotate(45 65 41)" fill="#b98f4d" stroke="none"/>
+      <line x1="18" y1="86" x2="52" y2="86"/>
+    </g>
+  </svg>
+</div>
+<div class="ring-burst" id="ringBurst"><span></span><span></span><span></span></div>
+<div class="toast" id="toast"></div>
+
+<!-- ======================= 0. ROLE SELECT ======================= -->
+<section class="screen active" id="screen-role">
+  <div class="wrap spotlight" style="margin-top:6vh;">
+    <div class="center mb28">
+      <svg width="64" height="64" viewBox="0 0 100 100" style="margin-bottom:10px;">
+        <g fill="none" stroke="#d4af6a" stroke-width="4" stroke-linecap="round">
+          <rect x="52" y="10" width="34" height="16" rx="4" transform="rotate(45 69 18)" fill="#d4af6a" stroke="none"/>
+          <rect x="60" y="24" width="10" height="34" rx="3" transform="rotate(45 65 41)" fill="#b98f4d" stroke="none"/>
+          <line x1="18" y1="86" x2="52" y2="86"/>
+        </g>
+      </svg>
+      <h1 class="big" style="font-size:36px;">ห้องประมูลความรู้</h1>
+      <div class="muted mono" style="letter-spacing:0.12em; font-size:13px; margin-top:6px;">KNOWLEDGE AUCTION HOUSE</div>
+    </div>
+    <div class="panel" style="max-width:460px; margin:0 auto;">
+      <div class="eyebrow">เลือกบทบาทของคุณ</div>
+      <button class="btn btn-gold btn-block btn-lg mb14" id="btnRoleTeacher">🔨 ฉันเป็นครู — ควบคุมการประมูล</button>
+      <button class="btn btn-ghost btn-block btn-lg" id="btnRoleStudent">🎓 ฉันเป็นนักเรียน — เข้าร่วมประมูล</button>
+    </div>
+    <div class="footer-note">ไฟล์เดียวจบ • ทำงานผ่าน Firebase Realtime Database • ใช้ได้ฟรีบน GitHub Pages</div>
+  </div>
+</section>
+
+<!-- ======================= 1. TEACHER SETUP ======================= -->
+<section class="screen" id="screen-teacher-setup">
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand"><span class="brand-name">ห้องประมูลความรู้ · ครู</span></div>
+      <button class="btn btn-ghost" id="btnBackHome1">← กลับหน้าแรก</button>
+    </div>
+
+    <div class="panel spotlight mb20">
+      <div class="eyebrow">ขั้นที่ 1 — ตั้งค่าห้องประมูล</div>
+      <h2 style="font-size:26px; margin-bottom:18px;">สร้างห้องประมูลใหม่</h2>
+
+      <div class="row">
+        <div class="field">
+          <label>รหัสห้อง (ตั้งเองหรือกดสุ่ม)</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="inRoomCode" placeholder="เช่น 4821" maxlength="8">
+            <button class="btn btn-ghost" id="btnRollCode" style="white-space:nowrap;">🎲 สุ่ม</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>แต้มตั้งต้นของนักเรียนแต่ละคน (ใช้ประมูล)</label>
+          <input type="number" id="inStartPoints" value="100" min="10">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>เวลาประมูลต่อรอบ (วินาที)</label>
+          <input type="number" id="inBidSeconds" value="20" min="5">
+        </div>
+        <div class="field">
+          <label>เวลาตอบคำถาม (วินาที)</label>
+          <input type="number" id="inAnswerSeconds" value="15" min="5">
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="eyebrow">ขั้นที่ 2 — นำเข้าโจทย์คำถาม</div>
+      <div class="field">
+        <label>ไฟล์ Excel (.xlsx) หรือ CSV — คอลัมน์: คำถาม, ตัวเลือก1-4, เฉลย(1-4)</label>
+        <input type="file" id="inFile" accept=".xlsx,.xls,.csv">
+        <div class="tag-file" id="fileStatus">ยังไม่ได้เลือกไฟล์ — <a href="#" id="lnkTemplate">ดาวน์โหลดไฟล์ตัวอย่าง CSV</a></div>
+      </div>
+      <div id="questionPreview" style="display:none; margin-top:14px;">
+        <div class="hint mb8">พบคำถามทั้งหมด <b id="qCount">0</b> ข้อ — ตัวอย่าง 3 ข้อแรก:</div>
+        <div id="qPreviewList"></div>
+      </div>
+
+      <div class="divider"></div>
+      <button class="btn btn-gold btn-block btn-lg" id="btnCreateRoom">สร้างห้อง &amp; ไปหน้าควบคุม →</button>
+      <div class="hint center mt8" id="setupError" style="color:var(--wine-bright);"></div>
+    </div>
+
+    <div class="panel">
+      <div class="eyebrow">ตั้งค่า Firebase (ทำครั้งเดียว)</div>
+      <div class="hint mb14">ใส่ค่า Firebase config ของคุณในไฟล์นี้ก่อนใช้งานจริง (ดูวิธีตั้งค่าแบบละเอียดในคู่มือที่แนบมา) หากยังไม่ได้ใส่ ระบบจะเตือนตรงนี้</div>
+      <div id="fbStatus" class="pill wine">⚠ ยังไม่ได้เชื่อมต่อ Firebase</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 2. TEACHER CONTROL / PROJECTOR ======================= -->
+<section class="screen" id="screen-teacher-control">
+  <div class="wrap-wide">
+    <div class="topbar">
+      <div class="brand"><span class="brand-name">🔨 ห้องประมูลความรู้</span></div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="room-chip">ห้อง <b id="ctrlRoomCode">----</b></div>
+        <button class="btn btn-ghost" id="btnEndGame">จบเกม</button>
+      </div>
+    </div>
+
+    <!-- LOBBY -->
+    <div class="panel spotlight mb20" id="lobbyPanel">
+      <div class="eyebrow">รอผู้เข้าร่วม</div>
+      <h2 style="font-size:24px; margin-bottom:14px;">นักเรียนเข้าร่วมห้องได้ที่นี่</h2>
+      <div class="row" style="align-items:flex-start;">
+        <div>
+          <div class="hint mb8">1) เข้าเว็บนี้แล้วเลือก "นักเรียน" แล้วกรอกรหัสห้อง<br>2) หรือสแกน QR / กดลิงก์ด้านล่าง</div>
+          <div class="room-chip mono" style="font-size:20px; padding:14px 22px; display:inline-block;" id="lobbyCodeBig">----</div>
+          <div class="hint mt8" id="joinLinkText" style="word-break:break-all;"></div>
+        </div>
+        <div class="qr-box" id="qrHolder"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="eyebrow">นักเรียนที่เข้าร่วมแล้ว (<span id="playerCount">0</span> คน)</div>
+      <div id="lobbyPlayerList" class="mb20"></div>
+      <button class="btn btn-gold btn-lg btn-block" id="btnStartGame" disabled>🔨 เริ่มการประมูล</button>
+    </div>
+
+    <!-- GAME (bidding / answering / reveal) -->
+    <div class="panel spotlight mb20" id="gamePanel" style="display:none;">
+      <div class="row" style="align-items:center; margin-bottom:6px;">
+        <div class="eyebrow" style="margin:0;">ข้อที่ <span id="qNum">1</span> / <span id="qTotal">0</span></div>
+        <div class="center" style="flex:0 0 auto;">
+          <span class="pill" id="phasePill">รอเริ่ม</span>
+        </div>
+        <div style="text-align:right; flex:0 0 auto;">
+          <span class="paddle" id="pointsBadge">0</span>
+          <div class="hint">คะแนนข้อนี้</div>
+        </div>
+      </div>
+
+      <div class="center mb14" style="margin-top:10px;">
+        <div class="timer-wrap">
+          <div class="timer-num" id="ctrlTimer">--</div>
+          <div class="hint" id="ctrlTimerLabel">วินาที</div>
+        </div>
+      </div>
+
+      <div class="center mb20" id="ctrlQuestionText" style="font-size:20px; font-weight:600; min-height:30px;"></div>
+
+      <!-- bidding view for teacher -->
+      <div id="ctrlBiddingBox">
+        <div class="eyebrow">ประมูลสด</div>
+        <div id="ctrlBidList" class="mb14"></div>
+        <div class="row">
+          <button class="btn btn-wine grow" id="btnCloseBidding">🔨 ปิดประมูลตอนนี้</button>
+        </div>
+      </div>
+
+      <!-- answering view for teacher -->
+      <div id="ctrlAnsweringBox" style="display:none;">
+        <div class="panel" style="background:rgba(0,0,0,0.2); padding:18px;">
+          <div class="hint mb8">ผู้ชนะการประมูล</div>
+          <div class="big" id="ctrlWinnerName">-</div>
+          <div class="hint">ประมูลไป <span id="ctrlWinnerBid">0</span> แต้ม — กำลังรอคำตอบ...</div>
+        </div>
+      </div>
+
+      <!-- reveal view for teacher -->
+      <div id="ctrlRevealBox" style="display:none;">
+        <div class="panel center" id="ctrlRevealCard" style="padding:26px;">
+          <div class="big mb8" id="ctrlRevealTitle">ผลลัพธ์</div>
+          <div class="muted" id="ctrlRevealSub"></div>
+        </div>
+        <button class="btn btn-gold btn-lg btn-block mt14" id="btnNextQuestion" style="margin-top:16px;">ข้อถัดไป →</button>
+      </div>
+
+      <div class="row mt14" style="margin-top:16px;">
+        <button class="btn btn-ghost" id="btnSkipQuestion">ข้ามข้อนี้ (ไม่มีผู้ชนะ)</button>
+      </div>
+    </div>
+
+    <!-- END SCREEN -->
+    <div class="panel spotlight" id="endPanel" style="display:none;">
+      <div class="eyebrow">จบการประมูล</div>
+      <h2 style="font-size:28px; margin-bottom:16px;">🏆 กระดานผู้นำสุดท้าย</h2>
+      <div id="finalLeaderboard"></div>
+      <button class="btn btn-ghost mt14" id="btnBackHome3" style="margin-top:16px;">กลับหน้าแรก</button>
+    </div>
+
+    <!-- Always-visible live leaderboard sidebar content (stacked under on projector) -->
+    <div class="panel" id="liveLbPanel">
+      <div class="eyebrow">คะแนนสะสม (Live)</div>
+      <div id="liveLeaderboard"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 3. STUDENT JOIN ======================= -->
+<section class="screen" id="screen-student-join">
+  <div class="wrap spotlight" style="margin-top:8vh; max-width:440px;">
+    <div class="center mb20">
+      <h1 style="font-size:28px;">🎓 เข้าร่วมห้องประมูล</h1>
+    </div>
+    <div class="panel">
+      <div class="field">
+        <label>รหัสห้อง</label>
+        <input type="text" id="inJoinCode" placeholder="เช่น 4821">
+      </div>
+      <div class="field">
+        <label>ชื่อของคุณ</label>
+        <input type="text" id="inJoinName" placeholder="ชื่อเล่น" maxlength="20">
+      </div>
+      <button class="btn btn-gold btn-block btn-lg" id="btnJoinRoom">เข้าห้อง →</button>
+      <div class="hint center mt8" id="joinError" style="color:var(--wine-bright);"></div>
+    </div>
+    <button class="btn btn-ghost btn-block mt14" id="btnBackHome2" style="margin-top:14px;">← กลับหน้าแรก</button>
+  </div>
+</section>
+
+<!-- ======================= 4. STUDENT GAME ======================= -->
+<section class="screen" id="screen-student-game">
+  <div class="wrap" style="max-width:640px;">
+    <div class="topbar">
+      <div class="room-chip">👤 <span id="stuName">-</span></div>
+      <div class="room-chip">💰 <span id="stuPoints">0</span> แต้ม | ⭐ <span id="stuScore">0</span> คะแนน</div>
+    </div>
+
+    <!-- waiting for game to start -->
+    <div class="panel spotlight center" id="stuLobby">
+      <div style="font-size:44px; margin-bottom:10px;">⏳</div>
+      <h2 style="font-size:22px;">รอครูเริ่มการประมูล...</h2>
+      <div class="muted mt8">เตรียมแต้มของคุณให้พร้อม แล้วรอสัญญาณ</div>
+    </div>
+
+    <!-- bidding -->
+    <div class="panel spotlight" id="stuBidding" style="display:none;">
+      <div class="center mb14">
+        <div class="eyebrow" style="justify-content:center;">ข้อที่ <span id="stuQNum">1</span></div>
+        <div class="paddle" style="font-size:22px; padding:6px 18px; height:auto;" id="stuPointsBadge">0 แต้ม</div>
+        <div class="hint mt8">คำถามจะเปิดเผยให้ผู้ชนะการประมูลเท่านั้น</div>
+      </div>
+      <div class="center mb20">
+        <div class="timer-wrap">
+          <div class="timer-num" id="stuTimer">--</div>
+          <div class="hint">วินาทีที่เหลือในการยื่นประมูล</div>
+        </div>
+      </div>
+      <div id="stuBidActive">
+        <div class="field">
+          <label>ยื่นราคาประมูล (คุณมี <span id="stuMyPoints">0</span> แต้ม)</label>
+          <div style="display:flex; gap:10px;">
+            <input type="number" id="inBidAmount" min="1" placeholder="ใส่จำนวนแต้ม">
+            <button class="btn btn-gold" id="btnSubmitBid">ยื่นประมูล</button>
+          </div>
+        </div>
+        <div class="hint center" id="myBidStatus"></div>
+      </div>
+      <div id="stuExcludedNote" style="display:none;" class="center">
+        <div class="pill wine">คุณตอบข้อนี้ผิดไปแล้ว — รอรอบถัดไป</div>
+      </div>
+      <div class="divider"></div>
+      <div class="eyebrow">ประมูลสูงสุดตอนนี้</div>
+      <div class="panel" style="background:rgba(0,0,0,0.2); padding:16px;">
+        <div class="row" style="align-items:center;">
+          <div class="big" id="stuTopBidder">ยังไม่มีใครประมูล</div>
+          <div class="paddle" id="stuTopAmount">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- I am answering -->
+    <div class="panel spotlight" id="stuAnswering" style="display:none;">
+      <div class="center mb8">
+        <span class="pill live">🎤 คุณคือผู้ชนะการประมูล!</span>
+      </div>
+      <div class="center mb14">
+        <div class="timer-wrap">
+          <div class="timer-num" id="stuAnsTimer">--</div>
+          <div class="hint">วินาทีในการตอบ</div>
+        </div>
+      </div>
+      <div class="big center mb14" id="stuQuestionText" style="font-size:20px;"></div>
+      <div class="choices" id="stuChoices"></div>
+    </div>
+
+    <!-- someone else is answering -->
+    <div class="panel spotlight center" id="stuWatching" style="display:none;">
+      <div style="font-size:40px;">🎙️</div>
+      <h2 style="font-size:20px; margin-top:10px;"><span id="watchWinnerName">-</span> กำลังตอบคำถามนี้</h2>
+      <div class="muted mt8">มูลค่า <span id="watchPoints">0</span> คะแนน — ลุ้นไปด้วยกัน!</div>
+    </div>
+
+    <!-- reveal -->
+    <div class="panel spotlight center" id="stuReveal" style="display:none;">
+      <div style="font-size:44px;" id="stuRevealIcon">🎉</div>
+      <h2 style="font-size:22px; margin-top:8px;" id="stuRevealTitle">ผลลัพธ์</h2>
+      <div class="muted mt8" id="stuRevealSub"></div>
+    </div>
+
+    <!-- ended -->
+    <div class="panel spotlight" id="stuEnded" style="display:none;">
+      <div class="eyebrow">จบการประมูลแล้ว</div>
+      <h2 style="font-size:24px; margin-bottom:14px;">🏆 กระดานผู้นำสุดท้าย</h2>
+      <div id="stuFinalLb"></div>
+    </div>
+
+    <div class="panel mt20" id="stuLeaderboardBox" style="margin-top:18px;">
+      <div class="eyebrow">อันดับคะแนนตอนนี้</div>
+      <div id="stuLiveLb"></div>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ================================================================
+   FIREBASE CONFIG
+   ----------------------------------------------------------------
+   แทนที่ค่าด้านล่างด้วย Firebase config ของคุณเอง
+   (ดูวิธีสร้างและตั้งค่าอย่างละเอียดในไฟล์คู่มือที่แนบมาให้)
+   ================================================================ */
+const firebaseConfig = {
+  apiKey: "วางค่าของคุณที่นี่",
+  authDomain: "your-project.firebaseapp.com",
+  databaseURL: "https://your-project-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "your-project",
+  storageBucket: "your-project.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "0:000000000000:web:xxxxxxxxxxxxxxxx"
+};
+
+let db = null;
+let fbReady = false;
+try{
+  if(firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf("วางค่า") === -1){
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    fbReady = true;
+  }
+}catch(e){ console.error("Firebase init failed:", e); }
+
+/* ================================================================
+   STATE / UTIL
+   ================================================================ */
+const $ = (id)=>document.getElementById(id);
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $(id).classList.add("active");
+}
+function toast(msg){
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._timer); t._timer = setTimeout(()=>t.classList.remove("show"), 2600);
+}
+function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function fireGavel(){
+  const g = $("gavelFlash"), r = $("ringBurst");
+  g.classList.remove("show"); r.classList.remove("show");
+  void g.offsetWidth;
+  g.classList.add("show"); r.classList.add("show");
+  setTimeout(()=>{ g.classList.remove("show"); r.classList.remove("show"); }, 950);
+}
+
+// server time offset for synced countdowns
+let serverOffset = 0;
+if(fbReady){
+  db.ref(".info/serverTimeOffset").on("value", snap=>{ serverOffset = snap.val() || 0; });
+}
+function serverNow(){ return Date.now() + serverOffset; }
+
+function requireFirebase(){
+  if(!fbReady){
+    toast("⚠ ยังไม่ได้ตั้งค่า Firebase — โปรดใส่ firebaseConfig ในโค้ดก่อนใช้งาน");
+    return false;
+  }
+  return true;
+}
+
+/* ================================================================
+   ROLE SELECT
+   ================================================================ */
+$("btnRoleTeacher").onclick = ()=>{ if(requireFirebase()) showScreen("screen-teacher-setup"); };
+$("btnRoleStudent").onclick = ()=>{ if(requireFirebase()) showScreen("screen-student-join"); };
+$("btnBackHome1").onclick = ()=>showScreen("screen-role");
+$("btnBackHome2").onclick = ()=>showScreen("screen-role");
+$("btnBackHome3").onclick = ()=>location.reload();
+
+if(fbReady){ $("fbStatus").textContent = "✓ เชื่อมต่อ Firebase แล้ว"; $("fbStatus").className = "pill live"; }
+
+// auto route from join link ?room=CODE&role=student
+(function autoRoute(){
+  const p = new URLSearchParams(location.search);
+  if(p.get("role") === "student"){
+    showScreen("screen-student-join");
+    if(p.get("room")) $("inJoinCode").value = p.get("room");
+  }
+})();
+
+/* ================================================================
+   TEACHER: SETUP
+   ================================================================ */
+let parsedQuestions = [];
+
+$("btnRollCode").onclick = ()=>{ $("inRoomCode").value = String(randInt(1000,9999)); };
+
+$("lnkTemplate").onclick = (e)=>{
+  e.preventDefault();
+  const csv = "คำถาม,ตัวเลือก1,ตัวเลือก2,ตัวเลือก3,ตัวเลือก4,เฉลย\n" +
+    "1+1 เท่ากับเท่าไหร่,1,2,3,4,2\n" +
+    "เมืองหลวงของประเทศไทยคือ,เชียงใหม่,ภูเก็ต,กรุงเทพมหานคร,ขอนแก่น,3\n";
+  const blob = new Blob(["\uFEFF"+csv], {type:"text/csv;charset=utf-8;"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "ตัวอย่างคำถาม.csv"; a.click();
+};
+
+$("inFile").onchange = (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  $("fileStatus").textContent = "กำลังอ่านไฟล์: " + file.name;
+  const reader = new FileReader();
+  reader.onload = (evt)=>{
+    try{
+      const data = new Uint8Array(evt.target.result);
+      const wb = XLSX.read(data, {type:"array"});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, {defval:""});
+      parsedQuestions = rows.map(r=>{
+        const q = (r["คำถาม"] ?? r["question"] ?? "").toString().trim();
+        const choices = [
+          (r["ตัวเลือก1"] ?? r["choice1"] ?? "").toString().trim(),
+          (r["ตัวเลือก2"] ?? r["choice2"] ?? "").toString().trim(),
+          (r["ตัวเลือก3"] ?? r["choice3"] ?? "").toString().trim(),
+          (r["ตัวเลือก4"] ?? r["choice4"] ?? "").toString().trim()
+        ];
+        let correct = parseInt(r["เฉลย"] ?? r["answer"] ?? "1", 10);
+        if(isNaN(correct) || correct<1 || correct>4) correct = 1;
+        return { q, choices, correct: correct-1 };
+      }).filter(r=>r.q && r.choices.every(c=>c!==""));
+
+      if(parsedQuestions.length === 0){
+        $("fileStatus").textContent = "⚠ อ่านไฟล์ไม่พบคำถามที่ถูกต้อง ตรวจสอบชื่อคอลัมน์อีกครั้ง";
+        $("questionPreview").style.display = "none";
+        return;
+      }
+      $("fileStatus").textContent = "✓ อ่านไฟล์สำเร็จ: " + file.name;
+      $("qCount").textContent = parsedQuestions.length;
+      const list = $("qPreviewList");
+      list.innerHTML = "";
+      parsedQuestions.slice(0,3).forEach((qq,i)=>{
+        const row = document.createElement("div");
+        row.className = "qlist-row";
+        row.innerHTML = `<span>${i+1}. ${qq.q}</span><span class="muted">เฉลย: ${qq.choices[qq.correct]}</span>`;
+        list.appendChild(row);
+      });
+      $("questionPreview").style.display = "block";
+    }catch(err){
+      console.error(err);
+      $("fileStatus").textContent = "⚠ เกิดข้อผิดพลาดขณะอ่านไฟล์: " + err.message;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+};
+
+let myRoomCode = null;
+let isTeacher = false;
+
+$("btnCreateRoom").onclick = async ()=>{
+  if(!requireFirebase()) return;
+  const code = ($("inRoomCode").value || "").trim() || String(randInt(1000,9999));
+  const startPoints = parseInt($("inStartPoints").value,10) || 100;
+  const bidSeconds = parseInt($("inBidSeconds").value,10) || 20;
+  const answerSeconds = parseInt($("inAnswerSeconds").value,10) || 15;
+
+  if(parsedQuestions.length === 0){
+    $("setupError").textContent = "กรุณาอัปโหลดไฟล์คำถามก่อนสร้างห้อง";
+    return;
+  }
+  $("setupError").textContent = "";
+
+  const roomRef = db.ref("rooms/"+code);
+  const existing = await roomRef.get();
+  if(existing.exists()){
+    const ok = confirm("รหัสห้องนี้มีอยู่แล้ว ต้องการเขียนทับห้องเดิมหรือไม่?");
+    if(!ok) return;
+  }
+
+  const order = shuffle(parsedQuestions.map((_,i)=>i));
+  await roomRef.set({
+    createdAt: firebase.database.ServerValue.TIMESTAMP,
+    status: "lobby",
+    settings: { startPoints, bidSeconds, answerSeconds },
+    questions: parsedQuestions,
+    order: order,
+    qIndex: 0,
+    current: null,
+    players: {}
+  });
+
+  myRoomCode = code;
+  isTeacher = true;
+  enterTeacherControl(code);
+};
+
+/* ================================================================
+   TEACHER: CONTROL SCREEN
+   ================================================================ */
+let ctrlTimerInt = null;
+let roomData = null;
+
+function enterTeacherControl(code){
+  showScreen("screen-teacher-control");
+  $("ctrlRoomCode").textContent = code;
+  $("lobbyCodeBig").textContent = code;
+  const link = location.origin + location.pathname + "?room="+code+"&role=student";
+  $("joinLinkText").innerHTML = 'ลิงก์เข้าร่วม: <a href="'+link+'" target="_blank">'+link+'</a>';
+  $("qrHolder").innerHTML = "";
+  new QRCode($("qrHolder"), { text: link, width:128, height:128, colorDark:"#150f1e", colorLight:"#ffffff" });
+
+  db.ref("rooms/"+code).on("value", (snap)=>{
+    roomData = snap.val();
+    if(!roomData) return;
+    renderTeacherState();
+  });
+}
+
+function renderTeacherState(){
+  const players = roomData.players || {};
+  const list = Object.entries(players);
+  $("playerCount").textContent = list.length;
+  $("btnStartGame").disabled = list.length === 0;
+
+  if(roomData.status === "lobby"){
+    $("lobbyPanel").style.display = "block";
+    $("gamePanel").style.display = "none";
+    $("endPanel").style.display = "none";
+    const box = $("lobbyPlayerList"); box.innerHTML = "";
+    list.forEach(([uid,p])=>{
+      const row = document.createElement("div");
+      row.className = "lb-row";
+      row.innerHTML = `<span class="lb-name">${escapeHtml(p.name)}</span><span class="lb-sub">${p.bidPoints} แต้ม</span>`;
+      box.appendChild(row);
+    });
+  } else if(roomData.status === "ended"){
+    $("lobbyPanel").style.display = "none";
+    $("gamePanel").style.display = "none";
+    $("endPanel").style.display = "block";
+    renderLeaderboard($("finalLeaderboard"), players, null);
+  } else {
+    $("lobbyPanel").style.display = "none";
+    $("gamePanel").style.display = "block";
+    $("endPanel").style.display = "none";
+    renderGameForTeacher();
+  }
+  renderLeaderboard($("liveLeaderboard"), players, null);
+}
+
+function escapeHtml(s){
+  return (s||"").toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function renderLeaderboard(container, players, myUid){
+  const arr = Object.entries(players||{}).map(([uid,p])=>({uid, name:p.name, score:p.score||0, bidPoints:p.bidPoints||0}));
+  arr.sort((a,b)=>b.score-a.score);
+  container.innerHTML = "";
+  arr.forEach((p,i)=>{
+    const row = document.createElement("div");
+    row.className = "lb-row" + (p.uid===myUid ? " me":"");
+    row.innerHTML = `<span class="lb-rank">${i+1}</span><span class="lb-name">${escapeHtml(p.name)}</span>
+      <span class="lb-sub">${p.bidPoints} แต้มประมูล</span><span class="lb-score">${p.score} คะแนน</span>`;
+    container.appendChild(row);
+  });
+  if(arr.length===0) container.innerHTML = '<div class="hint">ยังไม่มีผู้เล่น</div>';
+}
+
+$("btnStartGame").onclick = async ()=>{
+  await beginQuestion(0);
+};
+
+async function beginQuestion(qIndex){
+  const code = myRoomCode;
+  const order = roomData.order;
+  if(qIndex >= order.length){
+    await db.ref("rooms/"+code).update({ status:"ended" });
+    return;
+  }
+  const points = randInt(10,30);
+  await db.ref("rooms/"+code).update({
+    status:"playing",
+    qIndex: qIndex,
+    current: {
+      qIdx: order[qIndex],
+      points: points,
+      phase: "bidding",
+      bidDeadline: serverNow() + (roomData.settings.bidSeconds*1000),
+      highestBid: null,
+      failedUids: {},
+      bids: {},
+      winnerUid: null,
+      answerDeadline: null,
+      lastResult: null
+    }
+  });
+}
+
+function renderGameForTeacher(){
+  const cur = roomData.current;
+  if(!cur) return;
+  const q = roomData.questions[cur.qIdx];
+  $("qNum").textContent = roomData.qIndex+1;
+  $("qTotal").textContent = roomData.order.length;
+  $("pointsBadge").textContent = cur.points;
+
+  $("ctrlBiddingBox").style.display = "none";
+  $("ctrlAnsweringBox").style.display = "none";
+  $("ctrlRevealBox").style.display = "none";
+
+  clearInterval(ctrlTimerInt);
+
+  if(cur.phase === "bidding"){
+    $("phasePill").textContent = "🔨 กำลังประมูล"; $("phasePill").className = "pill live";
+    $("ctrlQuestionText").textContent = "(คำถามจะเปิดเผยให้ผู้ชนะการประมูล)";
+    $("ctrlBiddingBox").style.display = "block";
+    renderBidListTeacher(cur);
+    startTeacherTimer(cur.bidDeadline, ()=>closeBidding());
+  } else if(cur.phase === "answering"){
+    $("phasePill").textContent = "🎤 กำลังตอบ"; $("phasePill").className = "pill";
+    $("ctrlQuestionText").textContent = q.q;
+    $("ctrlAnsweringBox").style.display = "block";
+    const winner = roomData.players[cur.winnerUid];
+    $("ctrlWinnerName").textContent = winner ? winner.name : "-";
+    $("ctrlWinnerBid").textContent = cur.highestBid ? cur.highestBid.amount : 0;
+    startTeacherTimer(cur.answerDeadline, ()=>forceTimeoutAnswer());
+  } else if(cur.phase === "reveal"){
+    $("phasePill").textContent = "✅ เฉลย"; $("phasePill").className = "pill live";
+    $("ctrlQuestionText").textContent = q.q + " — เฉลย: " + q.choices[q.correct];
+    $("ctrlRevealBox").style.display = "block";
+    $("ctrlTimer").textContent = "—";
+    const r = cur.lastResult;
+    if(r){
+      $("ctrlRevealTitle").textContent = r.correct ? "🎉 ตอบถูก!" : "❌ ตอบผิด";
+      $("ctrlRevealCard").style.borderColor = r.correct ? "rgba(143,174,99,0.5)" : "rgba(198,90,103,0.5)";
+      $("ctrlRevealSub").textContent = r.correct
+        ? `${r.name} ได้รับ ${r.pointsAwarded} คะแนน`
+        : `${r.name} ตอบผิด (ไม่มีผู้ชนะรอบนี้)`;
+    }
+  }
+}
+
+function startTeacherTimer(deadline, onExpire){
+  function tick(){
+    const remain = Math.max(0, Math.ceil((deadline - serverNow())/1000));
+    $("ctrlTimer").textContent = remain;
+    $("ctrlTimer").classList.toggle("low", remain<=5);
+    if(remain<=0){ clearInterval(ctrlTimerInt); onExpire(); }
+  }
+  tick();
+  ctrlTimerInt = setInterval(tick, 300);
+}
+
+function renderBidListTeacher(cur){
+  const bids = cur.bids || {};
+  const players = roomData.players || {};
+  const arr = Object.entries(bids).map(([uid,b])=>({uid, amount:b.amount, ts:b.ts||0, name: players[uid]?players[uid].name:"?"}));
+  arr.sort((a,b)=> b.amount-a.amount || a.ts-b.ts);
+  const box = $("ctrlBidList");
+  box.innerHTML = "";
+  if(arr.length===0){ box.innerHTML = '<div class="hint">ยังไม่มีใครยื่นประมูล...</div>'; return; }
+  arr.forEach((b,i)=>{
+    const row = document.createElement("div");
+    row.className = "bid-item" + (i===0 ? " top":"");
+    row.innerHTML = `<span>${i===0?"👑 ":""}${escapeHtml(b.name)}</span><span>${b.amount} แต้ม</span>`;
+    box.appendChild(row);
+  });
+}
+
+async function closeBidding(){
+  const code = myRoomCode;
+  const cur = roomData.current;
+  if(!cur || cur.phase !== "bidding") return;
+  const bids = cur.bids || {};
+  const players = roomData.players || {};
+  const failed = cur.failedUids || {};
+  const arr = Object.entries(bids)
+    .filter(([uid])=>!failed[uid])
+    .filter(([uid,b])=> players[uid] && b.amount <= (players[uid].bidPoints||0) && b.amount > 0)
+    .map(([uid,b])=>({uid, amount:b.amount, ts:b.ts||0}));
+  arr.sort((a,b)=> b.amount-a.amount || a.ts-b.ts);
+
+  if(arr.length === 0){
+    // no valid bids -> skip to reveal-with-no-winner, then teacher can advance
+    await db.ref("rooms/"+code+"/current").update({
+      phase:"reveal", lastResult:{ correct:false, name:"(ไม่มีผู้ประมูล)", uid:null, pointsAwarded:0 }
+    });
+    return;
+  }
+  const winner = arr[0];
+  fireGavel();
+  const newPoints = (players[winner.uid].bidPoints||0) - winner.amount;
+  await db.ref("rooms/"+code).update({
+    ["players/"+winner.uid+"/bidPoints"]: newPoints,
+    ["current/phase"]: "answering",
+    ["current/winnerUid"]: winner.uid,
+    ["current/highestBid"]: { uid:winner.uid, name:players[winner.uid].name, amount:winner.amount },
+    ["current/answerDeadline"]: serverNow() + (roomData.settings.answerSeconds*1000)
+  });
+}
+
+$("btnCloseBidding").onclick = closeBidding;
+
+async function forceTimeoutAnswer(){
+  // treat as wrong answer (no selection)
+  await submitAnswer(-1, true);
+}
+
+async function submitAnswer(choiceIdx, isTimeout){
+  const code = myRoomCode;
+  const cur = roomData.current;
+  if(!cur || cur.phase !== "answering") return;
+  const q = roomData.questions[cur.qIdx];
+  const uid = cur.winnerUid;
+  const player = roomData.players[uid];
+  const correct = choiceIdx === q.correct;
+
+  if(correct){
+    const newScore = (player.score||0) + cur.points;
+    await db.ref("rooms/"+code).update({
+      ["players/"+uid+"/score"]: newScore,
+      ["current/phase"]: "reveal",
+      ["current/lastResult"]: { correct:true, uid, name:player.name, pointsAwarded: cur.points }
+    });
+  } else {
+    const failed = Object.assign({}, cur.failedUids||{});
+    failed[uid] = true;
+    // check if anyone else can still bid
+    const remainingPlayers = Object.keys(roomData.players||{}).filter(id=>!failed[id]);
+    if(remainingPlayers.length === 0){
+      await db.ref("rooms/"+code).update({
+        ["current/phase"]: "reveal",
+        ["current/failedUids"]: failed,
+        ["current/lastResult"]: { correct:false, uid, name:player.name, pointsAwarded:0 }
+      });
+    } else {
+      // reopen bidding for remaining players
+      await db.ref("rooms/"+code+"/current").update({
+        phase:"bidding",
+        failedUids: failed,
+        bids: {},
+        winnerUid: null,
+        highestBid: null,
+        bidDeadline: serverNow() + (roomData.settings.bidSeconds*1000),
+        answerDeadline: null
+      });
+      toast((player.name)+" ตอบผิด — เปิดประมูลรอบใหม่");
+    }
+  }
+}
+
+$("btnNextQuestion").onclick = ()=>{ beginQuestion(roomData.qIndex+1); };
+$("btnSkipQuestion").onclick = ()=>{ beginQuestion(roomData.qIndex+1); };
+$("btnEndGame").onclick = async ()=>{
+  if(confirm("ต้องการจบเกมตอนนี้เลยหรือไม่?")){
+    await db.ref("rooms/"+myRoomCode).update({ status:"ended" });
+  }
+};
+
+/* ================================================================
+   STUDENT: JOIN
+   ================================================================ */
+let stuCode = null, stuUid = null;
+
+$("btnJoinRoom").onclick = async ()=>{
+  if(!requireFirebase()) return;
+  const code = ($("inJoinCode").value||"").trim();
+  const name = ($("inJoinName").value||"").trim();
+  if(!code || !name){ $("joinError").textContent = "กรุณากรอกรหัสห้องและชื่อให้ครบ"; return; }
+  const snap = await db.ref("rooms/"+code).get();
+  if(!snap.exists()){ $("joinError").textContent = "ไม่พบห้องนี้ ตรวจสอบรหัสห้องอีกครั้ง"; return; }
+  $("joinError").textContent = "";
+  const data = snap.val();
+
+  let uid = localStorage.getItem("bq_uid_"+code);
+  if(!uid){
+    uid = "s_" + Math.random().toString(36).slice(2,10);
+    localStorage.setItem("bq_uid_"+code, uid);
+  }
+  stuCode = code; stuUid = uid;
+
+  const existingPlayer = (data.players||{})[uid];
+  if(!existingPlayer){
+    await db.ref("rooms/"+code+"/players/"+uid).set({
+      name: name, bidPoints: data.settings.startPoints, score:0, online:true
+    });
+  } else {
+    await db.ref("rooms/"+code+"/players/"+uid+"/online").set(true);
+  }
+  enterStudentGame();
+};
+
+/* ================================================================
+   STUDENT: GAME
+   ================================================================ */
+let stuTimerInt = null;
+let stuAnsTimerInt = null;
+let stuRoomData = null;
+let lastPhaseSeen = null;
+
+function enterStudentGame(){
+  showScreen("screen-student-game");
+  db.ref("rooms/"+stuCode).on("value", snap=>{
+    stuRoomData = snap.val();
+    if(!stuRoomData) return;
+    renderStudentState();
+  });
+}
+
+function renderStudentState(){
+  const me = stuRoomData.players[stuUid];
+  if(!me) return;
+  $("stuName").textContent = me.name;
+  $("stuPoints").textContent = me.bidPoints;
+  $("stuScore").textContent = me.score||0;
+
+  const panels = ["stuLobby","stuBidding","stuAnswering","stuWatching","stuReveal","stuEnded"];
+  panels.forEach(p=>$(p).style.display="none");
+  clearInterval(stuTimerInt); clearInterval(stuAnsTimerInt);
+
+  if(stuRoomData.status === "lobby"){
+    $("stuLobby").style.display = "block";
+  } else if(stuRoomData.status === "ended"){
+    $("stuEnded").style.display = "block";
+    renderLeaderboard($("stuFinalLb"), stuRoomData.players, stuUid);
+  } else {
+    const cur = stuRoomData.current;
+    const q = stuRoomData.questions[cur.qIdx];
+    $("stuQNum").textContent = stuRoomData.qIndex+1;
+
+    if(cur.phase === "bidding"){
+      $("stuBidding").style.display = "block";
+      $("stuPointsBadge").textContent = cur.points+" แต้ม";
+      $("stuMyPoints").textContent = me.bidPoints;
+      const failed = cur.failedUids||{};
+      const excluded = !!failed[stuUid];
+      $("stuBidActive").style.display = excluded ? "none":"block";
+      $("stuExcludedNote").style.display = excluded ? "block":"none";
+
+      const bids = cur.bids||{};
+      const arr = Object.entries(bids).map(([uid,b])=>({uid,amount:b.amount, ts:b.ts||0}));
+      arr.sort((a,b)=> b.amount-a.amount || a.ts-b.ts);
+      if(arr.length>0){
+        const top = arr[0];
+        $("stuTopBidder").textContent = (stuRoomData.players[top.uid]||{}).name || "?";
+        $("stuTopAmount").textContent = top.amount;
+      } else {
+        $("stuTopBidder").textContent = "ยังไม่มีใครประมูล";
+        $("stuTopAmount").textContent = "0";
+      }
+      const myBid = bids[stuUid];
+      $("myBidStatus").textContent = myBid ? ("คุณยื่นประมูลไว้ที่ "+myBid.amount+" แต้ม") : "";
+
+      startStudentTimer(cur.bidDeadline, "stuTimer");
+    } else if(cur.phase === "answering"){
+      if(cur.winnerUid === stuUid){
+        $("stuAnswering").style.display = "block";
+        $("stuQuestionText").textContent = q.q;
+        if(lastPhaseSeen !== "answering-"+stuRoomData.qIndex){
+          renderChoices(q, cur);
+          lastPhaseSeen = "answering-"+stuRoomData.qIndex;
+        }
+        startStudentTimer(cur.answerDeadline, "stuAnsTimer");
+      } else {
+        $("stuWatching").style.display = "block";
+        const w = stuRoomData.players[cur.winnerUid];
+        $("watchWinnerName").textContent = w ? w.name : "-";
+        $("watchPoints").textContent = cur.points;
+      }
+    } else if(cur.phase === "reveal"){
+      $("stuReveal").style.display = "block";
+      const r = cur.lastResult;
+      if(r){
+        const isMe = r.uid === stuUid;
+        $("stuRevealIcon").textContent = r.correct ? "🎉" : "💭";
+        $("stuRevealTitle").textContent = r.correct
+          ? (isMe ? "คุณตอบถูก!" : r.name+" ตอบถูก!")
+          : (r.uid ? (isMe? "คุณตอบผิด" : r.name+" ตอบผิด") : "ไม่มีผู้ชนะรอบนี้");
+        $("stuRevealSub").textContent = r.correct ? ("ได้รับ "+r.pointsAwarded+" คะแนน") : ("เฉลย: "+q.choices[q.correct]);
+      }
+    }
+  }
+  renderLeaderboard($("stuLiveLb"), stuRoomData.players, stuUid);
+}
+
+function startStudentTimer(deadline, elId){
+  const intName = elId==="stuTimer" ? "stuTimerInt" : "stuAnsTimerInt";
+  function tick(){
+    const remain = Math.max(0, Math.ceil((deadline - serverNow())/1000));
+    $(elId).textContent = remain;
+    $(elId).classList.toggle("low", remain<=5);
+    if(remain<=0){ if(intName==="stuTimerInt") clearInterval(stuTimerInt); else clearInterval(stuAnsTimerInt); }
+  }
+  tick();
+  if(intName==="stuTimerInt") stuTimerInt = setInterval(tick,300);
+  else stuAnsTimerInt = setInterval(tick,300);
+}
+
+function renderChoices(q, cur){
+  const box = $("stuChoices");
+  box.innerHTML = "";
+  const letters = ["ก","ข","ค","ง"];
+  q.choices.forEach((c,i)=>{
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.innerHTML = `<span class="k">${letters[i]}</span><span>${escapeHtml(c)}</span>`;
+    btn.onclick = async ()=>{
+      Array.from(box.children).forEach(b=>b.disabled=true);
+      btn.classList.add(i===q.correct?"correct":"wrong");
+      await submitAnswerAsStudent(i);
+    };
+    box.appendChild(btn);
+  });
+}
+
+async function submitAnswerAsStudent(choiceIdx){
+  // Only meaningful if this client is the winner; write goes through same logic teacher listens to
+  const code = stuCode;
+  const cur = stuRoomData.current;
+  if(!cur || cur.winnerUid !== stuUid) return;
+  const q = stuRoomData.questions[cur.qIdx];
+  const player = stuRoomData.players[stuUid];
+  const correct = choiceIdx === q.correct;
+  if(correct){
+    await db.ref("rooms/"+code).update({
+      ["players/"+stuUid+"/score"]: (player.score||0)+cur.points,
+      ["current/phase"]: "reveal",
+      ["current/lastResult"]: { correct:true, uid:stuUid, name:player.name, pointsAwarded: cur.points }
+    });
+  } else {
+    const failed = Object.assign({}, cur.failedUids||{});
+    failed[stuUid] = true;
+    const remainingPlayers = Object.keys(stuRoomData.players||{}).filter(id=>!failed[id]);
+    if(remainingPlayers.length === 0){
+      await db.ref("rooms/"+code).update({
+        ["current/phase"]: "reveal",
+        ["current/failedUids"]: failed,
+        ["current/lastResult"]: { correct:false, uid:stuUid, name:player.name, pointsAwarded:0 }
+      });
+    } else {
+      await db.ref("rooms/"+code+"/current").update({
+        phase:"bidding", failedUids: failed, bids:{}, winnerUid:null, highestBid:null,
+        bidDeadline: serverNow() + (stuRoomData.settings.bidSeconds*1000), answerDeadline:null
+      });
+    }
+  }
+}
+
+$("btnSubmitBid").onclick = async ()=>{
+  const amount = parseInt($("inBidAmount").value,10);
+  const me = stuRoomData.players[stuUid];
+  const cur = stuRoomData.current;
+  if(!amount || amount<=0){ toast("กรุณาใส่จำนวนแต้มที่ต้องการประมูล"); return; }
+  if(amount > me.bidPoints){ toast("แต้มของคุณไม่พอ (มี "+me.bidPoints+" แต้ม)"); return; }
+  if(cur.phase !== "bidding"){ toast("ปิดรับประมูลแล้ว"); return; }
+  await db.ref("rooms/"+stuCode+"/current/bids/"+stuUid).set({
+    amount: amount, ts: firebase.database.ServerValue.TIMESTAMP
+  });
+  toast("ยื่นประมูล "+amount+" แต้มแล้ว");
+};
+
+</script>
+</body>
+</html>
