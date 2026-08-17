@@ -1,0 +1,3001 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Jackpot Quiz Arena</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@600;800;900&family=Sarabun:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+/* ==========================================================================
+   JACKPOT QUIZ ARENA — design tokens
+   felt green casino table + brass/gold trim + oxblood maroon accents
+   ========================================================================== */
+:root{
+  --felt:#0E3B2E;
+  --felt-dark:#082821;
+  --felt-darker:#051813;
+  --gold:#E8B23D;
+  --gold-bright:#FFD966;
+  --gold-dim:#B8862A;
+  --maroon:#8C1F2B;
+  --maroon-bright:#B93042;
+  --cream:#F6EEDA;
+  --ink:#17110A;
+  --good:#35C97A;
+  --bad:#D64545;
+  --disp:'Kanit',sans-serif;
+  --body:'Sarabun',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --radius:18px;
+  --shadow-deep:0 12px 32px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  font-family:var(--body);
+  color:var(--cream);
+  background:
+    radial-gradient(ellipse at top,#164A38 0%,var(--felt) 45%,var(--felt-dark) 100%);
+  background-attachment:fixed;
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-tap-highlight-color:transparent;
+}
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.015) 0px, rgba(255,255,255,.015) 2px, transparent 2px, transparent 14px);
+  pointer-events:none;
+  z-index:0;
+}
+#app{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;}
+h1,h2,h3,.disp{font-family:var(--disp);font-weight:800;letter-spacing:.3px;}
+.mono{font-family:var(--mono);}
+.hidden{display:none !important;}
+button{font-family:var(--body);cursor:pointer;border:none;outline:none;}
+button:disabled{opacity:.45;cursor:not-allowed;}
+input,select{font-family:var(--body);}
+
+/* brass rivet frame — signature element */
+.brass-frame{
+  position:relative;
+  background:linear-gradient(180deg,#123f30,#0a2a20);
+  border-radius:var(--radius);
+  border:2px solid var(--gold-dim);
+  box-shadow:var(--shadow-deep), inset 0 0 0 1px rgba(232,178,61,.15);
+}
+.brass-frame::before,.brass-frame::after,
+.brass-frame .rivet{
+  content:'';
+  position:absolute;
+  width:9px;height:9px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #FFE9A8, var(--gold) 55%, var(--gold-dim) 100%);
+  box-shadow:0 1px 2px rgba(0,0,0,.6);
+}
+.brass-frame::before{top:8px;left:8px;}
+.brass-frame::after{top:8px;right:8px;}
+.brass-frame .rivet.br{bottom:8px;right:8px;}
+.brass-frame .rivet.bl{bottom:8px;left:8px;}
+
+.container{max-width:1180px;margin:0 auto;padding:20px;width:100%;flex:1;display:flex;flex-direction:column;}
+
+/* ---- landing / role select ---- */
+.landing{margin:auto;text-align:center;max-width:640px;padding:32px;}
+.landing .marquee{
+  font-size:clamp(38px,7vw,64px);
+  color:var(--gold-bright);
+  text-shadow:0 0 18px rgba(255,217,102,.55), 0 3px 0 var(--maroon);
+  margin:0 0 6px;
+}
+.landing .sub{color:var(--cream);opacity:.75;margin-bottom:34px;font-size:15px;}
+.role-row{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;}
+.role-card{
+  width:220px;padding:26px 18px;border-radius:var(--radius);
+  background:linear-gradient(160deg,#164A38,#0a2a20);
+  border:1px solid rgba(232,178,61,.35);
+  transition:transform .15s, box-shadow .15s, border-color .15s;
+}
+.role-card:hover{transform:translateY(-4px);border-color:var(--gold);box-shadow:0 10px 24px rgba(0,0,0,.4);}
+.role-card .ic{font-size:40px;margin-bottom:10px;display:block;}
+.role-card b{font-family:var(--disp);font-size:19px;color:var(--gold-bright);display:block;margin-bottom:4px;}
+.role-card span{font-size:13px;opacity:.7;}
+
+/* ---- generic panel/card ---- */
+.panel{padding:20px 22px;margin-bottom:16px;}
+.btn{
+  padding:12px 22px;border-radius:12px;font-weight:700;font-size:15px;
+  background:linear-gradient(180deg,var(--gold-bright),var(--gold-dim));
+  color:var(--ink);box-shadow:0 4px 0 #8a641c, 0 6px 14px rgba(0,0,0,.35);
+  transition:transform .08s;
+}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #8a641c;}
+.btn.ghost{background:transparent;color:var(--cream);border:1px solid rgba(246,238,218,.35);box-shadow:none;}
+.btn.danger{background:linear-gradient(180deg,#E15C5C,var(--maroon));color:#fff;box-shadow:0 4px 0 #5c1219,0 6px 14px rgba(0,0,0,.35);}
+.btn.sm{padding:7px 14px;font-size:13px;border-radius:9px;}
+.btn.block{width:100%;}
+
+.field{margin-bottom:14px;text-align:left;}
+.field label{display:block;font-size:13px;opacity:.8;margin-bottom:6px;}
+.field input[type=text],.field input[type=number]{
+  width:100%;padding:11px 13px;border-radius:10px;border:1px solid rgba(246,238,218,.25);
+  background:rgba(0,0,0,.25);color:var(--cream);font-size:15px;
+}
+.field input::placeholder{color:rgba(246,238,218,.4);}
+
+/* avatar picker */
+.join-avatar-preview{
+  width:88px;height:88px;margin:0 auto 18px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:46px;
+  background:radial-gradient(circle at 35% 30%,#1c5a44,#0a2a20 70%);
+  border:3px solid var(--gold);box-shadow:0 0 0 4px rgba(232,178,61,.18), 0 8px 20px rgba(0,0,0,.4);
+}
+.join-avatar-preview.pop{animation:avatarPop .45s ease;}
+.char-count{text-align:right;font-size:11px;opacity:.5;margin-top:4px;}
+.avatar-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:8px;margin-bottom:16px;}
+.avatar-opt{
+  font-size:24px;text-align:center;padding:10px 0;border-radius:12px;aspect-ratio:1;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.2);border:2px solid transparent;
+  transition:transform .1s ease, border-color .15s ease, background .15s ease;
+  touch-action:manipulation;
+}
+.avatar-opt:active{transform:scale(.92);}
+.avatar-opt.sel{border-color:var(--gold);background:rgba(232,178,61,.18);box-shadow:0 0 0 3px rgba(232,178,61,.15);}
+@media(hover:hover){.avatar-opt:hover{border-color:rgba(232,178,61,.5);}}
+
+/* ---- header bar (host + player game views) ---- */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 18px;margin-bottom:14px;flex-wrap:wrap;}
+.qcount{font-family:var(--disp);font-size:15px;color:var(--gold-bright);}
+.jackpot-badge{
+  display:flex;flex-direction:column;gap:5px;padding:8px 18px;border-radius:16px;
+  background:linear-gradient(180deg,#1c5a44,#0d3628);border:1px solid var(--gold);min-width:150px;
+}
+.jackpot-badge .jk-top{display:flex;align-items:center;gap:8px;}
+.jackpot-badge .coin{font-size:20px;}
+.jackpot-badge .amt{font-family:var(--mono);font-weight:800;font-size:22px;color:var(--gold-bright);line-height:1;}
+.jackpot-badge.low .amt{color:var(--bad);animation:potpulse 1s ease-in-out infinite;}
+@keyframes potpulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+.pot-gauge{width:100%;height:6px;border-radius:99px;background:rgba(0,0,0,.4);overflow:hidden;}
+.pot-gauge-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gold-dim),var(--gold-bright));transition:width .5s ease;}
+.pot-gauge-fill.low{background:linear-gradient(90deg,var(--maroon),var(--bad));}
+.answered-count{font-size:13px;opacity:.75;}
+.avatar-status-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px;}
+.avatar-chip{
+  width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:18px;background:rgba(0,0,0,.25);border:2px solid rgba(255,255,255,.15);
+  opacity:.35;filter:grayscale(1);transition:opacity .25s, filter .25s, border-color .25s;
+}
+.avatar-chip.answered{opacity:1;filter:none;border-color:var(--gold-bright);box-shadow:0 0 10px rgba(232,178,61,.4);animation:avatarPop .45s ease;}
+@keyframes avatarPop{0%{transform:scale(.25) rotate(-10deg);}55%{transform:scale(1.3) rotate(8deg);}100%{transform:scale(1) rotate(0);}}
+.avatar-waiting{font-size:44px;display:inline-block;animation:avatarBounce 1.1s ease-in-out infinite;}
+@keyframes avatarBounce{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-10px) scale(1.06);}}
+.avatar-reveal{font-size:52px;display:inline-block;}
+.avatar-reveal.happy{animation:avatarBounce .6s ease-in-out 2;}
+.avatar-reveal.sad{animation:avatarSad .5s ease-in-out;}
+@keyframes avatarSad{0%,100%{transform:translateX(0) rotate(0);}25%{transform:translateX(-6px) rotate(-6deg);}75%{transform:translateX(6px) rotate(6deg);}}
+.speed-badge{
+  text-align:center;font-family:var(--disp);font-weight:800;color:var(--ink);
+  background:linear-gradient(90deg,var(--gold-bright),#FFC94D,var(--gold-bright));
+  background-size:200% 100%;animation:speedShimmer 1.3s linear infinite;
+  padding:8px 14px;border-radius:10px;margin-bottom:14px;font-size:14px;
+  box-shadow:0 4px 12px rgba(0,0,0,.3);
+}
+@keyframes speedShimmer{0%{background-position:0% 0;}100%{background-position:200% 0;}}
+
+/* ---- question display ---- */
+.qtext{
+  font-family:var(--disp);font-size:clamp(20px,3vw,30px);text-align:center;line-height:1.35;
+  padding:26px 24px;margin-bottom:20px;color:var(--cream);position:relative;
+  background:
+    radial-gradient(ellipse at top,rgba(232,178,61,.14),transparent 65%),
+    linear-gradient(160deg,rgba(255,255,255,.05),rgba(0,0,0,.18));
+  border:1px solid rgba(232,178,61,.35);border-radius:16px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08), inset 0 -12px 24px rgba(0,0,0,.2);
+  animation:qtextIn .38s ease;
+}
+.qtext::before{
+  content:'❖';position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+  font-size:14px;color:var(--gold-bright);background:var(--felt-dark);padding:0 10px;
+}
+@keyframes qtextIn{0%{opacity:0;transform:translateY(-6px);}100%{opacity:1;transform:translateY(0);}}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media (max-width:560px){.choices{grid-template-columns:1fr;}}
+@media (max-width:420px){
+  .container{padding:12px;}
+  .topbar{padding:12px 14px;gap:10px;}
+  .jackpot-badge{min-width:0;padding:7px 12px;}
+  .jackpot-badge .amt{font-size:18px;}
+  .pod-col{width:84px;}
+  .pod-col.p1 .pod-bar{height:120px;font-size:20px;}
+  .pod-col.p2 .pod-bar{height:92px;font-size:17px;}
+  .pod-col.p3 .pod-bar{height:70px;font-size:17px;}
+  .podium{gap:8px;}
+  .stat-grid{grid-template-columns:1fr;}
+  .landing{padding:22px 16px;}
+  .landing .sub{margin-bottom:22px;font-size:14px;}
+  .role-card{width:100%;max-width:280px;padding:20px 16px;}
+  .join-avatar-preview{width:72px;height:72px;font-size:38px;margin-bottom:14px;}
+  .avatar-grid{grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:6px;}
+  .avatar-opt{font-size:20px;border-radius:10px;}
+}
+@media (max-width:340px){
+  .landing .marquee{font-size:26px;}
+  .avatar-grid{grid-template-columns:repeat(5,1fr);}
+}
+.choice{
+  position:relative;overflow:hidden;
+  padding:20px 18px 20px 16px;border-radius:16px;text-align:left;font-size:16px;font-weight:700;
+  display:flex;align-items:center;gap:14px;color:#fff;
+  border:2px solid rgba(255,255,255,.14);
+  box-shadow:0 5px 0 rgba(0,0,0,.28), 0 10px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.18);
+  transition:transform .12s ease, box-shadow .12s ease, filter .15s ease;
+  animation:choiceIn .38s ease backwards;
+}
+.choice:nth-child(1){animation-delay:.02s;}
+.choice:nth-child(2){animation-delay:.08s;}
+.choice:nth-child(3){animation-delay:.14s;}
+.choice:nth-child(4){animation-delay:.20s;}
+@keyframes choiceIn{0%{opacity:0;transform:translateY(12px) scale(.96);}100%{opacity:1;transform:translateY(0) scale(1);}}
+.choice::after{ /* diagonal glossy shine */
+  content:'';position:absolute;top:-70%;left:-25%;width:38%;height:240%;
+  background:linear-gradient(120deg,rgba(255,255,255,.28),transparent 65%);
+  transform:rotate(18deg);pointer-events:none;
+}
+.choice:not(.locked):hover{transform:translateY(-3px);box-shadow:0 8px 0 rgba(0,0,0,.28),0 16px 24px rgba(0,0,0,.4);filter:brightness(1.1);}
+.choice:not(.locked):active{transform:translateY(3px) scale(.98);box-shadow:0 2px 0 rgba(0,0,0,.28);}
+.choice .tag{
+  width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.3);
+  display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-size:16px;flex-shrink:0;
+  border:2px solid rgba(255,255,255,.4);box-shadow:inset 0 2px 3px rgba(0,0,0,.35);
+}
+.choice-txt{flex:1;}
+.choice.c0{background:linear-gradient(160deg,#4A8CC4,#2A5A85);}
+.choice.c1{background:linear-gradient(160deg,#D06A3A,#94411F);}
+.choice.c2{background:linear-gradient(160deg,#57A369,#316742);}
+.choice.c3{background:linear-gradient(160deg,#9C5AB8,#652F7B);}
+.choice.correct{outline:3px solid var(--good);filter:brightness(1.18);box-shadow:0 0 22px rgba(53,201,122,.8);animation:correctPop .5s ease;}
+.choice.wrong-sel{outline:3px solid var(--bad);filter:brightness(.68);}
+.choice.dim{filter:brightness(.5);}
+.choice.locked{pointer-events:none;}
+@keyframes correctPop{0%{transform:scale(1);}40%{transform:scale(1.045);}100%{transform:scale(1);}}
+
+/* timer ring */
+.timer-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:16px;}
+.timer-ring{position:relative;width:88px;height:88px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.4));}
+.timer-ring svg{transform:rotate(-90deg);width:100%;height:100%;}
+.timer-ring circle{fill:none;stroke-width:7;}
+.timer-ring .bg{stroke:rgba(255,255,255,.12);}
+.timer-ring .fg{stroke:var(--gold-bright);stroke-linecap:round;transition:stroke-dashoffset 1s linear, stroke .3s ease;}
+.timer-ring.warn .fg{stroke:#F2A93B;}
+.timer-ring.danger .fg{stroke:var(--bad);}
+.timer-ring.danger{animation:ringpulse .55s ease-in-out infinite;}
+@keyframes ringpulse{0%,100%{transform:scale(1);}50%{transform:scale(1.07);}}
+.timer-ring .num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:800;font-size:26px;}
+
+/* reveal bars */
+.reveal-list{display:flex;flex-direction:column;gap:10px;}
+.rbar-row{display:flex;align-items:center;gap:10px;font-size:14px;}
+.rbar-track{flex:1;height:16px;border-radius:8px;background:rgba(0,0,0,.3);overflow:hidden;}
+.rbar-fill{height:100%;border-radius:8px;transition:width .6s ease;}
+.rbar-fill.ok{background:var(--good);}
+.rbar-fill.no{background:rgba(255,255,255,.25);}
+
+/* spinners-strip (players currently eligible to spin) */
+.top5-strip{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px;}
+.top5-chip{
+  padding:8px 14px;border-radius:999px;background:rgba(232,178,61,.15);
+  border:1px solid var(--gold-dim);font-size:13px;display:flex;gap:6px;align-items:center;
+}
+.top5-chip .rk{font-family:var(--disp);color:var(--gold-bright);}
+
+/* ==========================================================================
+   SLOT MACHINE — signature element: 3-reel cabinet, brass trim, real spin
+   ========================================================================== */
+.slot-cabinet{
+  display:flex;flex-direction:column;align-items:center;gap:clamp(8px,2.2vmin,18px);
+  padding:clamp(10px,3vmin,28px) 10px;
+  max-height:100dvh;box-sizing:border-box;
+}
+.slot-body{
+  position:relative;padding:clamp(10px,2.4vmin,16px);border-radius:22px;
+  background:linear-gradient(160deg,#2a1408,#1a0c05 60%,#120802);
+  border:3px solid var(--gold-dim);
+  box-shadow:0 0 0 2px var(--ink), var(--shadow-deep), inset 0 0 30px rgba(0,0,0,.6);
+}
+.slot-body::before{ /* marquee light strip */
+  content:'';position:absolute;left:14px;right:14px;top:6px;height:4px;border-radius:4px;
+  background:repeating-linear-gradient(90deg,var(--gold-bright) 0 8px,transparent 8px 16px);
+  opacity:.85;
+}
+.slot-topper{
+  font-family:var(--disp);font-weight:900;text-align:center;font-size:clamp(12px,2.6vmin,16px);
+  color:var(--gold-bright);letter-spacing:1px;margin-bottom:clamp(4px,1.5vmin,10px);text-shadow:0 0 10px rgba(255,217,102,.5);
+}
+.reels-row{display:flex;gap:clamp(6px,1.6vmin,12px);background:#000;padding:clamp(6px,1.8vmin,10px);border-radius:14px;
+  box-shadow:inset 0 4px 14px rgba(0,0,0,.8);}
+.reel-window{
+  width:clamp(52px,17vmin,104px);height:clamp(52px,17vmin,104px);border-radius:10px;overflow:hidden;position:relative;
+  background:linear-gradient(180deg,var(--felt-darker),#0a1210);
+  box-shadow:inset 0 0 18px rgba(0,0,0,.8), 0 0 0 2px rgba(232,178,61,.4);
+}
+.reel-window::before,.reel-window::after{ /* top/bottom shadow so symbols fade at edges */
+  content:'';position:absolute;left:0;right:0;height:26%;z-index:2;pointer-events:none;
+}
+.reel-window::before{top:0;background:linear-gradient(180deg,rgba(0,0,0,.85),transparent);}
+.reel-window::after{bottom:0;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);}
+.reel-strip{position:absolute;left:0;top:0;width:100%;display:flex;flex-direction:column;will-change:transform;}
+.reel-sym{height:clamp(52px,17vmin,104px);display:flex;align-items:center;justify-content:center;
+  font-size:clamp(24px,8vmin,52px);flex-shrink:0;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));}
+.reel-window.spinning .reel-strip{animation:reelspin .18s linear infinite;filter:blur(2px);}
+@keyframes reelspin{0%{transform:translateY(0);}100%{transform:translateY(-75%);}}
+.reel-window.win-glow{box-shadow:inset 0 0 18px rgba(0,0,0,.8), 0 0 0 2px var(--gold-bright), 0 0 22px rgba(255,217,102,.85);}
+@keyframes shakeMachine{0%,100%{transform:translateX(0);}20%{transform:translateX(-6px) rotate(-.4deg);}40%{transform:translateX(5px) rotate(.4deg);}60%{transform:translateX(-4px);}80%{transform:translateX(3px);}}
+.slot-body.shake{animation:shakeMachine .4s ease;}
+.slot-lever-wrap{display:flex;align-items:center;gap:14px;}
+.spin-btn{
+  width:clamp(68px,19vmin,118px);height:clamp(68px,19vmin,118px);border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#FFE9A8,var(--gold) 55%,var(--gold-dim) 100%);
+  color:var(--ink);font-family:var(--disp);font-size:clamp(13px,3.6vmin,20px);font-weight:800;
+  box-shadow:0 6px 0 #8a641c,0 10px 20px rgba(0,0,0,.4);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;
+  flex-shrink:0;
+}
+.spin-btn:active{transform:translateY(4px);box-shadow:0 2px 0 #8a641c;}
+.reel-label{font-family:var(--disp);font-size:clamp(14px,3.4vmin,20px);color:var(--gold-bright);text-align:center;}
+.reel-sub{font-size:clamp(11px,2.4vmin,13px);opacity:.75;text-align:center;max-width:280px;}
+@media (max-height:480px){
+  .don-card{padding:14px 16px;}
+  .don-title{font-size:16px;margin-bottom:6px;}
+  .don-desc{font-size:12px;margin-bottom:8px;line-height:1.4;}
+  .don-options{gap:6px;}
+}
+/* double or nothing */
+.don-card{max-width:360px;padding:22px 20px;text-align:center;}
+.don-title{font-family:var(--disp);font-size:20px;color:var(--gold-bright);margin-bottom:10px;}
+.don-desc{font-size:13.5px;opacity:.85;line-height:1.6;margin-bottom:12px;}
+.don-score{font-size:14px;margin-bottom:14px;}
+.don-options{display:flex;flex-direction:column;gap:8px;}
+.don-badge{
+  font-size:13px;text-align:center;padding:7px 14px;border-radius:10px;margin-bottom:6px;
+  background:rgba(232,178,61,.15);border:1px solid var(--gold-dim);color:var(--gold-bright);
+}
+.don-result{
+  margin-top:12px;text-align:center;font-size:14px;padding:9px 14px;border-radius:10px;
+  animation:revealPop .4s ease;
+}
+.don-result.win{background:rgba(53,201,122,.16);border:1px solid var(--good);color:#8FF0B8;}
+.don-result.lose{background:rgba(214,69,69,.16);border:1px solid var(--bad);color:#FFB0B0;}
+.outcome-banner{
+  font-family:var(--disp);font-size:clamp(18px,5vw,26px);padding:16px 26px;border-radius:14px;text-align:center;
+  animation:pop .35s ease;
+}
+@keyframes pop{0%{transform:scale(.6);opacity:0;}70%{transform:scale(1.08);}100%{transform:scale(1);opacity:1;}}
+.outcome-banner.good{background:rgba(53,201,122,.18);color:#8FF0B8;border:1px solid var(--good);}
+.outcome-banner.bad{background:rgba(214,69,69,.18);color:#FFB0B0;border:1px solid var(--bad);}
+.outcome-banner.neutral{background:rgba(255,255,255,.08);color:var(--cream);border:1px solid rgba(255,255,255,.25);}
+
+/* coin burst fx for big wins */
+.coin-burst{position:fixed;inset:0;pointer-events:none;z-index:60;overflow:hidden;}
+.coin-fx{position:absolute;top:-30px;font-size:26px;animation:coinfall linear forwards;}
+@keyframes coinfall{to{transform:translateY(110vh) rotate(360deg);opacity:.2;}}
+.confetti-piece{position:absolute;top:-20px;animation:confettiFall linear forwards;}
+@keyframes confettiFall{to{transform:translateY(110vh) rotate(560deg);opacity:.1;}}
+
+/* full-screen colour flash on reveal + reveal banner */
+.flash-overlay{position:fixed;inset:0;pointer-events:none;z-index:65;animation:flashFade .55s ease-out forwards;}
+.flash-overlay.good{background:radial-gradient(circle,rgba(53,201,122,.38),transparent 68%);}
+.flash-overlay.bad{background:radial-gradient(circle,rgba(214,69,69,.28),transparent 68%);}
+@keyframes flashFade{0%{opacity:1;}100%{opacity:0;}}
+.reveal-banner{
+  text-align:center;margin-top:14px;padding:14px 18px;border-radius:14px;font-size:15px;
+  background:linear-gradient(160deg,rgba(53,201,122,.18),rgba(0,0,0,.15));
+  border:1px solid rgba(53,201,122,.55);animation:revealPop .45s ease;
+  box-shadow:0 0 20px rgba(53,201,122,.18);
+}
+@keyframes revealPop{0%{opacity:0;transform:scale(.85);}60%{transform:scale(1.04);}100%{opacity:1;transform:scale(1);}}
+.correct-icon-burst{display:inline-block;animation:iconBounce .6s ease;}
+@keyframes iconBounce{0%{transform:scale(.4) rotate(-12deg);opacity:0;}55%{transform:scale(1.3) rotate(8deg);}100%{transform:scale(1) rotate(0);opacity:1;}}
+
+/* leaderboard */
+.lb-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;margin-bottom:8px;background:rgba(0,0,0,.2);}
+.lb-row.me{border:1px solid var(--gold);background:rgba(232,178,61,.14);}
+.lb-rank{font-family:var(--disp);width:28px;text-align:center;color:var(--gold-bright);}
+.lb-av{font-size:22px;}
+.lb-name{flex:1;font-weight:600;}
+.lb-score{font-family:var(--mono);font-weight:800;color:var(--gold-bright);}
+
+/* podium */
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:14px;margin:26px 0;}
+.pod-col{text-align:center;width:110px;}
+.pod-av{font-size:34px;}
+.pod-name{font-size:13px;margin:4px 0;font-weight:700;}
+.pod-bar{border-radius:10px 10px 0 0;background:linear-gradient(180deg,var(--gold-bright),var(--gold-dim));color:var(--ink);
+  display:flex;align-items:flex-start;justify-content:center;padding-top:8px;font-family:var(--disp);font-weight:800;}
+.pod-col.p1 .pod-bar{height:150px;font-size:24px;}
+.pod-col.p2 .pod-bar{height:112px;font-size:20px;}
+.pod-col.p3 .pod-bar{height:84px;font-size:20px;}
+
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:18px;}
+.stat-card{padding:16px;text-align:center;}
+.stat-card .ic{font-size:26px;}
+.stat-card .lbl{font-size:12px;opacity:.7;margin:4px 0;}
+.stat-card .val{font-family:var(--disp);font-size:16px;color:var(--gold-bright);}
+
+/* reactions */
+.react-row{display:flex;gap:10px;justify-content:center;margin-top:14px;}
+.react-btn{font-size:26px;padding:8px 14px;border-radius:12px;background:rgba(0,0,0,.2);}
+.react-float{position:fixed;bottom:0;font-size:30px;pointer-events:none;animation:floatup 2.4s ease-out forwards;z-index:50;}
+@keyframes floatup{0%{transform:translateY(0);opacity:1;}100%{transform:translateY(-70vh);opacity:0;}}
+
+/* lobby player chips */
+.player-chip-grid{display:flex;flex-wrap:wrap;gap:10px;}
+.player-chip{
+  display:flex;align-items:center;gap:6px;padding:6px 10px 6px 6px;border-radius:999px;
+  background:rgba(0,0,0,.22);font-size:13px;
+}
+.player-chip .rm{opacity:.5;font-size:12px;padding:2px 4px;}
+.player-chip .rm:hover{opacity:1;color:var(--bad);}
+
+/* csv table preview */
+.qprev-table{width:100%;border-collapse:collapse;font-size:13px;}
+.qprev-table th,.qprev-table td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.1);text-align:left;}
+.qprev-table th{color:var(--gold-bright);font-weight:700;}
+
+.toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:var(--cream);padding:11px 20px;border-radius:10px;
+  font-size:14px;box-shadow:var(--shadow-deep);z-index:200;border:1px solid var(--gold-dim);
+}
+
+.snd-toggle{position:fixed;top:14px;right:14px;z-index:100;font-size:20px;background:rgba(0,0,0,.35);
+  border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;}
+.snd-vol-wrap{position:fixed;top:60px;right:8px;z-index:100;width:26px;height:64px;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  background:rgba(0,0,0,.3);border-radius:13px;}
+.snd-vol{width:56px;transform:rotate(-90deg);accent-color:var(--gold-bright);cursor:pointer;}
+
+.center-msg{margin:auto;text-align:center;padding:30px;max-width:420px;}
+.center-msg .ic{font-size:48px;margin-bottom:10px;}
+.footer-note{text-align:center;font-size:12px;opacity:.5;padding:14px;}
+
+.file-drop{
+  border:2px dashed rgba(232,178,61,.4);border-radius:14px;padding:24px;text-align:center;font-size:14px;opacity:.85;
+}
+.file-drop input{margin-top:10px;}
+
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.row.between{justify-content:space-between;}
+.grow{flex:1;}
+
+/* ==========================================================================
+   HOST CONTROL PANEL — teacher "cockpit" overlay, persists across phases
+   ========================================================================== */
+#hostCP{position:fixed;inset:0;pointer-events:none;z-index:150;font-family:var(--body);}
+#hostCP *{pointer-events:auto;}
+.cp-fab{
+  position:fixed;bottom:18px;right:18px;width:56px;height:56px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#FFE9A8,var(--gold) 55%,var(--gold-dim) 100%);
+  color:var(--ink);font-size:26px;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 0 #8a641c,0 10px 22px rgba(0,0,0,.45);border:none;
+}
+.cp-fab:active{transform:translateY(3px);box-shadow:0 2px 0 #8a641c;}
+.cp-fab .dot{position:absolute;top:2px;right:2px;width:12px;height:12px;border-radius:50%;background:var(--maroon-bright);border:2px solid var(--felt-darker);display:none;}
+.cp-fab.paused .dot{display:block;}
+.cp-drawer{
+  position:fixed;top:0;right:0;height:100%;width:340px;max-width:92vw;
+  background:linear-gradient(180deg,#123f30,#071f18);border-left:2px solid var(--gold-dim);
+  box-shadow:-8px 0 30px rgba(0,0,0,.5);transform:translateX(100%);transition:transform .25s ease;
+  display:flex;flex-direction:column;z-index:151;
+}
+.cp-drawer.open{transform:translateX(0);}
+.cp-head{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 10px;border-bottom:1px solid rgba(232,178,61,.25);}
+.cp-head b{font-family:var(--disp);color:var(--gold-bright);font-size:16px;}
+.cp-close{background:transparent;color:var(--cream);font-size:20px;opacity:.7;padding:4px 8px;}
+.cp-tabs{display:flex;border-bottom:1px solid rgba(232,178,61,.2);flex-shrink:0;}
+.cp-tab{flex:1;padding:10px 4px;text-align:center;font-size:12px;background:transparent;color:var(--cream);opacity:.6;border-bottom:2px solid transparent;}
+.cp-tab.active{opacity:1;color:var(--gold-bright);border-bottom-color:var(--gold-bright);}
+.cp-body{flex:1;overflow-y:auto;padding:14px 16px 24px;}
+.cp-sec{margin-bottom:18px;}
+.cp-sec-title{font-size:11px;text-transform:uppercase;letter-spacing:.6px;opacity:.55;margin-bottom:8px;}
+.cp-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.cp-row.between{justify-content:space-between;}
+.cp-player-row{display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;background:rgba(0,0,0,.22);margin-bottom:6px;}
+.cp-player-row .av{font-size:18px;}
+.cp-player-row .nm{flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cp-mini{width:26px;height:26px;border-radius:7px;background:rgba(232,178,61,.18);color:var(--gold-bright);font-size:13px;font-weight:800;padding:0;display:flex;align-items:center;justify-content:center;}
+.cp-mini.danger{background:rgba(214,69,69,.22);color:#FFB0B0;}
+.cp-score-input{width:56px;padding:4px 6px;border-radius:7px;border:1px solid rgba(246,238,218,.25);background:rgba(0,0,0,.3);color:var(--cream);font-family:var(--mono);font-size:12px;text-align:center;}
+.cp-switch{position:relative;width:42px;height:24px;border-radius:999px;background:rgba(255,255,255,.15);flex-shrink:0;}
+.cp-switch.on{background:var(--good);}
+.cp-switch .kn{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s;}
+.cp-switch.on .kn{left:21px;}
+.cp-note{font-size:11.5px;opacity:.6;line-height:1.5;margin-top:2px;}
+.cp-input{width:100%;padding:8px 10px;border-radius:8px;border:1px solid rgba(246,238,218,.25);background:rgba(0,0,0,.3);color:var(--cream);font-size:13px;}
+.rate-editor{display:flex;flex-direction:column;gap:7px;margin-top:8px;}
+.rate-row{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:10px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.06);}
+.rate-sym{font-size:18px;width:22px;text-align:center;flex-shrink:0;}
+.rate-label{flex:1;font-size:12.5px;}
+.rate-input{width:58px;padding:5px 6px;border-radius:7px;border:1px solid rgba(246,238,218,.25);background:rgba(0,0,0,.3);color:var(--cream);text-align:center;font-size:13px;}
+.rate-pct{width:44px;text-align:right;color:var(--gold-bright);font-size:12px;flex-shrink:0;}
+.rate-total-note{font-size:11.5px;opacity:.65;margin-top:6px;}
+.qr-box{background:#fff;padding:8px;border-radius:12px;width:fit-content;margin:8px auto;}
+.join-link{font-family:var(--mono);font-size:11px;background:rgba(0,0,0,.3);padding:8px;border-radius:8px;word-break:break-all;text-align:center;}
+
+/* setup screen: question editor + saved sets */
+.qedit-form{background:rgba(0,0,0,.2);border-radius:12px;padding:14px;margin-top:10px;}
+.qedit-form .field{margin-bottom:10px;}
+.choice-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.saved-set-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:9px;background:rgba(0,0,0,.2);margin-bottom:6px;}
+.saved-set-row .nm{flex:1;font-size:13px;}
+.qprev-table .qrow-actions{white-space:nowrap;}
+.qprev-table .qrow-actions button{margin-right:4px;}
+.cp-overlay-pause{
+  position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:6px;border-radius:14px;z-index:5;font-family:var(--disp);color:var(--gold-bright);
+}
+
+/* ---- connection status badge ---- */
+.conn-badge{
+  position:fixed;top:10px;left:10px;z-index:60;
+  display:flex;align-items:center;gap:6px;padding:6px 12px 6px 9px;border-radius:99px;
+  background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(4px);
+  font-size:12px;color:var(--cream);opacity:.9;transition:background .25s,border-color .25s;
+  pointer-events:none;
+}
+.conn-badge .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.conn-badge.ok .dot{background:var(--good);box-shadow:0 0 6px var(--good);}
+.conn-badge.bad .dot{background:var(--bad);box-shadow:0 0 6px var(--bad);animation:potpulse 1s ease-in-out infinite;}
+.conn-badge.wait .dot{background:var(--gold);box-shadow:0 0 6px var(--gold);animation:potpulse 1s ease-in-out infinite;}
+.conn-badge.bad{border-color:var(--bad);}
+
+/* ---- room-code entry / lobby chooser screens ---- */
+.room-code-display{
+  font-family:var(--mono);font-weight:800;letter-spacing:6px;font-size:clamp(28px,6vw,42px);
+  color:var(--gold-bright);text-shadow:0 0 14px rgba(255,217,102,.5);text-align:center;
+  padding:10px 18px;background:rgba(0,0,0,.28);border-radius:14px;border:1px solid rgba(232,178,61,.4);
+  display:inline-block;
+}
+.room-code-input{
+  width:100%;padding:16px 13px;border-radius:12px;border:1px solid rgba(246,238,218,.3);
+  background:rgba(0,0,0,.28);color:var(--gold-bright);font-family:var(--mono);font-weight:800;
+  font-size:26px;letter-spacing:8px;text-align:center;text-transform:uppercase;
+}
+.room-code-input::placeholder{color:rgba(246,238,218,.3);letter-spacing:4px;}
+.set-actions-row{display:flex;gap:6px;flex-wrap:wrap;}
+</style>
+</head>
+<body>
+<button class="snd-toggle" id="sndToggle" title="เปิด/ปิดเสียง">🔊</button>
+<div class="snd-vol-wrap" title="ระดับเสียง"><input type="range" class="snd-vol" id="sndVolSlider" min="0" max="100" value="70"></div>
+<div class="conn-badge wait" id="connBadge"><span class="dot"></span><span id="connBadgeTxt">กำลังเชื่อมต่อ...</span></div>
+<div id="app">
+  <div class="container" id="appRoot"></div>
+</div>
+
+<!-- ==========================================================================
+  ⚠️ ตั้งค่า Firebase ของคุณตรงนี้ก่อนใช้งาน — ดูวิธีตั้งค่าในคู่มือที่แนบมาให้
+
+  🔐 ความปลอดภัย (สำคัญมากก่อนนำไปใช้จริงในห้องเรียน):
+  ไฟล์นี้เป็นฝั่ง Client ล้วน ๆ — จะ "บังคับ" สิทธิ์เขียนข้อมูลจริง ๆ ได้ต้องตั้งที่
+  Firebase Console → Realtime Database → Rules เท่านั้น (แก้ในไฟล์ HTML นี้บังคับไม่ได้)
+  แนะนำให้ตั้งกฎประมาณนี้ (ปรับ path ตามที่ใช้จริงคือ "jackpotRooms"):
+
+  {
+    "rules": {
+      "jackpotRooms": {
+        "$room": {
+          ".read": true,
+          ".write": true,
+          "players": {
+            "$pid": {
+              // ผู้เล่นแต่ละคนแก้ไขได้เฉพาะข้อมูลของตัวเอง (ต้องผูกกับ Firebase Auth
+              // แบบ anonymous sign-in จริงจึงจะ "บังคับ" ได้ — ถ้ายังไม่ทำ Auth ข้อนี้
+              // เป็นแค่แนวทาง โปรดพิจารณาเพิ่ม firebase.auth().signInAnonymously()
+              // แล้วเทียบ $pid กับ auth.uid ใน rule นี้)
+              ".write": true
+            }
+          },
+          "answers": { "$qi": { "$pid": { ".write": true } } },
+          "reactions": { "$rid": { ".write": true } }
+        }
+      }
+    }
+  }
+
+  ระยะสั้น (ไม่ต้องแก้ Auth) อย่างน้อยควรตั้ง:
+    - ปิด public read/write แบบไม่จำกัดที่ path เดิม "jackpotGame" ถ้าเคยเปิดไว้
+    - จำกัดขนาด/รูปแบบข้อมูลด้วย .validate เพื่อกันการยิง payload ขยะ
+  รายละเอียดเพิ่มเติม: https://firebase.google.com/docs/database/security
+========================================================================== -->
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyA5d4lAYKRNSCGLM--OevnPS6uwiMLXzEo",
+  authDomain: "jackpot-quiz-arena.firebaseapp.com",
+  databaseURL: "https://jackpot-quiz-arena-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "jackpot-quiz-arena",
+  storageBucket: "jackpot-quiz-arena.firebasestorage.app",
+  messagingSenderId: "208018976720",
+  appId: "1:208018976720:web:a43652cac6f7bcb3cd93d5"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const ROOMS_ROOT = 'jackpotRooms'; // ทุกห้องแยกกันอยู่ใต้ path นี้ ห้องละหนึ่งรหัส
+let ROOM = null; // รหัสห้องปัจจุบัน เช่น "A7K9P" — ตั้งค่าตอนสร้าง/เข้าห้องเท่านั้น
+const gref = (p) => db.ref(ROOMS_ROOT + '/' + (ROOM || '_none_') + (p ? '/' + p : ''));
+
+/* ---- connection status: shows a live badge and lets the app know when it's
+   safe to assume writes are actually reaching the server (useful for the
+   host to know before relying on a just-sent action, and for players to know
+   why the screen might look "stuck" during a dropped connection). ---- */
+let isOnline = false;
+db.ref('.info/connected').on('value', snap=>{
+  isOnline = !!snap.val();
+  const badge = document.getElementById('connBadge');
+  const txt = document.getElementById('connBadgeTxt');
+  if(!badge || !txt) return;
+  if(isOnline){
+    badge.className = 'conn-badge ok'; txt.textContent = '🟢 เชื่อมต่อแล้ว';
+    if(window.__wasOffline){ toast('🔄 กลับมาเชื่อมต่อแล้ว'); window.__wasOffline=false; }
+  } else {
+    badge.className = 'conn-badge bad'; txt.textContent = '🔴 การเชื่อมต่อขาด — กำลังลองใหม่...';
+    window.__wasOffline = true;
+  }
+});
+function uidFallback(){ return 'r_'+Math.random().toString(36).slice(2,9); }
+function genRoomCode(){
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // ตัดตัวที่สับสนออก (O/0, I/1)
+  let s=''; for(let i=0;i<5;i++) s += alphabet[Math.floor(Math.random()*alphabet.length)];
+  return s;
+}
+</script>
+<script>
+/* ==========================================================================
+   SOUND — tiny WebAudio synth, no external files
+   ========================================================================== */
+let sndOn = true;
+let sndVolume = 0.7;
+try{ const savedVol = localStorage.getItem('jqa_snd_vol'); if(savedVol!=null) sndVolume = Math.max(0,Math.min(1, Number(savedVol)/100)); }catch(e){}
+let actx = null;
+function ac(){ if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)(); return actx; }
+function beep(freq, dur, type='sine', vol=.18, delay=0){
+  if(!sndOn || sndVolume<=0) return;
+  const c = ac(); const t0 = c.currentTime + delay;
+  const osc = c.createOscillator(); const gain = c.createGain();
+  osc.type = type; osc.frequency.setValueAtTime(freq, t0);
+  const v = vol * sndVolume;
+  gain.gain.setValueAtTime(0, t0);
+  gain.gain.linearRampToValueAtTime(v, t0+.015);
+  gain.gain.exponentialRampToValueAtTime(.001, t0+dur);
+  osc.connect(gain); gain.connect(c.destination);
+  osc.start(t0); osc.stop(t0+dur+.02);
+}
+const SND = {
+  tick: ()=>beep(880,.06,'square',.08),
+  correct: ()=>{beep(523,.12);beep(659,.12,'sine',.18,.09);beep(784,.14,'sine',.2,.18);beep(1046,.22,'sine',.16,.28);},
+  wrong: ()=>{beep(180,.28,'sawtooth',.15);},
+  reveal: ()=>beep(440,.15,'triangle',.15),
+  revealFanfare: ()=>{[523,659,784,988].forEach((f,i)=>beep(f,.18,'triangle',.2,i*.08));beep(1318,.32,'sine',.18,.34);},
+  spinloop: ()=>beep(300+Math.random()*200,.05,'square',.05),
+  coin: ()=>{beep(988,.08,'square',.15);beep(1318,.1,'square',.15,.06);},
+  jackpot: ()=>{[0,.1,.2,.3,.45].forEach((d,i)=>beep(660+i*110,.22,'sine',.22,d));},
+  bomb: ()=>beep(90,.4,'sawtooth',.22),
+  click: ()=>beep(700,.04,'square',.06),
+};
+/* ---- suspense drone: a sustained rising pad played under the spin-loop
+   ticks so the spin feels like it has a soundtrack, not just beeps. ---- */
+function startSpinDrone(){
+  if(!sndOn || sndVolume<=0) return null;
+  try{
+    const c = ac();
+    const osc = c.createOscillator(); const osc2 = c.createOscillator(); const gain = c.createGain();
+    osc.type = 'sawtooth'; osc2.type = 'triangle';
+    osc.frequency.setValueAtTime(90, c.currentTime);
+    osc2.frequency.setValueAtTime(90*1.5, c.currentTime);
+    gain.gain.setValueAtTime(0, c.currentTime);
+    gain.gain.linearRampToValueAtTime(.045*sndVolume, c.currentTime+.35);
+    osc.connect(gain); osc2.connect(gain); gain.connect(c.destination);
+    osc.start(); osc2.start();
+    return {osc, osc2, gain};
+  }catch(e){ return null; }
+}
+function riseSpinDrone(drone, durMs){
+  if(!drone) return;
+  try{
+    const c = ac(); const now = c.currentTime; const dur = Math.max(.2, durMs/1000);
+    drone.osc.frequency.linearRampToValueAtTime(90+260, now+dur);
+    drone.osc2.frequency.linearRampToValueAtTime((90+260)*1.5, now+dur);
+    drone.gain.gain.linearRampToValueAtTime(.09*sndVolume, now+dur);
+  }catch(e){}
+}
+function stopSpinDrone(drone){
+  if(!drone) return;
+  try{
+    const c = ac(); const now = c.currentTime;
+    drone.gain.gain.linearRampToValueAtTime(0, now+.28);
+    drone.osc.stop(now+.32); drone.osc2.stop(now+.32);
+  }catch(e){}
+}
+
+/* ==========================================================================
+   BACKGROUND MUSIC — a small looping "casino swing" riff, synthesized live
+   with the same WebAudio engine as the sound effects above (no audio files
+   to host/download). Plays continuously in the background at low volume for
+   as long as the tab is open, and obeys the same 🔊 mute toggle / volume
+   slider as every other sound — muting instantly silences it, unmuting
+   picks the loop back up on the next beat. Starts on the very first
+   tap/click anywhere in the app, since browsers block audio before a user
+   gesture. ---- */
+const BG_BPM = 126;
+const BG_STEP_SEC = 60 / BG_BPM / 2; // one swung eighth-note
+// walking "oom-pah" bass line, 16 eighth-note steps (2 bars) — 0 = rest
+const BG_BASS  = [110,0,164.81,0, 110,0,146.83,0, 130.81,0,196,0, 110,0,164.81,0];
+// sparse high "jackpot twinkle" doubling the bass every couple of bars —
+// intentionally thin so it stays background ambience, not a melody to sing
+const BG_CHIME = [0,0,0,880, 0,0,0,0, 0,0,0,0, 0,0,1046.5,0];
+let bgMusicState = null; // {step, nextNoteTime, timerId}
+// ducked while the host opens the floating control panel on their own
+// device (e.g. to talk over it / adjust settings) — only affects this
+// browser's own background music, never the sound effects, and never the
+// separate audio playing on students' own devices
+let bgMusicDucked = false;
+function bgMusicPlayNote(freq, time, dur, type, vol){
+  if(freq<=0) return;
+  try{
+    const c = ac();
+    const osc = c.createOscillator(); const gain = c.createGain();
+    osc.type = type; osc.frequency.setValueAtTime(freq, time);
+    const v = vol * sndVolume * (bgMusicDucked ? 0.15 : 1);
+    gain.gain.setValueAtTime(0, time);
+    gain.gain.linearRampToValueAtTime(v, time+.02);
+    gain.gain.exponentialRampToValueAtTime(.0001, time+dur);
+    osc.connect(gain); gain.connect(c.destination);
+    osc.start(time); osc.stop(time+dur+.02);
+  }catch(e){}
+}
+function bgMusicTick(){
+  if(!bgMusicState) return;
+  let c; try{ c = ac(); }catch(e){ return; }
+  // schedule ~150ms ahead of the audio clock so setInterval jitter/tab
+  // throttling never produces an audible gap in the loop
+  while(bgMusicState.nextNoteTime < c.currentTime + 0.15){
+    const i = bgMusicState.step % BG_BASS.length;
+    if(sndOn && sndVolume>0){
+      const swingOffset = (i%2===1) ? BG_STEP_SEC*0.18 : 0; // swung feel
+      const t = bgMusicState.nextNoteTime + swingOffset;
+      if(BG_BASS[i]>0)  bgMusicPlayNote(BG_BASS[i],  t, BG_STEP_SEC*0.9, 'triangle', .065);
+      if(BG_CHIME[i]>0) bgMusicPlayNote(BG_CHIME[i], t, BG_STEP_SEC*1.6, 'sine', .045);
+    }
+    bgMusicState.nextNoteTime += BG_STEP_SEC;
+    bgMusicState.step++;
+  }
+}
+function startBgMusic(){
+  if(bgMusicState) return; // already running
+  let c; try{ c = ac(); }catch(e){ return; }
+  bgMusicState = { step:0, nextNoteTime: c.currentTime + 0.05, timerId:null };
+  bgMusicState.timerId = setInterval(bgMusicTick, 50);
+}
+function unlockAndStartBgMusic(){
+  try{ const c = ac(); if(c.state === 'suspended') c.resume(); }catch(e){}
+  startBgMusic();
+}
+document.addEventListener('click', unlockAndStartBgMusic, {once:true});
+document.addEventListener('touchstart', unlockAndStartBgMusic, {once:true});
+// mobile browsers commonly suspend the AudioContext when the tab is
+// backgrounded — pick the loop back up (silently, if still muted) once
+// the tab is visible again instead of leaving it dead for the rest of class
+document.addEventListener('visibilitychange', ()=>{
+  if(!document.hidden && actx && actx.state==='suspended'){ actx.resume().catch(()=>{}); }
+});
+/* ---- celebration fx: confetti burst + a quick full-screen colour flash,
+   used on reveal (correct/wrong) so the moment feels bigger than a beep ---- */
+function spawnConfetti(n){
+  const wrap = document.createElement('div'); wrap.className = 'coin-burst';
+  document.body.appendChild(wrap);
+  const colors = ['#E8B23D','#FFD966','#35C97A','#8C1F2B','#4A8CC4','#F6EEDA'];
+  for(let i=0;i<n;i++){
+    const c = document.createElement('div'); c.className = 'confetti-piece';
+    c.style.left = (Math.random()*100)+'%';
+    const size = 6+Math.random()*7;
+    c.style.width = size+'px'; c.style.height = (size*.6)+'px';
+    c.style.background = colors[Math.floor(Math.random()*colors.length)];
+    c.style.animationDuration = (1.1+Math.random()*1.1)+'s';
+    c.style.borderRadius = Math.random()<.5? '50%':'2px';
+    wrap.appendChild(c);
+  }
+  setTimeout(()=>wrap.remove(), 2500);
+}
+function screenFlash(tone){
+  const el = document.createElement('div'); el.className = 'flash-overlay '+(tone==='good'?'good':'bad');
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 550);
+}
+document.getElementById('sndToggle').onclick = ()=>{
+  sndOn = !sndOn;
+  document.getElementById('sndToggle').textContent = sndOn ? '🔊' : '🔇';
+};
+(function(){
+  const slider = document.getElementById('sndVolSlider');
+  if(!slider) return;
+  slider.value = Math.round(sndVolume*100);
+  slider.oninput = ()=>{
+    sndVolume = Math.max(0, Math.min(1, Number(slider.value)/100));
+    try{ localStorage.setItem('jqa_snd_vol', slider.value); }catch(e){}
+  };
+})();
+
+/* ==========================================================================
+   HELPERS
+   ========================================================================== */
+const AVATARS = ['🦁','🐯','🐼','🦊','🐸','🐵','🦄','🐙','🦖','🐲','🦉','🐺','🐨','🦈','🐝','🦋','🐧','🐢'];
+/* ---- pot economy: every "good" outcome pulls points OUT of the shared pot,
+   BOMB pays a chunk of the loser's points back IN. When the pot hits 0 the
+   game ends — the class is literally racing to empty the jackpot. ---- */
+const OUTCOMES = [
+  {key:'GRAND', label:'GRAND JACKPOT!', weight:4,  sym:'💎', tone:'good'},
+  {key:'MINI',  label:'MINI JACKPOT',   weight:12, sym:'🪙', tone:'good'},
+  {key:'BONUS', label:'โบนัส',          weight:22, sym:'⭐', tone:'good'},
+  {key:'STEAL', label:'ขโมยแต้ม',       weight:14, sym:'🦹', tone:'bad'},
+  {key:'BOMB',  label:'ระเบิด!',        weight:14, sym:'💣', tone:'bad'},
+  {key:'MISS',  label:'ไม่ได้อะไรเลย',   weight:34, sym:'🔔', tone:'neutral'},
+];
+// decorative filler symbols used only to build the scrolling reel strip
+const FILLER_SYMS = ['🍒','🍋','🍇','7️⃣','🔔','⭐'];
+/* ---- teacher-editable drop rates: GAME.meta.outcomeWeights (key -> weight)
+   overrides the defaults above so the teacher can tune odds live; a weight
+   of 0 means that item is disabled (never drawn).
+   forWrongAnswer=true shrinks only the "good" (tone:'good') outcomes by
+   GAME.meta.wrongSpinGoodMult (default 0.35 = 35% of the normal chance),
+   so a player who answered incorrectly can still spin but is meaningfully
+   less likely to land a jackpot/bonus than someone who answered correctly.
+   Bad/neutral outcome weights are left untouched either way. ---- */
+function effectiveOutcomes(forWrongAnswer){
+  const ow = (GAME && GAME.meta && GAME.meta.outcomeWeights) || {};
+  const wrongMult = (GAME && GAME.meta && GAME.meta.wrongSpinGoodMult != null && !isNaN(GAME.meta.wrongSpinGoodMult))
+    ? Math.max(0, Number(GAME.meta.wrongSpinGoodMult)) : 0.35;
+  return OUTCOMES.map(o=>{
+    let weight = (ow[o.key]!=null && !isNaN(ow[o.key])) ? Math.max(0,Number(ow[o.key])) : o.weight;
+    if(forWrongAnswer && o.tone==='good') weight = weight * wrongMult;
+    return { ...o, weight };
+  });
+}
+function pickOutcome(forWrongAnswer){
+  const list = effectiveOutcomes(forWrongAnswer);
+  const total = list.reduce((s,o)=>s+o.weight,0);
+  if(total<=0) return list[list.length-1];
+  let r = Math.random()*total;
+  for(const o of list){ if(r<o.weight) return o; r-=o.weight; }
+  return list[list.length-1];
+}
+function uid(){ return 'p_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
+function esc(s){ return (s??'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function toast(msg, ms=2400){
+  const el = document.createElement('div'); el.className='toast'; el.textContent=msg;
+  document.body.appendChild(el); setTimeout(()=>el.remove(), ms);
+}
+function fmtNum(n){ return Math.round(n).toLocaleString('th-TH'); }
+function letterOf(i){ return ['A','B','C','D'][i]; }
+
+/* ---- shared pot-gauge widget: used everywhere the jackpot badge appears ---- */
+function jackpotBadgeHTML(extraStyle){
+  const jk = (GAME && GAME.meta && GAME.meta.jackpot) || 0;
+  const start = (GAME && GAME.meta && GAME.meta.startingJackpot) || Math.max(jk,1);
+  const pct = Math.max(0, Math.min(100, (jk/start)*100));
+  const low = pct <= 20;
+  return `<div class="jackpot-badge ${low?'low':''}" ${extraStyle?`style="${extraStyle}"`:''}>
+    <div class="jk-top"><span class="coin">🪙</span><span class="amt mono">${fmtNum(jk)}</span></div>
+    <div class="pot-gauge"><div class="pot-gauge-fill ${low?'low':''}" style="width:${pct}%"></div></div>
+  </div>`;
+}
+
+// simple CSV parser (handles quoted commas)
+function parseCSV(text){
+  const rows = []; let row=[]; let cur=''; let inQ=false;
+  text = text.replace(/\r\n/g,'\n');
+  for(let i=0;i<text.length;i++){
+    const c = text[i];
+    if(inQ){
+      if(c === '"'){ if(text[i+1]==='"'){cur+='"';i++;} else inQ=false; }
+      else cur+=c;
+    } else {
+      if(c === '"') inQ=true;
+      else if(c === ','){ row.push(cur); cur=''; }
+      else if(c === '\n'){ row.push(cur); rows.push(row); row=[]; cur=''; }
+      else cur+=c;
+    }
+  }
+  if(cur.length || row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(r => r.some(c=>c && c.trim().length));
+}
+function questionsFromCSV(text){
+  const rows = parseCSV(text);
+  let start = 0;
+  // skip header row if it looks like one
+  if(rows[0] && /คำถาม|question/i.test(rows[0][0]||'')) start = 1;
+  const qs = [];
+  for(let i=start;i<rows.length;i++){
+    const r = rows[i];
+    if(r.length < 6) continue;
+    const [q,a,b,c,d,ans] = r.map(x=>(x||'').trim());
+    if(!q) continue;
+    const idx = {a:0,b:1,c:2,d:3}[ans.toLowerCase()] ?? ['a','b','c','d'].indexOf(ans.toLowerCase());
+    qs.push({ q, choices:[a,b,c,d], correct: idx>=0?idx:0 });
+  }
+  return qs;
+}
+</script>
+<script>
+/* ==========================================================================
+   APP STATE + ROUTER
+   ========================================================================== */
+const root = document.getElementById('appRoot');
+let ROLE = null; // 'host' | 'player'
+let GAME = null; // live mirror of /jackpotRooms/{ROOM}
+let ME = { id:null, name:null, avatar:null };
+let myAnswerLocked = false;
+let mySpinDone = false;
+let reelTimer = null;
+// tracks an in-progress local spin animation so an unrelated realtime update
+// (e.g. a classmate spinning at the same moment) doesn't yank the reels out
+// from under the current player mid-animation
+let localSpin = null; // {qi, outcome, finals, spinning:bool}
+let playerTickInt = null;
+let lastRevealSoundQi = null;
+/* ---- spin-turn deadline: a single hard time budget per (question, player)
+   that covers the WHOLE spin turn — the Double-or-Nothing prompt AND the
+   spin button — instead of two separately-timed steps. Anchored to a fixed
+   end timestamp the first time the player's turn is rendered for this qi,
+   so it does NOT reset every time an unrelated realtime update (e.g. a
+   classmate spinning) triggers a re-render. Once it expires the player is
+   auto-forfeited (skip bet, auto-spin) immediately — no more waiting. ---- */
+const SPIN_TURN_MS = 8000;
+let spinDeadline = null; // {qi, end}
+let spinDeadlineInt = null;
+let spinForfeitedQi = null; // qi the player's turn was auto-forfeited on (missed the 8s window entirely)
+
+function loadMe(){
+  try{
+    const saved = JSON.parse(localStorage.getItem('jqa_me')||'null');
+    if(saved && saved.id){ ME = saved; return true; }
+  }catch(e){}
+  return false;
+}
+function saveMe(){ localStorage.setItem('jqa_me', JSON.stringify(ME)); }
+
+/* ==========================================================================
+   ROOM (multi-room support) + RECONNECT / RESUME
+   ทุกเกมแยกกันอยู่คนละห้องใต้ ROOMS_ROOT/{ROOM} แทนที่จะชนกันที่ path เดียว
+   นอกจากนี้ ROLE/ROOM ยังถูกจำไว้ใน localStorage เพื่อให้ครูปิด-เปิดแท็บ/มือถือดับ
+   แล้วกลับเข้าห้องเดิมได้ทันที ไม่ต้องเริ่มใหม่
+   ========================================================================== */
+let gameListenerRef = null;
+let gameSyncTimeoutId = null;
+window.__gameSyncError = null; // null = ok/pending, or {reason} once we know it failed
+function attachGameListener(){
+  if(gameListenerRef) return; // already listening
+  window.__gameSyncError = null;
+  gameListenerRef = gref();
+  // Safety net: if neither the success NOR the error callback below has
+  // fired within a few seconds (e.g. the SDK silently stalls on a flaky
+  // mobile connection), stop spinning forever and give the user something
+  // actionable instead of an infinite "กำลังเชื่อมต่อห้อง..." screen.
+  clearTimeout(gameSyncTimeoutId);
+  gameSyncTimeoutId = setTimeout(()=>{
+    if(!window.__gameSynced && !window.__gameSyncError){
+      window.__gameSyncError = { code:'timeout' };
+      render();
+    }
+  }, 9000);
+  gameListenerRef.on('value', snap => {
+    clearTimeout(gameSyncTimeoutId);
+    window.__gameSyncError = null;
+    GAME = snap.val();
+    window.__gameSynced = true;
+    render();
+  }, err => {
+    // Most common real-world cause: Firebase Realtime Database security
+    // rules deny read on this path (rules not set, or a "test mode" rule
+    // that already expired) — the SDK never calls the success callback in
+    // that case, so without this handler the app was stuck showing the
+    // "connecting" spinner forever with no explanation.
+    clearTimeout(gameSyncTimeoutId);
+    console.error('attachGameListener error:', err);
+    window.__gameSyncError = { code: (err && err.code) || 'unknown', message: (err && err.message) || String(err) };
+    window.__gameSynced = false;
+    render();
+  });
+  attachReactionsListener();
+}
+function detachGameListener(){
+  clearTimeout(gameSyncTimeoutId);
+  window.__gameSyncError = null;
+  if(gameListenerRef){ gameListenerRef.off(); gameListenerRef = null; }
+  detachReactionsListener();
+}
+
+/* ---- reactions floater listener: defined here (not down near where the
+   floating-emoji rendering lives) so that attachGameListener() can safely
+   call it during the very first page load (autoResume, below) — by the time
+   a later <script> block finishes running, this one has already executed. */
+let lastReactionKey = null;
+let reactionsListenerRef = null;
+function attachReactionsListener(){
+  if(reactionsListenerRef) return;
+  reactionsListenerRef = gref('reactions');
+  reactionsListenerRef.on('value', snap=>{
+    const val = snap.val(); if(!val) return;
+    const keys = Object.keys(val);
+    const newest = keys[keys.length-1];
+    if(newest && newest !== lastReactionKey){
+      lastReactionKey = newest;
+      const r = val[newest];
+      const el = document.createElement('div');
+      el.className = 'react-float';
+      el.style.left = (10+Math.random()*80)+'%';
+      el.textContent = r.emoji;
+      document.body.appendChild(el);
+      setTimeout(()=>el.remove(), 2500);
+    }
+  }, err => {
+    // Non-fatal (reactions are cosmetic) — just stop retrying silently
+    // forever and log it, instead of leaving a listener that never fires.
+    console.error('attachReactionsListener error:', err);
+  });
+}
+function detachReactionsListener(){
+  if(reactionsListenerRef){ reactionsListenerRef.off(); reactionsListenerRef = null; }
+  lastReactionKey = null;
+}
+function persistSession(){
+  try{
+    if(ROOM && ROLE){ localStorage.setItem('jqa_room', ROOM); localStorage.setItem('jqa_role', ROLE); }
+  }catch(e){}
+}
+function clearSession(){
+  try{ localStorage.removeItem('jqa_room'); localStorage.removeItem('jqa_role'); }catch(e){}
+}
+function enterRoom(code, role, opts){
+  opts = opts || {};
+  ROOM = (code||'').toUpperCase();
+  ROLE = role;
+  window.__gameSynced = false;
+  window.__gameSyncError = null;
+  persistSession();
+  try{
+    const url = new URL(location.href);
+    url.searchParams.set('room', ROOM);
+    history.replaceState(null, '', url.toString());
+  }catch(e){}
+  attachGameListener();
+  // opts.silent: used only by autoResume() during the very first synchronous
+  // script execution, before renderHost/renderPlayer (defined in later
+  // <script> blocks) exist yet — the final `render()` call at the bottom of
+  // the file performs the actual first paint once everything is loaded.
+  if(!opts.silent) render();
+}
+function leaveRoom(){
+  detachGameListener();
+  clearSession();
+  window.__gameSynced = false;
+  window.__gameSyncError = null;
+  ROOM = null; ROLE = null; GAME = null;
+  try{
+    const url = new URL(location.href);
+    url.searchParams.delete('room');
+    history.replaceState(null, '', url.toString());
+  }catch(e){}
+  render();
+}
+function urlRoomParam(){
+  try{ return new URLSearchParams(location.search).get('room'); }catch(e){ return null; }
+}
+
+function render(){
+  if(!ROLE || !ROOM){ renderLanding(); removeHostControlPanel(); return; }
+  if(window.__gameSyncError){ renderRoomSyncError(window.__gameSyncError); removeHostControlPanel(); return; }
+  if(!window.__gameSynced){ renderRoomLoading(); return; }
+  if(ROLE === 'host'){ renderHost(); mountHostControlPanel(); return; }
+  if(ROLE === 'player'){ renderPlayer(); removeHostControlPanel(); return; }
+}
+
+/* ---- shown briefly while reconnecting to a room whose data hasn't arrived
+   from Firebase yet (first snapshot still in flight) — avoids flashing the
+   wrong screen (e.g. "setup") for a split second while resuming. ---- */
+function renderRoomLoading(){
+  root.innerHTML = `
+    <div class="center-msg">
+      <div class="ic">🔄</div>
+      <div style="font-family:var(--disp);font-size:18px;color:var(--gold-bright);">กำลังเชื่อมต่อห้อง ${esc(ROOM||'')}...</div>
+      <div style="margin-top:10px;opacity:.7;font-size:13px;">รอสักครู่...</div>
+    </div>`;
+}
+
+/* ---- shown when attachGameListener's Firebase listener either came back
+   with a real error (most commonly "permission_denied" — the Realtime
+   Database security rules don't allow reading /jackpotRooms, e.g. because
+   they were never set or a "test mode" rule already expired) or simply
+   never fired at all within a few seconds. Previously there was no error
+   path here at all, so this situation looked identical to a permanently
+   spinning "กำลังเชื่อมต่อห้อง..." screen with no way out. ---- */
+function renderRoomSyncError(errInfo){
+  const isPermission = errInfo && /permission/i.test(errInfo.code||'');
+  const isTimeout = errInfo && errInfo.code === 'timeout';
+  const detail = isPermission
+    ? 'สาเหตุที่พบบ่อยที่สุด: กฎความปลอดภัย (Rules) ของ Firebase Realtime Database ยังไม่ได้อนุญาตให้อ่านข้อมูล หรือกฎแบบ "โหมดทดสอบ" หมดอายุแล้ว — ต้องเข้าไปตั้งค่าใน Firebase Console → Realtime Database → Rules'
+    : isTimeout
+      ? 'เชื่อมต่อกับเซิร์ฟเวอร์เกินเวลาที่กำหนด อาจเป็นเพราะอินเทอร์เน็ตไม่เสถียร หรือกฎความปลอดภัยของฐานข้อมูลปฏิเสธการอ่านข้อมูลแบบเงียบ ๆ'
+      : 'เกิดข้อผิดพลาดขณะเชื่อมต่อฐานข้อมูล';
+  root.innerHTML = `
+    <div class="center-msg">
+      <div class="ic">⚠️</div>
+      <div style="font-family:var(--disp);font-size:18px;color:var(--maroon-bright);">เชื่อมต่อห้อง ${esc(ROOM||'')} ไม่สำเร็จ</div>
+      <div style="margin-top:10px;opacity:.85;font-size:13px;max-width:420px;margin-left:auto;margin-right:auto;">${esc(detail)}</div>
+      ${errInfo && errInfo.message ? `<div class="mono" style="margin-top:8px;opacity:.55;font-size:11px;">${esc(errInfo.code||'')}: ${esc(errInfo.message)}</div>` : ''}
+      <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn" id="syncRetryBtn">🔄 ลองใหม่</button>
+        <button class="btn ghost" id="syncBackBtn">← กลับหน้าแรก</button>
+      </div>
+    </div>`;
+  document.getElementById('syncRetryBtn').onclick = ()=>{
+    window.__gameSyncError = null;
+    window.__gameSynced = false;
+    detachGameListener();
+    attachGameListener();
+    render();
+  };
+  document.getElementById('syncBackBtn').onclick = ()=> leaveRoom();
+}
+
+/* -------------------------------------------------------------------------- */
+function renderLanding(){
+  const urlRoom = urlRoomParam();
+  root.innerHTML = `
+    <div class="landing">
+      <h1 class="marquee">🎰 JACKPOT<br>QUIZ ARENA</h1>
+      <div class="sub">เกมตอบคำถามชิงตู้แจ็คพอทสด สำหรับห้องเรียน ~40 คน</div>
+      <div class="role-row">
+        <div class="role-card" id="pickHost"><span class="ic">🎙️</span><b>ครู / โฮสต์</b><span>ควบคุมเกม แสดงจอใหญ่</span></div>
+        <div class="role-card" id="pickPlayer"><span class="ic">📱</span><b>ผู้เล่น</b><span>เข้าเกมด้วยมือถือ</span></div>
+      </div>
+      ${urlRoom? `<div class="sub" style="margin-top:18px;">ลิงก์นี้พาไปห้อง <b class="mono" style="color:var(--gold-bright);">${esc(urlRoom)}</b> โดยอัตโนมัติเมื่อกด "ผู้เล่น"</div>`:''}
+    </div>`;
+  document.getElementById('pickHost').onclick = ()=>{ renderHostRoomChoice(); };
+  document.getElementById('pickPlayer').onclick = ()=>{ loadMe(); renderPlayerRoomEntry(urlRoom); };
+}
+
+function renderHostRoomChoice(){
+  let lastRoom = null, lastRole = null;
+  try{ lastRoom = localStorage.getItem('jqa_room'); lastRole = localStorage.getItem('jqa_role'); }catch(e){}
+  const hasPrev = lastRoom && lastRole === 'host';
+  root.innerHTML = `
+    <div class="landing">
+      <h1 class="marquee" style="font-size:32px;">🎙️ เริ่มเป็นโฮสต์</h1>
+      ${hasPrev? `
+        <div class="sub">พบห้องล่าสุดที่คุณสร้างไว้</div>
+        <div class="room-code-display" style="margin-bottom:18px;">${esc(lastRoom)}</div>
+        <button class="btn block" id="resumeRoomBtn" style="max-width:280px;margin:0 auto 10px;">🔄 กลับเข้าห้องเดิม</button>
+        <button class="btn ghost block" id="newRoomBtn" style="max-width:280px;margin:0 auto;">➕ สร้างห้องใหม่</button>
+      ` : `
+        <div class="sub">ระบบจะสุ่มรหัสห้อง 5 ตัวอักษรให้อัตโนมัติ เพื่อกันชนกับครูคนอื่นที่เปิดเกมพร้อมกัน</div>
+        <button class="btn block" id="newRoomBtn" style="max-width:280px;margin:0 auto;">➕ สร้างห้องใหม่</button>
+      `}
+      <button class="btn ghost sm" id="backBtn" style="margin-top:18px;">← กลับ</button>
+    </div>`;
+  const resumeBtn = document.getElementById('resumeRoomBtn');
+  if(resumeBtn) resumeBtn.onclick = ()=> enterRoom(lastRoom, 'host');
+  document.getElementById('newRoomBtn').onclick = ()=> enterRoom(genRoomCode(), 'host');
+  document.getElementById('backBtn').onclick = ()=>{ render(); };
+}
+
+function renderPlayerRoomEntry(prefill){
+  if(prefill){ tryJoinRoomCode(prefill); return; }
+  let lastRoom = null, lastRole = null;
+  try{ lastRoom = localStorage.getItem('jqa_room'); lastRole = localStorage.getItem('jqa_role'); }catch(e){}
+  const hasPrev = lastRoom && lastRole === 'player';
+  root.innerHTML = `
+    <div class="landing">
+      <h1 class="marquee" style="font-size:32px;">📱 เข้าร่วมห้อง</h1>
+      <div class="sub">ใส่รหัสห้อง 5 หลักที่ครูให้ (ดูจากจอใหญ่ หรือสแกน QR)</div>
+      <div class="field" style="max-width:280px;margin:0 auto 14px;">
+        <input type="text" class="room-code-input" id="roomCodeInput" maxlength="5" placeholder="ABCDE">
+      </div>
+      <button class="btn" id="roomJoinBtn">ต่อไป →</button>
+      ${hasPrev? `<div class="sub" style="margin-top:16px;">หรือ <span id="resumePlayerRoom" style="color:var(--gold-bright);text-decoration:underline;cursor:pointer;">กลับเข้าห้องล่าสุด (${esc(lastRoom)})</span></div>`:''}
+      <div style="margin-top:18px;"><button class="btn ghost sm" id="backBtn">← กลับ</button></div>
+    </div>`;
+  const input = document.getElementById('roomCodeInput');
+  input.oninput = ()=>{ input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5); };
+  input.onkeydown = (e)=>{ if(e.key==='Enter') document.getElementById('roomJoinBtn').click(); };
+  document.getElementById('roomJoinBtn').onclick = ()=> tryJoinRoomCode(input.value);
+  const resumeEl = document.getElementById('resumePlayerRoom');
+  if(resumeEl) resumeEl.onclick = ()=> tryJoinRoomCode(lastRoom);
+  document.getElementById('backBtn').onclick = ()=>{ render(); };
+}
+
+function tryJoinRoomCode(code){
+  code = (code||'').toUpperCase().trim();
+  if(code.length !== 5){ toast('กรุณาใส่รหัสห้อง 5 หลักให้ครบ'); renderPlayerRoomEntry(null); return; }
+  toast('⏳ กำลังตรวจสอบห้อง...', 1500);
+  db.ref(ROOMS_ROOT+'/'+code+'/meta').once('value').then(snap=>{
+    if(!snap.exists()){ toast('❌ ไม่พบห้องรหัสนี้ ตรวจสอบกับครูอีกครั้ง'); renderPlayerRoomEntry(null); return; }
+    enterRoom(code, 'player');
+  }).catch(()=>{ toast('เชื่อมต่อไม่ได้ ลองใหม่อีกครั้ง'); renderPlayerRoomEntry(null); });
+}
+
+/* ---- auto-resume on page load: if we already have a room+role saved from a
+   previous visit (app closed / wifi dropped / tab reloaded), jump straight
+   back in instead of showing the landing screen again. ---- */
+(function autoResume(){
+  const urlRoom = urlRoomParam();
+  let savedRoom=null, savedRole=null;
+  try{ savedRoom = localStorage.getItem('jqa_room'); savedRole = localStorage.getItem('jqa_role'); }catch(e){}
+  if(urlRoom && savedRole === 'player' && savedRoom !== urlRoom){
+    // a fresh join-link for a different room takes priority over an old session
+    return;
+  }
+  if(savedRoom && savedRole){
+    loadMe();
+    enterRoom(savedRoom, savedRole, {silent:true});
+  }
+})();
+</script>
+
+<script>
+/* ==========================================================================
+   HOST VIEW
+   ========================================================================== */
+function frameWrap(inner, cls=''){
+  return `<div class="brass-frame ${cls}"><span class="rivet bl"></span><span class="rivet br"></span>${inner}</div>`;
+}
+
+function renderHost(){
+  if(!GAME || !GAME.meta || GAME.meta.phase === 'setup'){ renderHostSetup(); return; }
+  const phase = GAME.meta.phase;
+  if(phase === 'lobby'){ renderHostLobby(); return; }
+  if(phase === 'end'){ renderHostEnd(); return; }
+  renderHostGame(phase);
+}
+
+/* ---- saved question-set library (localStorage, per-browser) ---- */
+function getSavedSets(){ try{ return JSON.parse(localStorage.getItem('jqa_saved_sets')||'{}'); }catch(e){ return {}; } }
+function writeSavedSets(obj){ localStorage.setItem('jqa_saved_sets', JSON.stringify(obj)); }
+function saveCurrentSet(){
+  if(!window.__pendingQs || !window.__pendingQs.length){ toast('ยังไม่มีคำถามให้บันทึก'); return; }
+  const name = prompt('ตั้งชื่อชุดคำถามนี้ (เช่น "วิทยาศาสตร์ ป.5 บทที่ 3"):');
+  if(!name) return;
+  const sets = getSavedSets();
+  sets[name] = window.__pendingQs;
+  writeSavedSets(sets);
+  toast(`บันทึกชุดคำถาม "${name}" แล้ว`);
+  renderHostSetup();
+}
+function loadSavedSet(name){
+  const sets = getSavedSets();
+  if(!sets[name]) return;
+  window.__pendingQs = JSON.parse(JSON.stringify(sets[name]));
+  window.__qFormOpen = false; window.__qEditIndex = null;
+  renderHostSetup();
+  toast(`โหลดชุดคำถาม "${name}" แล้ว (${sets[name].length} ข้อ)`);
+}
+function deleteSavedSet(name){
+  if(!confirm(`ลบชุดคำถาม "${name}" ที่บันทึกไว้?`)) return;
+  const sets = getSavedSets();
+  delete sets[name];
+  writeSavedSets(sets);
+  renderHostSetup();
+}
+function renameSavedSet(name){
+  const sets = getSavedSets();
+  if(!sets[name]) return;
+  const newName = prompt('ตั้งชื่อใหม่ให้ชุดคำถามนี้:', name);
+  if(!newName || newName===name) return;
+  if(sets[newName] && !confirm(`มีชุดชื่อ "${newName}" อยู่แล้ว ต้องการเขียนทับหรือไม่?`)) return;
+  sets[newName] = sets[name];
+  delete sets[name];
+  writeSavedSets(sets);
+  toast(`เปลี่ยนชื่อเป็น "${newName}" แล้ว`);
+  renderHostSetup();
+}
+function duplicateSavedSet(name){
+  const sets = getSavedSets();
+  if(!sets[name]) return;
+  let base = name + ' (สำเนา)', i=2;
+  while(sets[base]){ base = name+` (สำเนา ${i})`; i++; }
+  sets[base] = JSON.parse(JSON.stringify(sets[name]));
+  writeSavedSets(sets);
+  toast(`ทำสำเนาเป็น "${base}" แล้ว`);
+  renderHostSetup();
+}
+/* ---- backup/restore: export a saved set (or the currently-loaded set) to a
+   .json file the teacher can keep outside the browser, and re-import it —
+   protects the question bank from being lost if localStorage/browser data
+   ever gets cleared. ---- */
+function exportSetJSON(name){
+  const sets = getSavedSets();
+  const data = name ? sets[name] : window.__pendingQs;
+  const label = name || 'ชุดคำถามปัจจุบัน';
+  if(!data || !data.length){ toast('ไม่มีคำถามให้ Export'); return; }
+  const blob = new Blob([JSON.stringify({ name:label, questions:data }, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (name||'question-set').replace(/[\\/:*?"<>|]/g,'_') + '.json';
+  a.click();
+  toast(`Export "${label}" แล้ว`);
+}
+function exportAllSetsJSON(){
+  const sets = getSavedSets();
+  if(!Object.keys(sets).length){ toast('ยังไม่มีชุดคำถามที่บันทึกไว้'); return; }
+  const blob = new Blob([JSON.stringify(sets, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'jackpot-quiz-arena-question-bank.json';
+  a.click();
+  toast('Export คลังคำถามทั้งหมดแล้ว');
+}
+function importSetJSON(file){
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const parsed = JSON.parse(reader.result);
+      const sets = getSavedSets();
+      let added = 0;
+      // supports 3 shapes: {name, questions:[...]}, a raw [...] array, or a
+      // full bank export {"Set A":[...], "Set B":[...]}
+      if(parsed && Array.isArray(parsed.questions)){
+        let nm = parsed.name || 'นำเข้า '+new Date().toLocaleDateString('th-TH');
+        while(sets[nm]) nm += ' (ใหม่)';
+        sets[nm] = parsed.questions; added = 1;
+      } else if(Array.isArray(parsed)){
+        let nm = 'นำเข้า '+new Date().toLocaleDateString('th-TH');
+        while(sets[nm]) nm += ' (ใหม่)';
+        sets[nm] = parsed; added = 1;
+      } else if(parsed && typeof parsed === 'object'){
+        Object.entries(parsed).forEach(([nm, qs])=>{
+          if(!Array.isArray(qs)) return;
+          let finalName = nm;
+          while(sets[finalName]) finalName += ' (ใหม่)';
+          sets[finalName] = qs; added++;
+        });
+      }
+      if(!added){ toast('ไฟล์นี้ไม่ใช่รูปแบบชุดคำถามที่รองรับ'); return; }
+      writeSavedSets(sets);
+      toast(`นำเข้าชุดคำถามสำเร็จ ${added} ชุด`);
+      renderHostSetup();
+    }catch(e){ toast('อ่านไฟล์ไม่สำเร็จ — ตรวจสอบว่าเป็นไฟล์ .json ที่ถูกต้อง'); }
+  };
+  reader.readAsText(file);
+}
+
+/* ---- manual question add / edit form ---- */
+function qFormTemplate(){
+  const editing = window.__qEditIndex !== null && window.__qEditIndex !== undefined;
+  const q = editing ? window.__pendingQs[window.__qEditIndex] : { q:'', choices:['','','',''], correct:0 };
+  return `
+    <div class="qedit-form">
+      <div class="cp-sec-title" style="margin-bottom:10px;">${editing? `✏️ แก้ไขคำถามข้อที่ ${window.__qEditIndex+1}` : '➕ เพิ่มคำถามใหม่ด้วยตนเอง'}</div>
+      <div class="field"><label>คำถาม</label><input type="text" id="qfText" value="${esc(q.q)}" placeholder="พิมพ์คำถาม..."></div>
+      <div class="choice-edit-grid">
+        ${[0,1,2,3].map(i=>`
+          <div class="field" style="margin-bottom:0;">
+            <label>ตัวเลือก ${letterOf(i)} ${q.correct===i?'✅':''}</label>
+            <input type="text" id="qfC${i}" value="${esc(q.choices[i]||'')}" placeholder="ตัวเลือก ${letterOf(i)}">
+          </div>
+        `).join('')}
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label>คำตอบที่ถูกต้อง</label>
+        <div class="row">
+          ${[0,1,2,3].map(i=>`<label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="radio" name="qfCorrect" value="${i}" ${q.correct===i?'checked':''}> ${letterOf(i)}</label>`).join('')}
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px;">
+        <button class="btn sm" id="qfSaveBtn">${editing? '💾 บันทึกการแก้ไข':'➕ เพิ่มคำถามนี้'}</button>
+        <button class="btn ghost sm" id="qfCancelBtn">ยกเลิก</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderHostSetup(){
+  const qCount = window.__pendingQs ? window.__pendingQs.length : 0;
+  const savedSets = getSavedSets();
+  const savedNames = Object.keys(savedSets);
+  root.innerHTML = `
+    <div class="topbar brass-frame"><span class="rivet bl"></span><span class="rivet br"></span>
+      <h2 class="disp" style="margin:0;color:var(--gold-bright);">🎙️ ตั้งค่าเกม (โฮสต์)</h2>
+      <span class="mono" style="font-size:13px;opacity:.85;">ห้อง <b style="color:var(--gold-bright);letter-spacing:2px;">${esc(ROOM)}</b></span>
+      <button class="btn ghost sm" id="backBtn">← กลับ</button>
+    </div>
+    ${frameWrap(`
+      <div style="padding:20px;">
+        <div class="field">
+          <label>เวลาต่อข้อ (วินาที)</label>
+          <input type="number" id="qTime" value="20" min="5" max="90">
+        </div>
+
+        <div class="row" style="gap:14px;">
+          <div class="field grow">
+            <label>🪙 คะแนนเริ่มต้นในตู้แจ็คพอท</label>
+            <input type="number" id="startPot" value="5000" min="100" step="100">
+          </div>
+          <div class="field grow">
+            <label>คืนคะแนนเข้าตู้เมื่อตอบผิด (ต่อคน)</label>
+            <input type="number" id="wrongRefund" value="20" min="0" step="5">
+          </div>
+        </div>
+        <div class="cp-note" style="margin:-6px 0 14px;">เกมจะจบทันทีเมื่อคะแนนในตู้เหลือ 0 — ทุกคนแย่งกันหมุนดึงคะแนนจากตู้เดียวกัน ตอบผิดจะช่วยเติมคะแนนกลับเข้าตู้ให้เกมยืดขึ้น</div>
+
+        ${savedNames.length? `
+        <div class="field">
+          <label>📚 ชุดคำถามที่บันทึกไว้ (โหลดใช้ซ้ำได้ทันที ไม่ต้องอัปโหลดใหม่)</label>
+          ${savedNames.map(n=>`
+            <div class="saved-set-row">
+              <span class="nm">${esc(n)} <span style="opacity:.6;">(${savedSets[n].length} ข้อ)</span></span>
+              <div class="set-actions-row">
+                <button class="btn ghost sm" data-load="${esc(n)}">โหลด</button>
+                <button class="cp-mini" data-dupset="${esc(n)}" title="ทำสำเนา">📋</button>
+                <button class="cp-mini" data-renset="${esc(n)}" title="เปลี่ยนชื่อ">✏️</button>
+                <button class="cp-mini" data-expset="${esc(n)}" title="Export .json">📤</button>
+                <button class="cp-mini danger" data-delset="${esc(n)}" title="ลบ">🗑️</button>
+              </div>
+            </div>
+          `).join('')}
+          <div class="row" style="margin-top:6px;"><button class="btn ghost sm" id="exportAllBtn">📤 Export คลังคำถามทั้งหมด (.json)</button></div>
+        </div>` : ''}
+
+        <div class="field">
+          <label>💾 สำรอง/กู้คืนชุดคำถาม (ไฟล์ .json — ใช้ได้แม้เปลี่ยนเครื่อง/เบราว์เซอร์)</label>
+          <div class="file-drop">
+            <input type="file" id="jsonFile" accept=".json">
+            <div class="cp-note" style="margin-top:6px;">นำเข้าไฟล์ .json ที่ Export ไว้ก่อนหน้า (รองรับทั้งไฟล์ชุดเดียวและไฟล์คลังคำถามรวม)</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>นำเข้าคำถามจากไฟล์ CSV</label>
+          <div class="file-drop">
+            รูปแบบคอลัมน์: <b>คำถาม, ตัวเลือกA, ตัวเลือกB, ตัวเลือกC, ตัวเลือกD, เฉลย(A/B/C/D)</b><br>
+            <input type="file" id="csvFile" accept=".csv">
+            <div style="margin-top:8px;"><button class="btn ghost sm" id="dlTemplate">⬇️ ดาวน์โหลดไฟล์ตัวอย่าง CSV</button></div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-bottom:8px;">
+          <button class="btn ghost sm" id="addQBtn">➕ เพิ่มคำถามเอง</button>
+          ${qCount? `<button class="btn ghost sm" id="saveSetBtn">💾 บันทึกชุดนี้ไว้ใช้ครั้งหน้า</button>`:''}
+          ${qCount? `<button class="btn ghost sm" id="exportCurBtn">📤 Export ชุดนี้ (.json)</button>`:''}
+        </div>
+        <div id="qFormWrap">${window.__qFormOpen? qFormTemplate() : ''}</div>
+
+        <div id="qPreviewWrap"></div>
+        <button class="btn block" id="startLobbyBtn" ${qCount? '' : 'disabled'} style="margin-top:16px;">
+          🚪 เปิดห้องรอผู้เล่น ${qCount? `(${qCount} ข้อพร้อมแล้ว)`:''}
+        </button>
+      </div>
+    `)}
+    <div class="footer-note">Jackpot Quiz Arena · โหมดโฮสต์</div>
+  `;
+  document.getElementById('backBtn').onclick = ()=>{ leaveRoom(); };
+  document.getElementById('dlTemplate').onclick = downloadTemplate;
+  root.querySelectorAll('[data-load]').forEach(el=> el.onclick = ()=> loadSavedSet(el.dataset.load));
+  root.querySelectorAll('[data-delset]').forEach(el=> el.onclick = ()=> deleteSavedSet(el.dataset.delset));
+  root.querySelectorAll('[data-dupset]').forEach(el=> el.onclick = ()=> duplicateSavedSet(el.dataset.dupset));
+  root.querySelectorAll('[data-renset]').forEach(el=> el.onclick = ()=> renameSavedSet(el.dataset.renset));
+  root.querySelectorAll('[data-expset]').forEach(el=> el.onclick = ()=> exportSetJSON(el.dataset.expset));
+  const saveSetBtn = document.getElementById('saveSetBtn'); if(saveSetBtn) saveSetBtn.onclick = saveCurrentSet;
+  const exportAllBtn = document.getElementById('exportAllBtn'); if(exportAllBtn) exportAllBtn.onclick = exportAllSetsJSON;
+  const exportCurBtn = document.getElementById('exportCurBtn'); if(exportCurBtn) exportCurBtn.onclick = ()=> exportSetJSON(null);
+  const jsonFile = document.getElementById('jsonFile'); if(jsonFile) jsonFile.onchange = ()=>{
+    if(jsonFile.files[0]) importSetJSON(jsonFile.files[0]);
+  };
+
+  document.getElementById('addQBtn').onclick = ()=>{ window.__qFormOpen = true; window.__qEditIndex = null; renderHostSetup(); };
+  document.getElementById('csvFile').onchange = (e)=>{
+    const f = e.target.files[0]; if(!f) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try{
+        const qs = questionsFromCSV(reader.result);
+        if(!qs.length){ toast('ไม่พบคำถามในไฟล์ ตรวจสอบรูปแบบคอลัมน์อีกครั้ง'); return; }
+        window.__pendingQs = qs;
+        renderHostSetup();
+        toast(`นำเข้าคำถามสำเร็จ ${qs.length} ข้อ`);
+      }catch(err){ toast('อ่านไฟล์ไม่สำเร็จ: '+err.message); }
+    };
+    reader.readAsText(f, 'UTF-8');
+  };
+
+  if(window.__qFormOpen){
+    document.getElementById('qfSaveBtn').onclick = ()=>{
+      const qText = document.getElementById('qfText').value.trim();
+      const choices = [0,1,2,3].map(i=> document.getElementById('qfC'+i).value.trim());
+      const correctEl = root.querySelector('input[name="qfCorrect"]:checked');
+      const correct = correctEl ? parseInt(correctEl.value) : 0;
+      if(!qText || choices.some(c=>!c)){ toast('กรุณากรอกคำถามและตัวเลือกให้ครบทั้ง 4 ข้อ'); return; }
+      const newQ = { q:qText, choices, correct };
+      if(!window.__pendingQs) window.__pendingQs = [];
+      if(window.__qEditIndex !== null && window.__qEditIndex !== undefined){
+        window.__pendingQs[window.__qEditIndex] = newQ;
+        toast('บันทึกการแก้ไขแล้ว');
+      } else {
+        window.__pendingQs.push(newQ);
+        toast('เพิ่มคำถามแล้ว');
+      }
+      window.__qFormOpen = false; window.__qEditIndex = null;
+      renderHostSetup();
+    };
+    document.getElementById('qfCancelBtn').onclick = ()=>{ window.__qFormOpen = false; window.__qEditIndex = null; renderHostSetup(); };
+  }
+
+  if(window.__pendingQs && window.__pendingQs.length){
+    const rows = window.__pendingQs.map((q,i)=>`
+      <tr>
+        <td>${i+1}</td><td>${esc(q.q)}</td><td>${esc(q.choices.join(' / '))}</td><td>${letterOf(q.correct)}</td>
+        <td class="qrow-actions">
+          <button class="btn ghost sm" data-editq="${i}">แก้ไข</button>
+          <button class="btn danger sm" data-delq="${i}">ลบ</button>
+        </td>
+      </tr>
+    `).join('');
+    document.getElementById('qPreviewWrap').innerHTML = `
+      <div style="max-height:260px;overflow:auto;margin-top:10px;">
+        <table class="qprev-table"><thead><tr><th>#</th><th>คำถาม</th><th>ตัวเลือก</th><th>เฉลย</th><th></th></tr></thead>
+        <tbody>${rows}</tbody></table>
+      </div>`;
+    root.querySelectorAll('[data-editq]').forEach(el=>{
+      el.onclick = ()=>{ window.__qEditIndex = parseInt(el.dataset.editq); window.__qFormOpen = true; renderHostSetup(); document.getElementById('qFormWrap').scrollIntoView({behavior:'smooth'}); };
+    });
+    root.querySelectorAll('[data-delq]').forEach(el=>{
+      el.onclick = ()=>{
+        const i = parseInt(el.dataset.delq);
+        if(!confirm(`ลบคำถามข้อที่ ${i+1}?`)) return;
+        window.__pendingQs.splice(i,1);
+        renderHostSetup();
+      };
+    });
+  }
+
+  document.getElementById('startLobbyBtn').onclick = ()=>{
+    const qTime = parseInt(document.getElementById('qTime').value)||20;
+    const startPot = Math.max(100, parseInt(document.getElementById('startPot').value)||5000);
+    const wrongRefund = Math.max(0, parseInt(document.getElementById('wrongRefund').value)||0);
+    if(!window.__pendingQs || !window.__pendingQs.length){ toast('กรุณานำเข้าคำถามก่อน'); return; }
+    gref().set({
+      meta:{ phase:'lobby', qTime, baseQTime:qTime, questionIndex:-1, totalQuestions:window.__pendingQs.length,
+             jackpot:startPot, startingJackpot:startPot, wrongRefund, phaseStartTime:0,
+             paused:false, pausedAt:null, locked:false, reactionsEnabled:true, autoMode:true,
+             speedRoundNext:false, speedRound:false },
+      questions: window.__pendingQs,
+      players: {}, answers:{}, spins:{}, top5:{}, reactions:{}
+    });
+  };
+}
+
+function downloadTemplate(){
+  const csv = "คำถาม,ตัวเลือกA,ตัวเลือกB,ตัวเลือกC,ตัวเลือกD,เฉลย\n" +
+    "เมืองหลวงของประเทศไทยคือเมืองใด,กรุงเทพมหานคร,เชียงใหม่,ภูเก็ต,ขอนแก่น,A\n" +
+    "1+1 เท่ากับเท่าไร,1,2,3,4,B\n";
+  const blob = new Blob(["\uFEFF"+csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='ตัวอย่างคำถาม.csv'; a.click();
+}
+
+function renderHostLobby(){
+  const players = GAME.players || {};
+  const list = Object.entries(players);
+  root.innerHTML = `
+    <div class="topbar brass-frame"><span class="rivet bl"></span><span class="rivet br"></span>
+      <h2 class="disp" style="margin:0;color:var(--gold-bright);">🚪 ห้องรอผู้เล่น</h2>
+      ${jackpotBadgeHTML()}
+    </div>
+    ${frameWrap(`
+      <div style="padding:20px;">
+        <div style="text-align:center;margin-bottom:18px;">
+          <div style="font-size:13px;opacity:.75;margin-bottom:6px;">รหัสห้อง — ให้นักเรียนพิมพ์รหัสนี้ตอนกด "ผู้เล่น"</div>
+          <div class="room-code-display">${esc(ROOM)}</div>
+        </div>
+        <div class="row between" style="margin-bottom:14px;">
+          <b>ผู้เล่นเข้าร่วมแล้ว: ${list.length} คน</b>
+          <button class="btn danger sm" id="resetBtn">♻️ เริ่มใหม่ทั้งหมด</button>
+        </div>
+        <div class="player-chip-grid">
+          ${list.map(([id,p])=>`
+            <div class="player-chip">${p.avatar} ${esc(p.name)} <span class="rm" data-id="${id}">✕</span></div>
+          `).join('') || '<span style="opacity:.6;">ยังไม่มีผู้เล่นเข้าร่วม — ให้นักเรียนเปิดหน้านี้แล้วกดปุ่ม "ผู้เล่น"</span>'}
+        </div>
+        <button class="btn block" id="startGameBtn" style="margin-top:20px;" ${list.length? '':'disabled'}>▶️ เริ่มเกม (${GAME.meta.totalQuestions} ข้อ)</button>
+      </div>
+    `)}
+  `;
+  root.querySelectorAll('.rm').forEach(el=>{
+    el.onclick = ()=> kickPlayer(el.dataset.id);
+  });
+  document.getElementById('resetBtn').onclick = ()=>{
+    if(confirm('ล้างเกมทั้งหมดและกลับไปหน้าตั้งค่า?')){ clearAllAutoTimers(); gref().set(null); }
+  };
+  document.getElementById('startGameBtn').onclick = ()=> startQuestion(0);
+}
+
+function startQuestion(index){
+  // Clear any auto-mode timers left over from a previous attempt at this (or
+  // any other) question index — otherwise restarting/jumping to a question
+  // that already had e.g. a "toReveal" timer scheduled (because everyone had
+  // answered right before the restart) lets that stale timer fire against the
+  // freshly-restarted question and auto-reveal it almost immediately with no
+  // real answers submitted yet.
+  clearAllAutoTimers();
+  const useSpeed = !!(GAME && GAME.meta && GAME.meta.speedRoundNext);
+  const baseQTime = (GAME && GAME.meta && (GAME.meta.baseQTime || GAME.meta.qTime)) || 20;
+  const speedTimeFactor = (GAME && GAME.meta && GAME.meta.speedTimeFactor!=null) ? Number(GAME.meta.speedTimeFactor) : 0.5;
+  const qTimeForThis = useSpeed ? Math.max(5, Math.round(baseQTime*speedTimeFactor)) : baseQTime;
+  // One atomic multi-path update instead of 4 separate writes: with separate
+  // writes, the host's own listener (and every player's) can receive the new
+  // phase="question" the instant the meta write lands while the previous
+  // question's answers/spins/top5 are still sitting there un-cleared, which
+  // can trip the auto-mode "everyone answered" check against stale data.
+  gref().update({
+    'meta/phase':'question', 'meta/questionIndex':index, 'meta/phaseStartTime': Date.now(),
+    'meta/paused':false, 'meta/pausedAt':null, 'meta/qTime': qTimeForThis,
+    'meta/speedRound': useSpeed, 'meta/speedRoundNext':false,
+    ['answers/'+index]: null,
+    ['spins/'+index]: null,
+    ['top5/'+index]: null,
+  });
+}
+
+/* ==========================================================================
+   SHARED TEACHER-CONTROL ACTIONS (used by both inline buttons and the
+   floating Host Control Panel, so behaviour always matches)
+   ========================================================================== */
+function getTimeLeft(){
+  if(!GAME || !GAME.meta) return 0;
+  const t = GAME.meta.qTime;
+  const start = GAME.meta.phaseStartTime || Date.now();
+  const now = GAME.meta.paused ? (GAME.meta.pausedAt || Date.now()) : Date.now();
+  return Math.max(0, t - (now-start)/1000);
+}
+function togglePause(){
+  if(!GAME || !GAME.meta) return;
+  if(GAME.meta.paused){
+    const pausedAt = GAME.meta.pausedAt || Date.now();
+    const shift = Date.now() - pausedAt;
+    gref('meta').update({ paused:false, pausedAt:null, phaseStartTime:(GAME.meta.phaseStartTime||Date.now())+shift });
+    toast('▶️ เล่นต่อแล้ว');
+  } else {
+    gref('meta').update({ paused:true, pausedAt:Date.now() });
+    toast('⏸️ หยุดเกมชั่วคราว');
+  }
+}
+function extendTime(sec){
+  if(!GAME || !GAME.meta) return;
+  gref('meta/phaseStartTime').set((GAME.meta.phaseStartTime||Date.now()) + sec*1000);
+  toast(`⏱️ เพิ่มเวลา ${sec} วินาที`);
+}
+function potEmpty(){ return !!(GAME && GAME.meta && (GAME.meta.jackpot||0) <= 0); }
+function afterSpinPhase(){
+  // pot hit zero during the spin round -> the class just emptied the jackpot, game over
+  gref('meta/phase').set(potEmpty() ? 'end' : 'leaderboard');
+}
+function advancePhase(){
+  if(!GAME || !GAME.meta) return;
+  const phase = GAME.meta.phase;
+  const qi = GAME.meta.questionIndex;
+  if(phase==='question') goReveal(qi);
+  else if(phase==='reveal') goSpin(qi);
+  else if(phase==='spin') afterSpinPhase();
+  else if(phase==='leaderboard'){
+    const isLast = qi >= GAME.meta.totalQuestions - 1;
+    if(isLast || potEmpty()) gref('meta/phase').set('end');
+    else startQuestion(qi+1);
+  }
+}
+function jumpToQuestion(idx){
+  if(!GAME || !GAME.meta) return;
+  if(idx<0 || idx>=GAME.meta.totalQuestions) return;
+  startQuestion(idx);
+  toast(`⏭️ ไปข้อที่ ${idx+1}`);
+}
+function endGameNow(){ gref('meta/phase').set('end'); }
+function kickPlayer(pid){
+  gref('players/'+pid).remove();
+  const qi = GAME && GAME.meta ? GAME.meta.questionIndex : -1;
+  if(qi>=0) gref('answers/'+qi+'/'+pid).remove();
+}
+function adjustScore(pid, delta){
+  gref('players/'+pid+'/score').transaction(v=> Math.max(0, Math.round((v||0)+delta)));
+}
+function setScore(pid, val){
+  const n = Math.max(0, Math.round(Number(val)||0));
+  gref('players/'+pid+'/score').set(n);
+}
+function setJackpot(val){
+  const n = Math.max(0, Math.round(Number(val)||0));
+  gref('meta/jackpot').set(n);
+}
+function adjustJackpot(delta){
+  gref('meta/jackpot').transaction(v=> Math.max(0, Math.round((v||0)+delta)));
+}
+function toggleLock(){
+  gref('meta/locked').set(!(GAME.meta.locked));
+  toast(GAME.meta.locked ? '🔓 ปลดล็อคห้องแล้ว' : '🔒 ล็อคห้องแล้ว — ผู้เล่นใหม่เข้าไม่ได้');
+}
+function toggleReactionsEnabled(){
+  const cur = GAME.meta.reactionsEnabled !== false;
+  gref('meta/reactionsEnabled').set(!cur);
+}
+
+/* ==========================================================================
+   AUTO MODE — lets the game run continuously without the teacher clicking
+   "next" every time: question -> reveal -> spin -> leaderboard -> next
+   question happens on its own, using small delays so everyone can still
+   read what's on screen. The teacher can still use any manual control
+   (pause, ➡️ ข้ามไปขั้นตอนถัดไป, jump, etc.) at any moment as an override —
+   every scheduled auto-step re-checks the live phase/question before it
+   fires, so a manual action never gets clobbered by a stale timer.
+   ========================================================================== */
+window.__autoTimers = window.__autoTimers || {};
+function scheduleOnce(key, delayMs, fn){
+  if(window.__autoTimers[key]) return; // already scheduled — don't duplicate
+  window.__autoTimers[key] = setTimeout(()=>{ delete window.__autoTimers[key]; fn(); }, delayMs);
+}
+function clearAllAutoTimers(){
+  Object.values(window.__autoTimers).forEach(id=>clearTimeout(id));
+  window.__autoTimers = {};
+}
+function toggleAutoMode(){
+  const cur = GAME.meta.autoMode !== false;
+  gref('meta/autoMode').set(!cur);
+  if(cur) clearAllAutoTimers();
+  toast(cur? '🖐️ ปิดโหมดออโต้แล้ว — ครูกดควบคุมเองทุกขั้นตอน' : '🤖 เปิดโหมดออโต้แล้ว — เกมจะเดินหน้าให้เองอัตโนมัติ');
+}
+
+function renderHost__timerBar(){
+  const t = GAME.meta.qTime;
+  const left = getTimeLeft();
+  const pct = left/t;
+  const urgency = pct<=0.2 ? 'danger' : (pct<=0.5 ? 'warn' : '');
+  const circ = 2*Math.PI*32;
+  return `<div class="timer-wrap"><div class="timer-ring ${urgency}">
+    <svg viewBox="0 0 74 74"><circle class="bg" cx="37" cy="37" r="32"></circle>
+    <circle class="fg" cx="37" cy="37" r="32" stroke-dasharray="${circ}" stroke-dashoffset="${circ*(1-pct)}"></circle></svg>
+    <div class="num mono">${Math.ceil(left)}</div></div></div>
+    ${GAME.meta.paused? `<div style="text-align:center;margin-top:-4px;margin-bottom:10px;color:var(--gold-bright);font-size:13px;">⏸️ ครูหยุดเกมชั่วคราว</div>` : ''}`;
+}
+
+let hostTickInt = null;
+let hostSpinDeadline = null; // {qi, end} — host-side visible countdown for the spin phase's 12s auto-advance
+let hostSpinInt = null;
+function renderHostGame(phase){
+  clearInterval(hostTickInt);
+  const qi = GAME.meta.questionIndex;
+  const q = GAME.questions[qi];
+  const players = GAME.players || {};
+  const totalPlayers = Object.keys(players).length;
+  const answers = (GAME.answers && GAME.answers[qi]) || {};
+  const answeredCount = Object.keys(answers).length;
+  const autoMode = GAME.meta.autoMode !== false;
+  const autoNote = autoMode? `<div style="text-align:center;margin-top:10px;font-size:12px;opacity:.55;">🤖 โหมดออโต้: เกมจะเดินหน้าต่อเองอัตโนมัติ</div>` : '';
+
+  let body = '';
+  if(phase === 'question'){
+    body = `
+      ${renderHost__timerBar()}
+      ${GAME.meta.speedRound? `<div class="speed-badge">⚡ SPEED ROUND — คะแนนคูณ ${GAME.meta.speedMult ?? 2} เท่า!</div>`:''}
+      <div class="qtext">${esc(q.q)}</div>
+      <div class="choices">
+        ${q.choices.map((c,i)=>`<div class="choice c${i}"><span class="tag">${letterOf(i)}</span><span class="choice-txt">${esc(c)}</span></div>`).join('')}
+      </div>
+      <div class="avatar-status-row">
+        ${Object.entries(players).map(([id,p])=>`<div class="avatar-chip ${answers[id]?'answered':''}" title="${esc(p.name)}">${p.avatar}</div>`).join('')}
+      </div>
+      <div style="text-align:center;margin-top:10px;" class="answered-count">ตอบแล้ว ${answeredCount}/${totalPlayers} คน</div>
+      <button class="btn block" id="nextBtn" style="margin-top:16px;">➡️ เฉลยคำตอบ</button>
+      ${autoNote}
+    `;
+    if(autoMode && !GAME.meta.paused && totalPlayers>0 && answeredCount>=totalPlayers){
+      scheduleOnce(`toReveal-${qi}`, 700, ()=>{ if(GAME && GAME.meta && GAME.meta.phase==='question' && GAME.meta.questionIndex===qi && !GAME.meta.paused) goReveal(qi); });
+    }
+  } else if(phase === 'reveal'){
+    const counts = [0,0,0,0];
+    Object.values(answers).forEach(a=>{ if(a.choice>=0 && a.choice<4) counts[a.choice]++; });
+    const max = Math.max(1,...counts);
+    body = `
+      <div class="qtext">${esc(q.q)}</div>
+      <div class="reveal-list">
+        ${q.choices.map((c,i)=>`
+          <div class="rbar-row">
+            <span class="tag" style="width:26px;">${letterOf(i)}</span>
+            <div class="rbar-track"><div class="rbar-fill ${i===q.correct?'ok':'no'}" style="width:${counts[i]/max*100}%"></div></div>
+            <span class="mono" style="width:26px;text-align:right;">${counts[i]}</span>
+          </div>`).join('')}
+      </div>
+      <div class="reveal-banner">✅ คำตอบที่ถูกคือ <b>${letterOf(q.correct)}. ${esc(q.choices[q.correct])}</b></div>
+      <button class="btn block" id="nextBtn" style="margin-top:16px;">🎰 เข้าสู่ช่วงหมุนแจ็คพอท</button>
+      ${autoNote}
+    `;
+    if(autoMode){
+      scheduleOnce(`toSpin-${qi}`, 3500, ()=>{ if(GAME && GAME.meta && GAME.meta.phase==='reveal' && GAME.meta.questionIndex===qi) goSpin(qi); });
+    }
+  } else if(phase === 'spin'){
+    const spinMap = (GAME.top5 && GAME.top5[qi]) || {};
+    const spinners = Object.keys(spinMap);
+    const spins = (GAME.spins && GAME.spins[qi]) || {};
+    const doneCount = Object.keys(spins).length;
+    // anchor (or re-use) the visible 12s countdown to the same fallback used
+    // below — only meaningful in auto mode, since manual mode has no
+    // auto-advance to count down to
+    if(autoMode){
+      if(!hostSpinDeadline || hostSpinDeadline.qi!==qi) hostSpinDeadline = { qi, end: Date.now()+12000 };
+    } else {
+      hostSpinDeadline = null;
+    }
+    body = `
+      ${jackpotBadgeHTML('margin:0 auto 18px;width:220px;')}
+      <div style="text-align:center;font-family:var(--disp);color:var(--gold-bright);margin-bottom:10px;">🎰 ทุกคนที่ตอบคำถามได้สิทธิ์หมุนตู้แจ็คพอท (ตอบผิด = อัตราลดลง)</div>
+      <div class="top5-strip">
+        ${spinners.length? spinners.map((id,i)=>{
+          const p = players[id]; if(!p) return '';
+          const s = spins[id];
+          const wasCorrect = !!spinMap[id];
+          const tag = wasCorrect ? '' : ' <span style="opacity:.6;" title="ตอบผิด — อัตราลดลง">🔻</span>';
+          return `<div class="top5-chip">${p.avatar} ${esc(p.name)}${tag} ${s? `→ ${outcomeSym(s.outcome)} ${s.delta>=0?'+':''}${s.delta}`:'⏳'}</div>`;
+        }).join('') : '<span style="opacity:.7;">ไม่มีใครตอบคำถามข้อนี้</span>'}
+      </div>
+      <div style="text-align:center;margin-top:14px;opacity:.75;font-size:13px;">หมุนแล้ว ${doneCount}/${spinners.length} คน</div>
+      ${autoMode? `<div style="text-align:center;margin-top:6px;font-size:13px;color:var(--gold-bright);" id="hostSpinCountdown">⏳ ข้ามอัตโนมัติใน 12 วินาที</div>` : ''}
+      <button class="btn block" id="nextBtn" style="margin-top:20px;">📊 ดูตารางคะแนน</button>
+      ${autoNote}
+    `;
+    if(autoMode){
+      // safety net in case someone never spins (disconnected, etc.)
+      scheduleOnce(`spinFallback-${qi}`, 12000, ()=>{ if(GAME && GAME.meta && GAME.meta.phase==='spin' && GAME.meta.questionIndex===qi) afterSpinPhase(); });
+      if(spinners.length===0){
+        scheduleOnce(`spinEmpty-${qi}`, 1500, ()=>{ if(GAME && GAME.meta && GAME.meta.phase==='spin' && GAME.meta.questionIndex===qi) afterSpinPhase(); });
+      } else if(doneCount>=spinners.length){
+        scheduleOnce(`spinDone-${qi}`, 1500, ()=>{ if(GAME && GAME.meta && GAME.meta.phase==='spin' && GAME.meta.questionIndex===qi) afterSpinPhase(); });
+      }
+    }
+  } else if(phase === 'leaderboard'){
+    const ranked = Object.entries(players).sort((a,b)=>b[1].score-a[1].score).slice(0,10);
+    const isLast = qi >= GAME.meta.totalQuestions - 1;
+    const gameOver = isLast || potEmpty();
+    body = `
+      <div style="text-align:center;font-family:var(--disp);color:var(--gold-bright);margin-bottom:14px;">📊 ตารางคะแนนล่าสุด</div>
+      ${potEmpty()? `<div style="text-align:center;margin-bottom:14px;color:var(--gold-bright);">🪙 ตู้แจ็คพอทหมดแล้ว! เกมกำลังจะจบ</div>`:''}
+      ${ranked.map(([id,p],i)=>`
+        <div class="lb-row"><span class="lb-rank">${i+1}</span><span class="lb-av">${p.avatar}</span><span class="lb-name">${esc(p.name)}</span><span class="lb-score mono">${fmtNum(p.score)}</span></div>
+      `).join('')}
+      <button class="btn block" id="nextBtn" style="margin-top:18px;">${gameOver? '🏁 จบเกม ดูสรุปผล':'➡️ ข้อถัดไป'}</button>
+      ${autoNote}
+    `;
+    if(autoMode){
+      scheduleOnce(`toNext-${qi}`, 4000, ()=>{
+        if(!GAME || !GAME.meta || GAME.meta.phase!=='leaderboard' || GAME.meta.questionIndex!==qi) return;
+        if(isLast || potEmpty()) gref('meta/phase').set('end'); else startQuestion(qi+1);
+      });
+    }
+  }
+
+  root.innerHTML = `
+    <div class="topbar brass-frame"><span class="rivet bl"></span><span class="rivet br"></span>
+      <div class="qcount">ข้อที่ ${qi+1} / ${GAME.meta.totalQuestions}</div>
+      ${jackpotBadgeHTML()}
+    </div>
+    ${frameWrap(`<div style="padding:22px;">${body}</div>`)}
+  `;
+
+  if(phase === 'question'){
+    hostTickInt = setInterval(()=>{
+      if(!GAME || !GAME.meta || GAME.meta.phase !== 'question'){ clearInterval(hostTickInt); return; }
+      const left = getTimeLeft();
+      if(!GAME.meta.paused && left <= 0){ clearInterval(hostTickInt); goReveal(qi); }
+      else { const ring = document.querySelector('.timer-ring'); if(ring){ const circ=2*Math.PI*32; const pct=left/GAME.meta.qTime; ring.querySelector('.fg').style.strokeDashoffset = circ*(1-pct); ring.querySelector('.num').textContent = Math.ceil(left); const urgency = pct<=0.2?'danger':(pct<=0.5?'warn':''); ring.classList.remove('warn','danger'); if(urgency) ring.classList.add(urgency); } }
+    }, 250);
+  }
+  if(phase === 'spin' && autoMode){
+    clearInterval(hostSpinInt);
+    hostSpinInt = setInterval(()=>{
+      if(!GAME || !GAME.meta || GAME.meta.phase!=='spin' || GAME.meta.questionIndex!==qi || !hostSpinDeadline || hostSpinDeadline.qi!==qi){
+        clearInterval(hostSpinInt); return;
+      }
+      const left = Math.max(0, Math.ceil((hostSpinDeadline.end - Date.now())/1000));
+      const el = document.getElementById('hostSpinCountdown');
+      if(el) el.textContent = left>0 ? `⏳ ข้ามอัตโนมัติใน ${left} วินาที` : '⏳ กำลังข้ามไปหน้าคะแนน...';
+      if(left<=0) clearInterval(hostSpinInt);
+    }, 250);
+  }
+
+  const nb = document.getElementById('nextBtn');
+  if(nb) nb.onclick = advancePhase;
+}
+
+function outcomeSym(key){ const o = OUTCOMES.find(x=>x.key===key); return o? o.sym : '❓'; }
+
+function goReveal(qi){
+  const q = GAME.questions[qi];
+  const answers = (GAME.answers && GAME.answers[qi]) || {};
+  const players = GAME.players || {};
+  let wrongCount = 0;
+  const correctList = [];
+  const wrongList = [];
+  Object.entries(answers).forEach(([pid,a])=>{
+    if(a.choice === q.correct){ correctList.push({pid, ts:a.ts}); }
+    else { wrongCount++; wrongList.push({pid, ts:a.ts}); }
+  });
+  correctList.sort((a,b)=>a.ts-b.ts);
+  wrongList.sort((a,b)=>a.ts-b.ts);
+  // everyone who answered gets to spin — correct answerers keep the normal
+  // odds, wrong answerers spin too but at reduced odds (see pickOutcome).
+  // Stored as {pid: true|false} where the value marks "answered correctly",
+  // so the client knows which odds table to use for that player's spin.
+  const spinMap = {};
+  correctList.forEach(c=> spinMap[c.pid] = true);
+  wrongList.forEach(c=> spinMap[c.pid] = false);
+
+  const updates = {};
+  const isSpeedRound = !!GAME.meta.speedRound;
+  const speedMult = isSpeedRound ? ((GAME.meta.speedMult!=null) ? Number(GAME.meta.speedMult) : 2) : 1;
+  const streakStep = (GAME.meta.streakStep!=null) ? Number(GAME.meta.streakStep) : 0.1;
+  const streakCapSteps = (GAME.meta.streakCapSteps!=null) ? Number(GAME.meta.streakCapSteps) : 4;
+  correctList.forEach((c,i)=>{
+    const speedBonus = Math.max(0, 50 - i*10 - Math.floor(Math.random()*5));
+    const cur = players[c.pid]?.score || 0;
+    const streak = (players[c.pid]?.streak||0) + 1;
+    const streakMult = 1 + Math.min(streak-1,streakCapSteps)*streakStep;
+    const totalMult = streakMult * speedMult;
+    const gain = Math.round((100 + speedBonus) * totalMult);
+    updates['players/'+c.pid+'/score'] = cur + gain;
+    updates['players/'+c.pid+'/streak'] = streak;
+    updates['players/'+c.pid+'/lastGain'] = gain;
+    updates['players/'+c.pid+'/lastMult'] = Math.round(totalMult*100)/100;
+    updates['players/'+c.pid+'/lastSpeedRound'] = isSpeedRound;
+    updates['players/'+c.pid+'/lastCorrect'] = true;
+  });
+  Object.keys(answers).forEach(pid=>{
+    if(answers[pid].choice !== q.correct){
+      updates['players/'+pid+'/streak'] = 0;
+      updates['players/'+pid+'/lastGain'] = 0;
+      updates['players/'+pid+'/lastCorrect'] = false;
+    }
+  });
+  const refundEach = GAME.meta.wrongRefund ?? 20;
+  const startPot = GAME.meta.startingJackpot || GAME.meta.jackpot || 5000;
+  const potCap = Math.round(startPot*1.5);
+  updates['meta/jackpot'] = Math.min(potCap, (GAME.meta.jackpot||0) + wrongCount*refundEach);
+  updates['top5/'+qi] = spinMap;
+  updates['meta/phase'] = 'reveal';
+  gref().update(updates);
+  SND.revealFanfare();
+  spawnConfetti(26);
+}
+
+function goSpin(qi){ gref('meta/phase').set('spin'); }
+
+function renderHostEnd(){
+  const players = GAME.players || {};
+  const ranked = Object.entries(players).sort((a,b)=>b[1].score-a[1].score);
+  const spinsAll = GAME.spins || {};
+  // stats
+  let jackpotKing = null, jkAmt = -1;
+  let unlucky = null, bombCount = -1;
+  const bombTally = {};
+  const potTotals = {}; // pid -> cumulative points scooped out of the shared pot across all spins
+  Object.values(spinsAll).forEach(qspins=>{
+    Object.entries(qspins).forEach(([pid,s])=>{
+      if(s.delta > jkAmt){ jkAmt = s.delta; jackpotKing = pid; }
+      if(s.outcome === 'BOMB'){ bombTally[pid] = (bombTally[pid]||0)+1; }
+      if(s.delta > 0) potTotals[pid] = (potTotals[pid]||0) + s.delta;
+    });
+  });
+  Object.entries(bombTally).forEach(([pid,c])=>{ if(c>bombCount){bombCount=c;unlucky=pid;} });
+  let potRaider = null, potRaiderAmt = -1;
+  Object.entries(potTotals).forEach(([pid,sum])=>{ if(sum>potRaiderAmt){potRaiderAmt=sum;potRaider=pid;} });
+
+  root.innerHTML = `
+    <div class="topbar brass-frame"><span class="rivet bl"></span><span class="rivet br"></span>
+      <h2 class="disp" style="margin:0;color:var(--gold-bright);">🏁 จบเกม!</h2>
+      <button class="btn ghost sm" id="csvExport">⬇️ ส่งออกคะแนน CSV</button>
+    </div>
+    ${frameWrap(`
+      <div style="padding:22px;">
+        ${potEmpty()? `<div style="text-align:center;margin-bottom:14px;color:var(--gold-bright);font-family:var(--disp);">🪙 ตู้แจ็คพอทถูกกวาดจนหมด — เกมจบลงอย่างมันส์!</div>`:''}
+        <div class="podium">
+          ${ranked[1]? `<div class="pod-col p2"><div class="pod-av">${ranked[1][1].avatar}</div><div class="pod-name">${esc(ranked[1][1].name)}</div><div class="pod-bar">2</div></div>`:''}
+          ${ranked[0]? `<div class="pod-col p1"><div class="pod-av">👑${ranked[0][1].avatar}</div><div class="pod-name">${esc(ranked[0][1].name)}</div><div class="pod-bar">1</div></div>`:''}
+          ${ranked[2]? `<div class="pod-col p3"><div class="pod-av">${ranked[2][1].avatar}</div><div class="pod-name">${esc(ranked[2][1].name)}</div><div class="pod-bar">3</div></div>`:''}
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="ic">🪙</div><div class="lbl">เจ้าแม่/เจ้าพ่อตู้แจ็คพอท</div><div class="val">${potRaider? esc(players[potRaider].name)+' (+'+fmtNum(potRaiderAmt)+')':'-'}</div></div>
+          <div class="stat-card"><div class="ic">💎</div><div class="lbl">หมุนแตกครั้งใหญ่สุด</div><div class="val">${jackpotKing? esc(players[jackpotKing].name)+' (+'+fmtNum(jkAmt)+')':'-'}</div></div>
+          <div class="stat-card"><div class="ic">💣</div><div class="lbl">โดนระเบิดบ่อยสุด</div><div class="val">${unlucky? esc(players[unlucky].name)+' ('+bombCount+' ครั้ง)':'-'}</div></div>
+        </div>
+        <div style="margin-top:24px;">
+          ${ranked.map(([id,p],i)=>`<div class="lb-row"><span class="lb-rank">${i+1}</span><span class="lb-av">${p.avatar}</span><span class="lb-name">${esc(p.name)}</span><span class="lb-score mono">${fmtNum(p.score)}</span></div>`).join('')}
+        </div>
+        <button class="btn danger block" id="newGameBtn" style="margin-top:20px;">♻️ เริ่มเกมใหม่</button>
+      </div>
+    `)}
+  `;
+  document.getElementById('newGameBtn').onclick = ()=>{ if(confirm('เริ่มเกมใหม่ทั้งหมด?')){ clearAllAutoTimers(); gref().set(null); } };
+  document.getElementById('csvExport').onclick = ()=>{
+    let csv = "\uFEFFอันดับ,ชื่อ,คะแนน\n";
+    ranked.forEach(([id,p],i)=>{ csv += `${i+1},${p.name},${p.score}\n`; });
+    const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='คะแนน-jackpot-quiz.csv'; a.click();
+  };
+}
+</script>
+
+<script>
+/* ==========================================================================
+   HOST CONTROL PANEL — floating "cockpit" for the teacher.
+   Mounted to <body> (not #app) so it survives every re-render of the game
+   view untouched; only its own innerHTML is refreshed on each GAME update.
+   ========================================================================== */
+window.__cpOpen = false;
+window.__cpTab = 'players';
+
+function removeHostControlPanel(){
+  const el = document.getElementById('hostCP');
+  if(el) el.remove();
+  bgMusicDucked = false;
+}
+
+function mountHostControlPanel(){
+  if(!GAME || !GAME.meta || GAME.meta.phase === 'setup'){ removeHostControlPanel(); return; }
+  let panel = document.getElementById('hostCP');
+  if(!panel){ panel = document.createElement('div'); panel.id = 'hostCP'; document.body.appendChild(panel); }
+  panel.innerHTML = cpTemplate();
+  wireControlPanel();
+  // duck the background music (on this host device only) while the drawer
+  // is actually open — collapsed to just the 🎛️ tab counts as closed
+  bgMusicDucked = !!window.__cpOpen;
+}
+
+function cpTemplate(){
+  const paused = !!GAME.meta.paused;
+  const phase = GAME.meta.phase;
+  return `
+    <button class="cp-fab ${paused?'paused':''}" id="cpFab" title="ศูนย์ควบคุมครู">🎛️<span class="dot"></span></button>
+    <div class="cp-drawer ${window.__cpOpen?'open':''}" id="cpDrawer">
+      <div class="cp-head"><b>🎛️ ศูนย์ควบคุมครู</b><button class="cp-close" id="cpCloseBtn">✕</button></div>
+      <div class="cp-tabs">
+        <button class="cp-tab ${window.__cpTab==='players'?'active':''}" data-tab="players">👥 ผู้เล่น</button>
+        <button class="cp-tab ${window.__cpTab==='game'?'active':''}" data-tab="game">🎮 เกม</button>
+        <button class="cp-tab ${window.__cpTab==='jackpot'?'active':''}" data-tab="jackpot">🪙 แจ็คพอท</button>
+        <button class="cp-tab ${window.__cpTab==='settings'?'active':''}" data-tab="settings">⚙️ ตั้งค่า</button>
+      </div>
+      <div class="cp-body">${cpTabBody()}</div>
+    </div>
+  `;
+}
+
+function cpTabBody(){
+  if(window.__cpTab==='players') return cpPlayersTab();
+  if(window.__cpTab==='game') return cpGameTab();
+  if(window.__cpTab==='jackpot') return cpJackpotTab();
+  if(window.__cpTab==='settings') return cpSettingsTab();
+  return '';
+}
+
+function cpPlayersTab(){
+  const players = GAME.players || {};
+  const list = Object.entries(players).sort((a,b)=>b[1].score-a[1].score);
+  if(!list.length) return `<div class="cp-note">ยังไม่มีผู้เล่นเข้าร่วม</div>`;
+  return `
+    <div class="cp-sec">
+      <div class="cp-sec-title">ผู้เล่นทั้งหมด (${list.length})</div>
+      ${list.map(([id,p])=>`
+        <div class="cp-player-row">
+          <span class="av">${p.avatar}</span>
+          <span class="nm">${esc(p.name)}</span>
+          <button class="cp-mini" data-act="score-" data-id="${id}">−</button>
+          <input class="cp-score-input" type="number" value="${p.score||0}" data-id="${id}" data-role="score-input">
+          <button class="cp-mini" data-act="score+" data-id="${id}">＋</button>
+          <button class="cp-mini danger" data-act="kick" data-id="${id}" title="เชิญออก">✕</button>
+        </div>
+      `).join('')}
+      <div class="cp-note">กด − / ＋ เพื่อปรับ 10 คะแนน หรือแก้เลขในช่องแล้วกด Enter เพื่อตั้งคะแนนใหม่ทันที</div>
+    </div>
+  `;
+}
+
+function cpGameTab(){
+  const phase = GAME.meta.phase;
+  const paused = !!GAME.meta.paused;
+  const inQuestion = phase === 'question';
+  const total = GAME.meta.totalQuestions;
+  const autoMode = GAME.meta.autoMode !== false;
+  const speedNext = !!GAME.meta.speedRoundNext;
+  const speedMult = GAME.meta.speedMult ?? 2;
+  const speedTimePct = Math.round((GAME.meta.speedTimeFactor ?? 0.5)*100);
+  const streakStep = Math.round((GAME.meta.streakStep ?? 0.1)*100);
+  const streakCapSteps = GAME.meta.streakCapSteps ?? 4;
+  const streakMaxMult = (1 + streakCapSteps*(streakStep/100)).toFixed(2);
+  return `
+    <div class="cp-sec">
+      <div class="cp-sec-title">โหมดการเล่น</div>
+      <div class="cp-row between">
+        <span>🤖 โหมดออโต้ (เดินเกมเองอัตโนมัติ)</span>
+        <div class="cp-switch ${autoMode?'on':''}" id="cpAutoSwitch"><div class="kn"></div></div>
+      </div>
+      <div class="cp-note">เมื่อเปิด: หมดเวลาหรือตอบครบทุกคน → เฉลยเอง → เข้าหมุนแจ็คพอทเอง (คนตอบถูกทุกคนได้หมุน) → ไปข้อถัดไปเอง ปุ่มควบคุมด้านล่างยังใช้แทรกแซงได้เสมอ</div>
+    </div>
+    <div class="cp-sec">
+      <div class="cp-sec-title">⚡ Speed Round</div>
+      <div class="cp-row between">
+        <span>⚡ ให้ข้อถัดไปเป็น Speed Round</span>
+        <div class="cp-switch ${speedNext?'on':''}" id="cpSpeedSwitch"><div class="kn"></div></div>
+      </div>
+      <div class="cp-note">ข้อที่ตั้งเป็น Speed Round จะมีเวลาสั้นลง แต่คะแนนที่ได้จากการตอบถูกจะคูณเพิ่ม ${GAME.meta.speedRound && inQuestion? '<b style="color:var(--gold-bright);">— ข้อนี้กำลังเป็น Speed Round อยู่!</b>':''}</div>
+      <div class="row" style="gap:10px;margin-top:8px;">
+        <div class="field grow">
+          <label style="font-size:11px;">ตัวคูณคะแนน (เท่า)</label>
+          <input class="cp-input" type="number" id="cpSpeedMultInput" value="${speedMult}" min="1" max="5" step="0.1">
+        </div>
+        <div class="field grow">
+          <label style="font-size:11px;">เวลาที่เหลือ (% ของเวลาปกติ)</label>
+          <input class="cp-input" type="number" id="cpSpeedTimeInput" value="${speedTimePct}" min="10" max="100" step="5">
+        </div>
+      </div>
+      <div class="cp-row" style="margin-top:8px;"><button class="btn ghost sm block" id="cpSpeedSetBtn">ตั้งค่า Speed Round</button></div>
+    </div>
+    <div class="cp-sec">
+      <div class="cp-sec-title">🔥 ตัวคูณสตรีค</div>
+      <div class="cp-note">ตอบถูกติดกันยิ่งเยอะ คะแนนยิ่งคูณเพิ่มขึ้นทีละขั้น จนถึงเพดานสูงสุด — ปัจจุบันสูงสุด <b>x${streakMaxMult}</b></div>
+      <div class="row" style="gap:10px;margin-top:8px;">
+        <div class="field grow">
+          <label style="font-size:11px;">คูณเพิ่ม/สตรีค (%)</label>
+          <input class="cp-input" type="number" id="cpStreakStepInput" value="${streakStep}" min="0" max="100" step="5">
+        </div>
+        <div class="field grow">
+          <label style="font-size:11px;">จำนวนขั้นสูงสุดที่นับ</label>
+          <input class="cp-input" type="number" id="cpStreakCapInput" value="${streakCapSteps}" min="1" max="10" step="1">
+        </div>
+      </div>
+      <div class="cp-row" style="margin-top:8px;"><button class="btn ghost sm block" id="cpStreakSetBtn">ตั้งค่าตัวคูณสตรีค</button></div>
+    </div>
+    <div class="cp-sec">
+      <div class="cp-sec-title">🎲 Double or Nothing</div>
+      <div class="cp-note">ตัวเลือกเดิมพันคงที่ 2 ค่าที่จะให้เลือก (นอกจากนี้ระบบจะเสนอ "ครึ่งหนึ่งของคะแนนปัจจุบัน" ให้เองเสมอ)</div>
+      <div class="row" style="gap:10px;margin-top:8px;">
+        <div class="field grow">
+          <label style="font-size:11px;">ตัวเลือกที่ 1</label>
+          <input class="cp-input" type="number" id="cpDonP1Input" value="${GAME.meta.donPreset1 ?? 50}" min="0" step="10">
+        </div>
+        <div class="field grow">
+          <label style="font-size:11px;">ตัวเลือกที่ 2</label>
+          <input class="cp-input" type="number" id="cpDonP2Input" value="${GAME.meta.donPreset2 ?? 100}" min="0" step="10">
+        </div>
+      </div>
+      <div class="cp-row" style="margin-top:8px;"><button class="btn ghost sm block" id="cpDonSetBtn">ตั้งค่า Double or Nothing</button></div>
+    </div>
+    <div class="cp-sec">
+      <div class="cp-sec-title">สถานะปัจจุบัน</div>
+      <div class="cp-note">เฟส: <b>${phaseLabel(phase)}</b> ${GAME.meta.questionIndex>=0? `· ข้อ ${GAME.meta.questionIndex+1}/${total}`:''}</div>
+    </div>
+    <div class="cp-sec">
+      <div class="cp-sec-title">ควบคุมเวลา (เฉพาะช่วงถามคำถาม)</div>
+      <div class="cp-row">
+        <button class="btn ${paused?'':'ghost'} sm" id="cpPauseBtn" ${inQuestion? '' : 'disabled'} style="flex:1;">${paused? '▶️ เล่นต่อ':'⏸️ หยุดชั่วคราว'}</button>
+      </div>
+      <div class="cp-row">
+        <button class="btn ghost sm" data-ext="10" ${inQuestion? '' : 'disabled'} style="flex:1;">+10 วิ</button>
+        <button class="btn ghost sm" data-ext="30" ${inQuestion? '' : 'disabled'} style="flex:1;">+30 วิ</button>
+      </div>
+    </div>
+    <div class="cp-sec">
+      <div class="cp-sec-title">เปลี่ยนขั้นตอน</div>
+      <div class="cp-row">
+        <button class="btn ghost sm block" id="cpAdvanceBtn" ${phase==='end'?'disabled':''}>➡️ ข้ามไปขั้นตอนถัดไป</button>
+      </div>
+      <div class="cp-row">
+        <button class="btn ghost sm block" id="cpRestartQBtn" ${GAME.meta.questionIndex>=0?'':'disabled'}>🔁 เริ่มข้อนี้ใหม่ (รีเซ็ตคำตอบ+เวลา)</button>
+      </div>
+      <div class="cp-row">
+        <input class="cp-input" style="width:70px;" type="number" min="1" max="${total}" id="cpJumpInput" placeholder="ข้อ #">
+        <button class="btn ghost sm" id="cpJumpBtn">ไปข้อนี้</button>
+      </div>
+      <div class="cp-row">
+        <button class="btn danger sm block" id="cpEndNowBtn" ${phase==='end'?'disabled':''}>🏁 จบเกมทันที</button>
+      </div>
+    </div>
+    <div class="cp-sec">
+      <div class="cp-sec-title">⛔ โซนอันตราย</div>
+      <div class="cp-note">ใช้เมื่อต้องการยกเลิกเกมฉุกเฉิน หรือล้างข้อมูลทั้งหมดเพื่อเริ่มรอบใหม่ทันที — ทำได้จากทุกขั้นตอนของเกม ไม่ต้องรอให้จบก่อน</div>
+      <div class="cp-row" style="margin-top:6px;">
+        <button class="btn danger sm block" id="cpForceEndBtn">🚨 บังคับจบเกมทันที (ทุกสถานะ)</button>
+      </div>
+      <div class="cp-row">
+        <button class="btn danger sm block" id="cpWipeDataBtn">🗑️ ล้างข้อมูลทั้งหมด (รีเซ็ตกลับหน้าตั้งค่า)</button>
+      </div>
+    </div>
+  `;
+}
+
+function cpJackpotTab(){
+  const wrongMult = (GAME.meta.wrongSpinGoodMult != null && !isNaN(GAME.meta.wrongSpinGoodMult)) ? Number(GAME.meta.wrongSpinGoodMult) : 0.35;
+  return `
+    <div class="cp-sec">
+      <div class="cp-sec-title">แจ็คพอทปัจจุบัน</div>
+      ${jackpotBadgeHTML('width:220px;margin-bottom:12px;')}
+      <div class="cp-note">เกมจะจบทันทีเมื่อคะแนนในตู้เหลือ 0 — ปรับค่าได้ทุกเมื่อถ้าอยากยืด/ย่นเกม</div>
+      <div class="cp-row" style="margin-top:6px;">
+        <button class="btn ghost sm" data-jk="-500">−500</button>
+        <button class="btn ghost sm" data-jk="-100">−100</button>
+        <button class="btn ghost sm" data-jk="100">+100</button>
+        <button class="btn ghost sm" data-jk="500">+500</button>
+      </div>
+      <div class="cp-row" style="margin-top:8px;">
+        <input class="cp-input" type="number" id="cpJkInput" placeholder="ตั้งค่าใหม่..." style="flex:1;">
+        <button class="btn sm" id="cpJkSetBtn">ตั้งค่า</button>
+      </div>
+    </div>
+    <div class="cp-sec">
+      <div class="cp-sec-title">คืนคะแนนเข้าตู้เมื่อตอบผิด (ต่อคน)</div>
+      <div class="cp-row">
+        <input class="cp-input" type="number" id="cpWrongRefundInput" value="${GAME.meta.wrongRefund ?? 20}" style="flex:1;">
+        <button class="btn sm" id="cpWrongRefundSetBtn">ตั้งค่า</button>
+      </div>
+    </div>
+    <div class="cp-sec">
+      <div class="cp-sec-title">🔻 อัตราลุ้นรางวัลของคนตอบผิด (ตอนหมุน)</div>
+      <div class="cp-note">คนตอบผิดหมุนตู้แจ็คพอทได้เหมือนกัน แต่โอกาสออกรางวัลดี (💎🪙⭐) จะถูกคูณด้วยค่านี้ก่อนสุ่ม — คนตอบถูกได้อัตราปกติเสมอ ไม่ได้รับผลจากค่านี้ ใส่ 0.35 = เหลือ 35% ของโอกาสปกติ, ใส่ 1 = อัตราเท่ากับคนตอบถูก, ใส่ 0 = คนตอบผิดหมุนได้แต่ไม่มีทางถูกรางวัลดีเลย</div>
+      <div class="cp-row">
+        <input class="cp-input" type="number" id="cpWrongMultInput" min="0" max="1" step="0.05" value="${wrongMult}" style="flex:1;">
+        <button class="btn sm" id="cpWrongMultSetBtn">ตั้งค่า</button>
+      </div>
+    </div>
+    ${cpRatesSection()}
+  `;
+}
+
+/* ---- rate/odds editor: lets the teacher change the weight of each
+   jackpot-reel outcome and see the live % chance + how many items total
+   can be drawn. ---- */
+function cpRatesSection(){
+  const list = effectiveOutcomes();
+  const total = list.reduce((s,o)=>s+o.weight,0) || 1;
+  const activeCount = list.filter(o=>o.weight>0).length;
+  return `
+    <div class="cp-sec">
+      <div class="cp-sec-title">🎯 อัตราการออกรางวัล (น้ำหนักสุ่ม)</div>
+      <div class="cp-note">ตัวเลขยิ่งมาก โอกาสออกยิ่งสูง — ใส่ 0 เพื่อปิดรายการนั้นไม่ให้ออก ระบบคำนวณ % ให้อัตโนมัติ</div>
+      <div class="rate-editor" id="rateEditor">
+        ${list.map(o=>`
+          <div class="rate-row">
+            <span class="rate-sym">${o.sym}</span>
+            <span class="rate-label">${o.label}</span>
+            <input class="rate-input mono" type="number" min="0" step="1" inputmode="numeric" value="${o.weight}" data-key="${o.key}">
+            <span class="rate-pct mono" data-pct="${o.key}">${(o.weight/total*100).toFixed(1)}%</span>
+          </div>
+        `).join('')}
+      </div>
+      <div class="rate-total-note">🎰 รายการที่สุ่มได้ทั้งหมด: <b>${list.length}</b> รายการ (เปิดใช้งานอยู่ ${activeCount} รายการ)</div>
+      <div class="cp-row" style="margin-top:8px;">
+        <button class="btn ghost sm block" id="cpResetRatesBtn">↺ คืนค่าอัตราเริ่มต้น</button>
+      </div>
+    </div>
+  `;
+}
+function recalcRatePercents(){
+  const editor = document.getElementById('rateEditor');
+  if(!editor) return;
+  const inputs = editor.querySelectorAll('.rate-input');
+  let total = 0;
+  inputs.forEach(el=>{ total += Math.max(0, Number(el.value)||0); });
+  if(total<=0) total = 1;
+  inputs.forEach(el=>{
+    const w = Math.max(0, Number(el.value)||0);
+    const pctEl = editor.querySelector(`.rate-pct[data-pct="${el.dataset.key}"]`);
+    if(pctEl) pctEl.textContent = (w/total*100).toFixed(1)+'%';
+  });
+}
+
+function cpSettingsTab(){
+  const locked = !!GAME.meta.locked;
+  const reactionsOn = GAME.meta.reactionsEnabled !== false;
+  const link = location.href;
+  return `
+    <div class="cp-sec">
+      <div class="cp-sec-title">การเข้าร่วมห้อง</div>
+      <div class="cp-row between">
+        <span>🔒 ล็อคห้อง (กันผู้เล่นใหม่)</span>
+        <div class="cp-switch ${locked?'on':''}" id="cpLockSwitch"><div class="kn"></div></div>
+      </div>
+      <div class="cp-note">เมื่อล็อค นักเรียนที่ยังไม่เข้าร่วมจะเข้าห้องไม่ได้ (ผู้ที่อยู่ในห้องแล้วเล่นต่อได้ปกติ)</div>
+    </div>
+    <div class="cp-sec">
+      <div class="cp-sec-title">ปฏิกิริยา (อีโมจิ) ของผู้เล่น</div>
+      <div class="cp-row between">
+        <span>😀 เปิดให้ส่งอีโมจิ</span>
+        <div class="cp-switch ${reactionsOn?'on':''}" id="cpReactSwitch"><div class="kn"></div></div>
+      </div>
+    </div>
+    <div class="cp-sec">
+      <div class="cp-sec-title">เสียงประกอบ (จอนี้)</div>
+      <div class="cp-row between">
+        <span>🔊 เสียง</span>
+        <div class="cp-switch ${sndOn?'on':''}" id="cpSndSwitch"><div class="kn"></div></div>
+      </div>
+    </div>
+    <div class="cp-sec">
+      <div class="cp-sec-title">ลิงก์ + QR ให้นักเรียนสแกนเข้าห้อง</div>
+      <div class="qr-box"><img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(link)}" width="160" height="160" alt="QR join link"></div>
+      <div class="join-link">${esc(link)}</div>
+    </div>
+  `;
+}
+
+function phaseLabel(p){
+  return {lobby:'ห้องรอ', question:'กำลังถาม', reveal:'เฉลย', spin:'หมุนแจ็คพอท', leaderboard:'ตารางคะแนน', end:'จบเกม'}[p] || p;
+}
+
+function wireControlPanel(){
+  const fab = document.getElementById('cpFab');
+  const drawer = document.getElementById('cpDrawer');
+  if(fab) fab.onclick = ()=>{ window.__cpOpen = !window.__cpOpen; mountHostControlPanel(); };
+  const closeBtn = document.getElementById('cpCloseBtn');
+  if(closeBtn) closeBtn.onclick = ()=>{ window.__cpOpen = false; mountHostControlPanel(); };
+  document.querySelectorAll('.cp-tab').forEach(el=>{
+    el.onclick = ()=>{ window.__cpTab = el.dataset.tab; mountHostControlPanel(); };
+  });
+
+  // players tab
+  document.querySelectorAll('[data-act="score-"]').forEach(el=> el.onclick = ()=> adjustScore(el.dataset.id, -10));
+  document.querySelectorAll('[data-act="score+"]').forEach(el=> el.onclick = ()=> adjustScore(el.dataset.id, 10));
+  document.querySelectorAll('[data-act="kick"]').forEach(el=> el.onclick = ()=>{ if(confirm('เชิญผู้เล่นคนนี้ออกจากเกม?')) kickPlayer(el.dataset.id); });
+  document.querySelectorAll('[data-role="score-input"]').forEach(el=>{
+    el.onkeydown = (e)=>{ if(e.key==='Enter'){ setScore(el.dataset.id, el.value); toast('อัปเดตคะแนนแล้ว'); } };
+  });
+
+  // game tab
+  const autoSw = document.getElementById('cpAutoSwitch'); if(autoSw) autoSw.onclick = toggleAutoMode;
+  const speedSw = document.getElementById('cpSpeedSwitch'); if(speedSw) speedSw.onclick = ()=>{
+    const cur = !!GAME.meta.speedRoundNext;
+    gref('meta/speedRoundNext').set(!cur);
+    toast(!cur? '⚡ ข้อถัดไปจะเป็น Speed Round':'ยกเลิก Speed Round ข้อถัดไปแล้ว');
+  };
+  const speedSetBtn = document.getElementById('cpSpeedSetBtn'); if(speedSetBtn) speedSetBtn.onclick = ()=>{
+    const mult = Number(document.getElementById('cpSpeedMultInput').value);
+    const pct = Number(document.getElementById('cpSpeedTimeInput').value);
+    if(isNaN(mult) || mult<1 || mult>5 || isNaN(pct) || pct<10 || pct>100){ toast('กรุณาใส่ค่าที่ถูกต้อง (คูณ 1-5, เวลา 10-100%)'); return; }
+    gref('meta').update({ speedMult: Math.round(mult*10)/10, speedTimeFactor: Math.round(pct)/100 });
+    toast('ตั้งค่า Speed Round แล้ว');
+  };
+  const streakSetBtn = document.getElementById('cpStreakSetBtn'); if(streakSetBtn) streakSetBtn.onclick = ()=>{
+    const step = Number(document.getElementById('cpStreakStepInput').value);
+    const cap = Number(document.getElementById('cpStreakCapInput').value);
+    if(isNaN(step) || step<0 || step>100 || isNaN(cap) || cap<1 || cap>10){ toast('กรุณาใส่ค่าที่ถูกต้อง'); return; }
+    gref('meta').update({ streakStep: Math.round(step)/100, streakCapSteps: Math.round(cap) });
+    toast('ตั้งค่าตัวคูณสตรีคแล้ว');
+  };
+  const donSetBtn = document.getElementById('cpDonSetBtn'); if(donSetBtn) donSetBtn.onclick = ()=>{
+    const p1 = Math.max(0, Math.round(Number(document.getElementById('cpDonP1Input').value)||0));
+    const p2 = Math.max(0, Math.round(Number(document.getElementById('cpDonP2Input').value)||0));
+    gref('meta').update({ donPreset1: p1, donPreset2: p2 });
+    toast('ตั้งค่า Double or Nothing แล้ว');
+  };
+  const pb = document.getElementById('cpPauseBtn'); if(pb) pb.onclick = togglePause;
+  document.querySelectorAll('[data-ext]').forEach(el=> el.onclick = ()=> extendTime(parseInt(el.dataset.ext)));
+  const ab = document.getElementById('cpAdvanceBtn'); if(ab) ab.onclick = advancePhase;
+  const rb = document.getElementById('cpRestartQBtn'); if(rb) rb.onclick = ()=>{ if(confirm('เริ่มข้อปัจจุบันใหม่? คำตอบของนักเรียนในข้อนี้จะถูกล้าง')) jumpToQuestion(GAME.meta.questionIndex); };
+  const jb = document.getElementById('cpJumpBtn'); if(jb) jb.onclick = ()=>{
+    const v = parseInt(document.getElementById('cpJumpInput').value);
+    if(!v || v<1 || v>GAME.meta.totalQuestions){ toast('กรุณาใส่หมายเลขข้อให้ถูกต้อง'); return; }
+    if(confirm(`ไปข้อที่ ${v}? คำตอบเดิมของข้อนั้น (ถ้ามี) จะถูกล้าง`)) jumpToQuestion(v-1);
+  };
+  const eb = document.getElementById('cpEndNowBtn'); if(eb) eb.onclick = ()=>{ if(confirm('จบเกมทันทีเลยหรือไม่?')) endGameNow(); };
+  const feb = document.getElementById('cpForceEndBtn'); if(feb) feb.onclick = ()=>{
+    if(confirm('🚨 บังคับจบเกมทันที? ผู้เล่นทุกคนจะถูกพาไปหน้าสรุปผลทันทีไม่ว่าตอนนี้อยู่ขั้นตอนไหน')){ clearAllAutoTimers(); endGameNow(); toast('บังคับจบเกมแล้ว'); }
+  };
+  const wdb = document.getElementById('cpWipeDataBtn'); if(wdb) wdb.onclick = ()=>{
+    if(!confirm('⚠️ การล้างข้อมูลจะลบผู้เล่น คะแนน คำถาม และค่าที่ตั้งไว้ทั้งหมดอย่างถาวร ไม่สามารถกู้คืนได้ ต้องการดำเนินการต่อหรือไม่?')) return;
+    if(!confirm('ยืนยันอีกครั้ง: ล้างข้อมูลทั้งหมดและกลับไปหน้าตั้งค่าเลยใช่ไหม?')) return;
+    clearAllAutoTimers();
+    gref().set(null);
+    toast('ล้างข้อมูลทั้งหมดแล้ว');
+  };
+
+  // jackpot tab
+  document.querySelectorAll('[data-jk]').forEach(el=> el.onclick = ()=> adjustJackpot(parseInt(el.dataset.jk)));
+  const jkSet = document.getElementById('cpJkSetBtn'); if(jkSet) jkSet.onclick = ()=>{
+    const v = document.getElementById('cpJkInput').value;
+    if(v==='' || isNaN(v)){ toast('กรุณาใส่ตัวเลข'); return; }
+    setJackpot(v); toast('ตั้งค่าแจ็คพอทแล้ว');
+  };
+  const wrSet = document.getElementById('cpWrongRefundSetBtn'); if(wrSet) wrSet.onclick = ()=>{
+    const v = document.getElementById('cpWrongRefundInput').value;
+    if(v==='' || isNaN(v) || Number(v)<0){ toast('กรุณาใส่ตัวเลข'); return; }
+    gref('meta/wrongRefund').set(Math.round(Number(v)));
+    toast('ตั้งค่าคะแนนคืนตู้แล้ว');
+  };
+  const wmSet = document.getElementById('cpWrongMultSetBtn'); if(wmSet) wmSet.onclick = ()=>{
+    const v = document.getElementById('cpWrongMultInput').value;
+    if(v==='' || isNaN(v) || Number(v)<0){ toast('กรุณาใส่ตัวเลข 0 ขึ้นไป'); return; }
+    gref('meta/wrongSpinGoodMult').set(Math.max(0, Number(v)));
+    toast('ตั้งค่าอัตราลุ้นรางวัลของคนตอบผิดแล้ว');
+  };
+  document.querySelectorAll('.rate-input').forEach(el=>{
+    el.oninput = recalcRatePercents;
+    el.onchange = ()=>{
+      const v = Math.max(0, Math.round(Number(el.value)||0));
+      el.value = v;
+      gref('meta/outcomeWeights/'+el.dataset.key).set(v);
+      recalcRatePercents();
+      toast('ปรับอัตรา '+el.dataset.key+' แล้ว');
+    };
+  });
+  const resetRatesBtn = document.getElementById('cpResetRatesBtn');
+  if(resetRatesBtn) resetRatesBtn.onclick = ()=>{
+    if(confirm('คืนค่าอัตราการออกรางวัลทั้งหมดกลับเป็นค่าเริ่มต้น?')){
+      gref('meta/outcomeWeights').remove();
+      toast('คืนค่าอัตราเริ่มต้นแล้ว');
+    }
+  };
+
+  // settings tab
+  const lockSw = document.getElementById('cpLockSwitch'); if(lockSw) lockSw.onclick = toggleLock;
+  const reactSw = document.getElementById('cpReactSwitch'); if(reactSw) reactSw.onclick = toggleReactionsEnabled;
+  const sndSw = document.getElementById('cpSndSwitch'); if(sndSw) sndSw.onclick = ()=>{
+    sndOn = !sndOn;
+    document.getElementById('sndToggle').textContent = sndOn ? '🔊' : '🔇';
+    mountHostControlPanel();
+  };
+}
+</script>
+
+<script>
+/* ==========================================================================
+   PLAYER VIEW
+   ========================================================================== */
+function renderPlayer(){
+  if(!GAME || !GAME.meta){
+    root.innerHTML = `<div class="center-msg"><div class="ic">⏳</div>รอครูเปิดห้อง...<br><button class="btn ghost sm" style="margin-top:14px;" id="backBtn">← กลับ</button></div>`;
+    document.getElementById('backBtn').onclick = ()=>{ leaveRoom(); };
+    return;
+  }
+  if(!ME.id || !GAME.players || !GAME.players[ME.id]){
+    if(GAME.meta.locked){
+      root.innerHTML = `<div class="center-msg"><div class="ic">🔒</div>ครูล็อคห้องนี้แล้ว<br><span style="opacity:.7;font-size:13px;">ไม่สามารถเข้าร่วมเพิ่มได้ในขณะนี้</span><br><button class="btn ghost sm" style="margin-top:14px;" id="backBtn">← กลับ</button></div>`;
+      document.getElementById('backBtn').onclick = ()=>{ leaveRoom(); };
+      return;
+    }
+    renderPlayerJoin(); return;
+  }
+
+  const phase = GAME.meta.phase;
+  if(phase === 'setup'){
+    root.innerHTML = `<div class="center-msg"><div class="ic">⏳</div>รอครูตั้งค่าเกม...</div>`;
+    return;
+  }
+  if(phase === 'lobby'){ renderPlayerLobby(); return; }
+  if(phase === 'end'){ renderPlayerEnd(); return; }
+  renderPlayerGame(phase);
+}
+
+function renderPlayerJoin(){
+  window.__selAvatar = window.__selAvatar || AVATARS[0];
+  root.innerHTML = `
+    <div class="landing">
+      <h1 class="marquee" style="font-size:32px;">🎰 เข้าร่วมเกม</h1>
+      <div class="join-avatar-preview" id="avatarPreview">${window.__selAvatar}</div>
+      <div class="field" style="max-width:300px;margin:0 auto 4px;">
+        <label>ชื่อของคุณ</label>
+        <input type="text" id="nameInput" placeholder="ชื่อเล่น" maxlength="16" value="${esc(ME.name||'')}" autocomplete="off">
+        <div class="char-count" id="nameCount">${(ME.name||'').length}/16</div>
+      </div>
+      <div style="max-width:340px;margin:10px auto 0;">
+        <label style="display:block;font-size:13px;opacity:.8;margin-bottom:10px;">เลือกตัวละคร</label>
+        <div class="avatar-grid">
+          ${AVATARS.map(a=>`<button type="button" class="avatar-opt ${a===window.__selAvatar?'sel':''}" data-a="${a}" aria-label="เลือก ${a}">${a}</button>`).join('')}
+        </div>
+      </div>
+      <button class="btn block" id="joinBtn" style="max-width:300px;margin:20px auto 0;">🚪 เข้าร่วมห้อง</button>
+      <button class="btn ghost sm" id="backBtn" style="margin-top:14px;">← กลับ</button>
+    </div>
+  `;
+  const preview = document.getElementById('avatarPreview');
+  root.querySelectorAll('.avatar-opt').forEach(el=>{
+    el.onclick = ()=>{
+      window.__selAvatar = el.dataset.a;
+      root.querySelectorAll('.avatar-opt').forEach(x=>x.classList.remove('sel'));
+      el.classList.add('sel');
+      preview.textContent = window.__selAvatar;
+      preview.classList.remove('pop'); void preview.offsetWidth; preview.classList.add('pop');
+      SND.tick();
+    };
+  });
+  const nameInput = document.getElementById('nameInput');
+  const nameCount = document.getElementById('nameCount');
+  nameInput.oninput = ()=>{ nameCount.textContent = nameInput.value.length + '/16'; };
+  nameInput.onkeydown = (e)=>{ if(e.key==='Enter') document.getElementById('joinBtn').click(); };
+  document.getElementById('backBtn').onclick = ()=>{ leaveRoom(); };
+  document.getElementById('joinBtn').onclick = ()=>{
+    const name = nameInput.value.trim();
+    if(!name){ toast('กรุณาใส่ชื่อ'); nameInput.focus(); return; }
+    ME = { id: ME.id || uid(), name, avatar: window.__selAvatar };
+    saveMe();
+    gref('players/'+ME.id).set({ name, avatar: ME.avatar, score:0, streak:0, joinedAt: Date.now() });
+    SND.click();
+  };
+}
+
+function renderPlayerLobby(){
+  root.innerHTML = `
+    <div class="center-msg">
+      <div class="ic">${ME.avatar}</div>
+      <div style="font-family:var(--disp);font-size:20px;color:var(--gold-bright);">สวัสดี ${esc(ME.name)}!</div>
+      <div style="margin-top:8px;opacity:.8;">รอครูเริ่มเกม... (${Object.keys(GAME.players||{}).length} คนพร้อมแล้ว)</div>
+    </div>`;
+}
+
+function renderPlayerGame(phase){
+  const qi = GAME.meta.questionIndex;
+  const q = GAME.questions[qi];
+  const me = GAME.players[ME.id];
+  const myAns = GAME.answers && GAME.answers[qi] && GAME.answers[qi][ME.id];
+
+  if(phase === 'question'){
+    myAnswerLocked = !!myAns;
+    const paused = !!GAME.meta.paused;
+    root.innerHTML = `
+      <div class="topbar brass-frame"><span class="rivet bl"></span><span class="rivet br"></span>
+        <div class="qcount">ข้อที่ ${qi+1} / ${GAME.meta.totalQuestions}</div>
+        ${jackpotBadgeHTML()}
+      </div>
+      ${frameWrap(`<div style="padding:20px;">
+        ${renderHost__timerBar()}
+        ${GAME.meta.speedRound? `<div class="speed-badge">⚡ SPEED ROUND — คะแนนคูณ ${GAME.meta.speedMult ?? 2} เท่า!</div>`:''}
+        <div class="qtext" style="font-size:18px;">${esc(q.q)}</div>
+        <div class="choices" style="position:relative;">
+          ${paused && !myAnswerLocked? `<div class="cp-overlay-pause"><span style="font-size:30px;">⏸️</span>ครูหยุดเกมชั่วคราว</div>`:''}
+          ${q.choices.map((c,i)=>`<div class="choice c${i} ${(myAnswerLocked||paused)?'locked':''} ${myAns && myAns.choice===i?'wrong-sel':''}" data-i="${i}"><span class="tag">${letterOf(i)}</span><span class="choice-txt">${esc(c)}</span></div>`).join('')}
+        </div>
+        ${myAnswerLocked? `<div style="text-align:center;margin-top:14px;">
+          <div class="avatar-waiting">${ME.avatar}</div>
+          <div style="opacity:.85;margin-top:4px;">✅ ส่งคำตอบแล้ว รอเพื่อนๆ...</div>
+        </div>`:''}
+      </div>`)}
+    `;
+    clearInterval(playerTickInt);
+    playerTickInt = setInterval(()=>{
+      const ring = document.querySelector('.timer-ring');
+      if(!ring || !GAME || !GAME.meta || GAME.meta.phase !== 'question'){ clearInterval(playerTickInt); return; }
+      const left = getTimeLeft();
+      const circ=2*Math.PI*32; const pct=Math.max(0,left/GAME.meta.qTime);
+      ring.querySelector('.fg').style.strokeDashoffset = circ*(1-pct);
+      ring.querySelector('.num').textContent = Math.max(0,Math.ceil(left));
+      const urgency = pct<=0.2?'danger':(pct<=0.5?'warn':'');
+      ring.classList.remove('warn','danger');
+      if(urgency) ring.classList.add(urgency);
+    }, 250);
+    if(!myAnswerLocked && !paused){
+      root.querySelectorAll('.choice').forEach(el=>{
+        el.onclick = ()=>{
+          if(myAnswerLocked || GAME.meta.paused) return;
+          myAnswerLocked = true;
+          const i = parseInt(el.dataset.i);
+          gref('answers/'+qi+'/'+ME.id).set({ choice:i, ts: Date.now() - (GAME.meta.phaseStartTime||Date.now()) });
+          SND.click();
+          render();
+        };
+      });
+    }
+  } else if(phase === 'reveal'){
+    const correct = !!myAns && myAns.choice === q.correct;
+    if(lastRevealSoundQi !== qi){
+      lastRevealSoundQi = qi;
+      if(myAns !== undefined){
+        SND[correct ? 'correct' : 'wrong']();
+        screenFlash(correct ? 'good' : 'bad');
+        if(correct) spawnConfetti(30);
+      }
+    }
+    root.innerHTML = `
+      <div class="center-msg">
+        <div class="avatar-reveal ${myAns===undefined?'':(correct?'happy':'sad')}">${ME.avatar}</div>
+        <div class="ic correct-icon-burst" style="font-size:${correct?'44px':'32px'};margin-top:2px;">${myAns===undefined? '⌛' : (correct? '🎉':'❌')}</div>
+        <div class="disp" style="font-size:${correct?'26px':'22px'};color:${correct?'var(--good)':'var(--bad)'};${correct?'text-shadow:0 0 18px rgba(53,201,122,.6);':''}">
+          ${myAns===undefined? 'ไม่ได้ตอบข้อนี้' : (correct? `🎊 ตอบถูก! +${me.lastGain||0} คะแนน` : 'ตอบผิด')}
+        </div>
+        ${correct && me.lastMult>1? `<div style="margin-top:4px;color:var(--gold-bright);font-size:13px;">✨ ตัวคูณรวม x${me.lastMult}${me.lastSpeedRound?' (⚡ Speed Round x2)':''}</div>`:''}
+        <div style="margin-top:10px;opacity:.8;">คำตอบที่ถูก: ${letterOf(q.correct)}. ${esc(q.choices[q.correct])}</div>
+        ${(me.streak||0)>=2? `<div style="margin-top:8px;">🔥 ตอบถูกติดต่อกัน ${me.streak} ข้อ! (คูณ x${(1+Math.min(me.streak-1,(GAME.meta.streakCapSteps ?? 4))*(GAME.meta.streakStep ?? 0.1)).toFixed(2)})</div>`:''}
+      </div>`;
+  } else if(phase === 'spin'){
+    renderPlayerSpin(qi);
+  } else if(phase === 'leaderboard'){
+    const ranked = Object.entries(GAME.players).sort((a,b)=>b[1].score-a[1].score);
+    const myRank = ranked.findIndex(([id])=>id===ME.id)+1;
+    root.innerHTML = `
+      <div style="text-align:center;font-family:var(--disp);color:var(--gold-bright);margin-bottom:14px;">📊 ตารางคะแนน — คุณอยู่อันดับ ${myRank}</div>
+      ${ranked.slice(0,10).map(([id,p],i)=>`
+        <div class="lb-row ${id===ME.id?'me':''}"><span class="lb-rank">${i+1}</span><span class="lb-av">${p.avatar}</span><span class="lb-name">${esc(p.name)}</span><span class="lb-score mono">${fmtNum(p.score)}</span></div>
+      `).join('')}
+    `;
+  }
+}
+
+// Called when a player's 8-second spin-turn window runs out, from either
+// the DoN prompt or the spin button screen. Revokes the turn outright — no
+// spin happens, no result is written — and re-draws to show that plainly.
+function forfeitSpin(qi){
+  spinForfeitedQi = qi;
+  clearInterval(spinDeadlineInt);
+  renderPlayerSpin(qi);
+}
+
+function renderPlayerSpin(qi){
+  const spinMap = (GAME.top5 && GAME.top5[qi]) || {};
+  const myTurn = Object.prototype.hasOwnProperty.call(spinMap, ME.id);
+  const iAnsweredCorrect = !!spinMap[ME.id];
+  const mySpin = GAME.spins && GAME.spins[qi] && GAME.spins[qi][ME.id];
+
+  // Anchor (or re-use) the hard deadline for this player's turn on this
+  // question. Only set once per qi — a later re-render for the SAME qi
+  // must never push the deadline back out.
+  if(myTurn && !mySpin){
+    if(!spinDeadline || spinDeadline.qi !== qi){
+      spinDeadline = { qi, end: Date.now() + SPIN_TURN_MS };
+    }
+  } else if(spinDeadline && spinDeadline.qi !== qi){
+    spinDeadline = null;
+  }
+  if(spinForfeitedQi !== null && spinForfeitedQi !== qi) spinForfeitedQi = null;
+
+  if(!myTurn){
+    clearInterval(spinDeadlineInt);
+    const reactionsOn = GAME.meta.reactionsEnabled !== false;
+    const didntAnswer = !(GAME.answers && GAME.answers[qi] && GAME.answers[qi][ME.id]);
+    root.innerHTML = `
+      <div class="center-msg">
+        <div class="ic">🎰</div>
+        <div style="opacity:.85;">${didntAnswer? 'คุณไม่ได้ตอบคำถามข้อนี้ จึงไม่ได้สิทธิ์หมุนตู้แจ็คพอทรอบนี้' : 'รอผู้เล่นคนอื่นหมุนตู้แจ็คพอท...'}</div>
+        ${reactionsOn? `<div class="react-row">
+          ${['😀','👏','😱','😭'].map(e=>`<div class="react-btn" data-e="${e}">${e}</div>`).join('')}
+        </div>` : ''}
+      </div>`;
+    root.querySelectorAll('.react-btn').forEach(el=>{
+      el.onclick = ()=>{ gref('reactions/'+Date.now()+'_'+Math.random().toString(36).slice(2)).set({emoji:el.dataset.e, avatar: ME.avatar}); };
+    });
+    return;
+  }
+
+  if(mySpin){
+    localSpin = null;
+    clearInterval(spinDeadlineInt);
+    const o = OUTCOMES.find(x=>x.key===mySpin.outcome);
+    const finals = [o.sym, o.sym, o.sym];
+    const donBet = mySpin.donBet||0;
+    root.innerHTML = `
+      <div class="slot-cabinet">
+        <div class="slot-body brass-frame"><span class="rivet bl"></span><span class="rivet br"></span>
+          <div class="slot-topper">🎰 ผลการหมุน 🎰</div>
+          <div class="reels-row">
+            ${finals.map(s=>`<div class="reel-window ${o.tone==='good'?'win-glow':''}"><div class="reel-strip"><div class="reel-sym">${s}</div></div></div>`).join('')}
+          </div>
+        </div>
+        <div class="outcome-banner ${o.tone}">${o.sym} ${o.label}<br><span class="mono">${mySpin.delta>=0?'+':''}${mySpin.delta} คะแนน</span></div>
+        ${donBet>0? `<div class="don-result ${mySpin.donDelta>=0?'win':'lose'}">🎲 Double or Nothing (เดิมพัน ${fmtNum(donBet)}) — ${mySpin.donDelta>=0?`ชนะ! ได้เพิ่ม +${fmtNum(mySpin.donDelta)}`:`เสียเดิมพันไป ${fmtNum(Math.abs(mySpin.donDelta))}`}</div>`:''}
+      </div>`;
+    return;
+  }
+
+  // still spinning locally (result already decided client-side, just animating) —
+  // re-draw using the persisted per-reel "stopped" state instead of restarting it
+  if(localSpin && localSpin.qi === qi){ renderSpinCabinet(localSpin.outcome, localSpin.finals, localSpin.stopped, iAnsweredCorrect); return; }
+
+  // Turn already auto-forfeited (ran out the 8s window without deciding) —
+  // show that plainly instead of drawing the DoN/spin screen again. No spin
+  // right left to use, full stop — nothing more to click here.
+  if(spinForfeitedQi === qi){
+    clearInterval(spinDeadlineInt);
+    root.innerHTML = `
+      <div class="center-msg">
+        <div class="ic">⏰</div>
+        <div style="opacity:.85;">หมดเวลา — พลาดสิทธิ์หมุนตู้แจ็คพอทรอบนี้</div>
+      </div>`;
+    return;
+  }
+
+  // Deadline already passed (e.g. a stray re-render landed just after the
+  // clock ran out but before the countdown's own callback fired) — forfeit
+  // immediately instead of drawing one more interactive frame.
+  if(spinDeadline && spinDeadline.qi===qi && Date.now() >= spinDeadline.end){
+    forfeitSpin(qi);
+    return;
+  }
+
+  // ---- Double or Nothing prompt: shown once per question before the reels
+  // start, letting the player wager extra points on this spin. Counts
+  // against the same shared turn deadline as the spin button below. ----
+  if(window.__donQi !== qi){
+    renderDonPrompt(qi, iAnsweredCorrect);
+    return;
+  }
+  const donBet = window.__donBet || 0;
+
+  root.innerHTML = `
+    <div class="slot-cabinet">
+      <div class="reel-label">${iAnsweredCorrect? '🎉 คุณตอบถูก! ได้สิทธิ์หมุนตู้แจ็คพอท' : '🔻 ตอบผิด แต่ยังได้หมุนตู้แจ็คพอท (อัตราลุ้นรางวัลลดลง)'}</div>
+      ${donBet>0? `<div class="don-badge">🎲 เดิมพันไว้ ${fmtNum(donBet)} แต้ม — ออกดีได้คืน x2 / ออกไม่ดีเสียหมด!</div>`:''}
+      <div class="slot-body brass-frame" id="slotBody"><span class="rivet bl"></span><span class="rivet br"></span>
+        <div class="slot-topper">🎰 JACKPOT SPIN 🎰</div>
+        <div class="reels-row">
+          <div class="reel-window" id="reelWin0"><div class="reel-strip"><div class="reel-sym">${FILLER_SYMS[0]}</div></div></div>
+          <div class="reel-window" id="reelWin1"><div class="reel-strip"><div class="reel-sym">${FILLER_SYMS[1]}</div></div></div>
+          <div class="reel-window" id="reelWin2"><div class="reel-strip"><div class="reel-sym">${FILLER_SYMS[2]}</div></div></div>
+        </div>
+      </div>
+      <button class="spin-btn" id="spinBtn">หมุน<br>เลย!</button>
+      <div class="reel-sub" id="spinCountdown">เหลือเวลา 8 วินาที — ไม่กดจะพลาดสิทธิ์หมุน</div>
+    </div>`;
+  document.getElementById('spinBtn').onclick = ()=>{ clearInterval(spinDeadlineInt); startSpin(); };
+  // Countdown ticks off the shared spinDeadline (not a fresh 8s each render),
+  // so a classmate's unrelated realtime update can't push this player's
+  // deadline back out. When it hits 0 the turn is forfeited outright — no
+  // spin happens, the player simply loses the right for this question.
+  clearInterval(spinDeadlineInt);
+  spinDeadlineInt = setInterval(()=>{
+    if(!spinDeadline || spinDeadline.qi!==qi || !GAME || GAME.meta.phase!=='spin' || GAME.meta.questionIndex!==qi){
+      clearInterval(spinDeadlineInt); return;
+    }
+    const left = Math.max(0, Math.ceil((spinDeadline.end - Date.now())/1000));
+    const sub = document.getElementById('spinCountdown');
+    if(sub) sub.textContent = left>0 ? `เหลือเวลา ${left} วินาที — ไม่กดจะพลาดสิทธิ์หมุน` : 'หมดเวลา — พลาดสิทธิ์หมุนแล้ว';
+    if(left<=0){ clearInterval(spinDeadlineInt); forfeitSpin(qi); }
+  }, 250);
+
+  function reelFinalSymbols(outcome){
+    if(outcome.key !== 'MISS') return [outcome.sym, outcome.sym, outcome.sym];
+    const pool = FILLER_SYMS.filter(s=>s!==outcome.sym);
+    const a = pool[Math.floor(Math.random()*pool.length)];
+    const nearMiss = Math.random() < 0.6; // "so close!" 2-of-3 match, common slot tease
+    const b = nearMiss ? a : pool[Math.floor(Math.random()*pool.length)];
+    let c = pool[Math.floor(Math.random()*pool.length)];
+    if(nearMiss){ while(c===a) c = pool[Math.floor(Math.random()*pool.length)]; }
+    return [a,b,c];
+  }
+
+  function startSpin(){
+    // Staleness guard: if the room has already moved off this question's
+    // spin phase (host advanced manually, or the 12s host-side fallback
+    // fired) between when this turn started and now, this player's spin
+    // right is void — don't animate or write a result into a round that
+    // has already ended for everyone else.
+    if(!GAME || !GAME.meta || GAME.meta.phase!=='spin' || GAME.meta.questionIndex!==qi){
+      clearInterval(spinDeadlineInt);
+      return;
+    }
+    clearInterval(spinDeadlineInt);
+    const btn = document.getElementById('spinBtn'); if(btn) btn.disabled = true;
+    const outcome = pickOutcome(!iAnsweredCorrect);
+    const finals = reelFinalSymbols(outcome);
+    localSpin = { qi, outcome, finals, stopped:[false,false,false] };
+    SND.click();
+    renderSpinCabinet(outcome, finals, localSpin.stopped, iAnsweredCorrect);
+
+    const STOP_AT = [900, 1300, 1850]; // reel 1,2,3 stop times (ms) — staggered for suspense
+    const spinBeep = setInterval(SND.spinloop, 90);
+    const drone = startSpinDrone();
+    riseSpinDrone(drone, Math.max(...STOP_AT));
+    STOP_AT.forEach((t,i)=>{
+      setTimeout(()=>{
+        SND.click();
+        if(localSpin) localSpin.stopped[i] = true;
+        const win = document.getElementById('reelWin'+i);
+        if(win){
+          win.classList.remove('spinning');
+          const strip = win.querySelector('.reel-strip');
+          if(strip) strip.innerHTML = `<div class="reel-sym">${finals[i]}</div>`;
+        }
+      }, t);
+    });
+    setTimeout(()=>{
+      clearInterval(spinBeep);
+      stopSpinDrone(drone);
+      // re-check right before writing: the round may have moved on during
+      // the ~2s reel animation (host force-advanced, etc.) — if so, drop
+      // the result silently instead of crediting a round that's already over.
+      if(!GAME || !GAME.meta || GAME.meta.phase!=='spin' || GAME.meta.questionIndex!==qi) return;
+      applySpinResult(qi, ME.id, outcome, donBet);
+      if(outcome.tone==='good'){
+        SND[outcome.key==='GRAND'?'jackpot':'coin']();
+        if(outcome.key==='GRAND' || outcome.key==='MINI'){ spawnCoinBurst(outcome.key==='GRAND'?36:18); spawnConfetti(outcome.key==='GRAND'?32:16); screenFlash('good'); }
+        [0,1,2].forEach(i=>{ const w=document.getElementById('reelWin'+i); if(w) w.classList.add('win-glow'); });
+      } else if(outcome.key==='BOMB'){
+        SND.bomb();
+        screenFlash('bad');
+        const body = document.getElementById('slotBody');
+        if(body){ body.classList.add('shake'); setTimeout(()=>body.classList.remove('shake'), 400); }
+      } else {
+        SND.reveal();
+      }
+    }, Math.max(...STOP_AT) + 150);
+  }
+}
+
+// ---- Double or Nothing prompt: wager some current points before spinning.
+// "Good" spin results (💎🪙⭐) pay the wager back doubled; anything else
+// forfeits it. Choosing "ข้าม" (skip) plays the spin exactly as before. ----
+function renderDonPrompt(qi, iAnsweredCorrect){
+  const me = GAME.players[ME.id] || {score:0};
+  const score = me.score || 0;
+  const p1 = GAME.meta.donPreset1 ?? 50;
+  const p2 = GAME.meta.donPreset2 ?? 100;
+  const raw = [0, p1, p2, Math.round(score*0.5)];
+  const opts = [...new Set(raw.map(v=>Math.min(v, score)))].sort((a,b)=>a-b);
+  root.innerHTML = `
+    <div class="slot-cabinet">
+      <div class="reel-label">${iAnsweredCorrect? '🎉 คุณตอบถูก! ก่อนหมุน...' : '🔻 ตอบผิด แต่ยังหมุนได้ (อัตราลุ้นรางวัลลดลง) — ก่อนหมุน...'}</div>
+      <div class="don-card brass-frame"><span class="rivet bl"></span><span class="rivet br"></span>
+        <div class="don-title">🎲 Double or Nothing?</div>
+        <div class="don-desc">เดิมพันคะแนนเพิ่มก่อนหมุน — ถ้าผลออก <b style="color:var(--good);">💎🪙⭐ (ดี)</b> รับเดิมพันคืน 2 เท่า แต่ถ้าออก <b style="color:var(--bad);">🦹💣🔔 (ไม่ดี)</b> เสียเดิมพันไปเลย</div>
+        <div class="don-score">คะแนนปัจจุบัน: <span class="mono">${fmtNum(score)}</span></div>
+        <div class="don-options">
+          ${opts.map(v=>`<button class="btn ${v===0?'ghost':''} sm don-opt" data-bet="${v}">${v===0?'ข้าม (ไม่เดิมพัน)':`เดิมพัน ${fmtNum(v)}`}</button>`).join('')}
+        </div>
+      </div>
+      <div class="reel-sub" id="spinCountdown">เหลือเวลา 8 วินาที — ไม่ตัดสินใจจะพลาดสิทธิ์หมุนทั้งหมด</div>
+    </div>`;
+  root.querySelectorAll('.don-opt').forEach(el=>{
+    el.onclick = ()=>{
+      clearInterval(spinDeadlineInt);
+      window.__donQi = qi;
+      window.__donBet = parseInt(el.dataset.bet)||0;
+      SND.click();
+      render();
+    };
+  });
+  // Shares the same hard deadline as the spin button — a player who never
+  // taps a bet option gets their WHOLE spin turn forfeited at the same
+  // 8-second mark (not just the bet skipped) instead of stalling here with
+  // no timeout at all.
+  clearInterval(spinDeadlineInt);
+  spinDeadlineInt = setInterval(()=>{
+    if(!spinDeadline || spinDeadline.qi!==qi || !GAME || GAME.meta.phase!=='spin' || GAME.meta.questionIndex!==qi){
+      clearInterval(spinDeadlineInt); return;
+    }
+    const left = Math.max(0, Math.ceil((spinDeadline.end - Date.now())/1000));
+    const sub = document.getElementById('spinCountdown');
+    if(sub) sub.textContent = left>0 ? `เหลือเวลา ${left} วินาที — ไม่ตัดสินใจจะพลาดสิทธิ์หมุนทั้งหมด` : 'หมดเวลา — พลาดสิทธิ์หมุนแล้ว';
+    if(left<=0){ clearInterval(spinDeadlineInt); forfeitSpin(qi); }
+  }, 250);
+}
+
+// Renders the 3 reels; each reel independently shows either the spinning
+// filler-loop or its already-decided final symbol, per the `stopped` array —
+// this lets an unrelated realtime update re-draw mid-spin without visually
+// un-stopping a reel that already landed.
+function renderSpinCabinet(outcome, finals, stopped, iAnsweredCorrect){
+  const allStopped = stopped.every(Boolean);
+  root.innerHTML = `
+    <div class="slot-cabinet">
+      <div class="reel-label">${iAnsweredCorrect? '🎉 คุณตอบถูก! ได้สิทธิ์หมุนตู้แจ็คพอท' : '🔻 ตอบผิด แต่ยังได้หมุนตู้แจ็คพอท (อัตราลุ้นรางวัลลดลง)'}</div>
+      <div class="slot-body brass-frame" id="slotBody"><span class="rivet bl"></span><span class="rivet br"></span>
+        <div class="slot-topper">🎰 JACKPOT SPIN 🎰</div>
+        <div class="reels-row">
+          ${[0,1,2].map(i=>`
+            <div class="reel-window ${stopped[i]?'':'spinning'}" id="reelWin${i}">
+              <div class="reel-strip">
+                ${stopped[i]
+                  ? `<div class="reel-sym">${finals[i]}</div>`
+                  : FILLER_SYMS.slice(0,4).map(s=>`<div class="reel-sym">${s}</div>`).join('')}
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+      <button class="spin-btn" disabled>หมุน<br>แล้ว</button>
+      <div class="reel-sub">${allStopped? '⏳ กำลังบันทึกผล...' : 'กำลังหมุน...'}</div>
+    </div>`;
+}
+
+function spawnCoinBurst(n){
+  const wrap = document.createElement('div'); wrap.className = 'coin-burst';
+  document.body.appendChild(wrap);
+  for(let i=0;i<n;i++){
+    const c = document.createElement('div'); c.className = 'coin-fx'; c.textContent = Math.random()<.5?'🪙':'✨';
+    c.style.left = (Math.random()*100)+'%';
+    c.style.animationDuration = (1.4+Math.random()*1.1)+'s';
+    c.style.fontSize = (18+Math.random()*16)+'px';
+    wrap.appendChild(c);
+  }
+  setTimeout(()=>wrap.remove(), 2700);
+}
+
+function applySpinResult(qi, pid, outcome, bet){
+  bet = Math.max(0, Math.round(Number(bet)||0));
+  // ใช้ transaction แทน once().then(update) เพราะถ้าผู้เล่นหลายคนใน TOP 5
+  // กดหมุนพร้อมกัน การอ่านค่า jackpot/players แบบ once() จะเจอ race condition
+  // (อ่านค่าเก่าเหมือนกันก่อนเขียนทับ ทำให้แต้ม/jackpot คลาดเคลื่อน)
+  gref().transaction(g=>{
+    if(!g) return g;
+    if(g.spins && g.spins[qi] && g.spins[qi][pid]) return g; // กันกดซ้ำ/หมุนซ้ำ
+    if(!g.players) g.players = {};
+    if(!g.meta) g.meta = {};
+    const players = g.players;
+    let jackpot = g.meta.jackpot || 0;
+    const startPot = g.meta.startingJackpot || jackpot || 5000;
+    const potCap = Math.round(startPot*1.5);
+    let delta = 0;
+    if(outcome.key === 'GRAND'){
+      // takes EVERYTHING left in the pot — the dramatic, game-ending spin
+      delta = jackpot;
+      g.meta.jackpot = 0;
+    }
+    else if(outcome.key === 'MINI'){
+      delta = Math.min(jackpot, Math.max(50, Math.round(jackpot*0.2)));
+      g.meta.jackpot = jackpot - delta;
+    }
+    else if(outcome.key === 'BONUS'){
+      delta = Math.min(jackpot, 250);
+      g.meta.jackpot = jackpot - delta;
+    }
+    else if(outcome.key === 'STEAL'){
+      const ranked = Object.entries(players).sort((a,b)=>(b[1].score||0)-(a[1].score||0));
+      const top = ranked[0];
+      if(top && top[0] !== pid && (top[1].score||0) > 0){
+        delta = Math.min(150, top[1].score||0);
+        players[top[0]].score = Math.max(0,(players[top[0]].score||0)-delta);
+      } else { // fallback: ไม่มีใครให้ขโมย -> ดึงจากตู้แทน
+        delta = Math.min(jackpot, 150);
+        g.meta.jackpot = jackpot - delta;
+      }
+    }
+    else if(outcome.key === 'BOMB'){
+      delta = -120;
+      g.meta.jackpot = Math.min(potCap, jackpot + 120); // ระเบิด = คะแนนที่เสียไปกลับเข้าตู้
+    }
+    else { delta = 0; } // MISS
+    if(!players[pid]) players[pid] = { score:0 };
+    const curScore = players[pid].score || 0;
+    // ---- Double or Nothing: player wagered points before spinning. A "good"
+    // outcome pays the wager back doubled (net +bet on top of the normal win);
+    // anything else (bad/neutral) forfeits the wager entirely. ----
+    let donDelta = 0;
+    if(bet>0){ donDelta = outcome.tone==='good' ? bet : -bet; }
+    players[pid].score = Math.max(0, curScore + delta + donDelta);
+    if(!g.spins) g.spins = {};
+    if(!g.spins[qi]) g.spins[qi] = {};
+    g.spins[qi][pid] = { outcome: outcome.key, delta, donBet:bet, donDelta, ts: Date.now() };
+    return g;
+  }, (err)=>{ if(err) console.error('spin transaction error', err); });
+}
+
+function renderPlayerEnd(){
+  const players = GAME.players || {};
+  const ranked = Object.entries(players).sort((a,b)=>b[1].score-a[1].score);
+  const myRank = ranked.findIndex(([id])=>id===ME.id)+1;
+  root.innerHTML = `
+    <div class="center-msg">
+      <div class="ic">🏁</div>
+      <div class="disp" style="font-size:22px;color:var(--gold-bright);">จบเกม!</div>
+      <div style="margin-top:8px;">คุณอยู่อันดับที่ <b>${myRank}</b> จาก ${ranked.length} คน</div>
+      <div style="margin-top:4px;" class="mono">คะแนนรวม ${fmtNum(players[ME.id]?.score||0)}</div>
+    </div>`;
+}
+</script>
+
+<script>
+/* periodic cleanup of old reactions (host only, avoid db bloat) — the
+   attach/detach functions themselves live earlier in the file (right next
+   to attachGameListener) since autoResume() can call them on initial page
+   load, before this later script block would otherwise have run. */
+setInterval(()=>{
+  if(ROLE !== 'host' || !ROOM || !GAME || !GAME.reactions) return;
+  const keys = Object.keys(GAME.reactions);
+  if(keys.length > 40){
+    const updates = {};
+    keys.slice(0, keys.length-40).forEach(k=> updates[k]=null);
+    gref('reactions').update(updates);
+  }
+}, 8000);
+
+render();
+</script>
+</body>
+</html>
