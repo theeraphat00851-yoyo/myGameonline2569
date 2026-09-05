@@ -1,0 +1,4377 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Fruit Quiz Battle</title>
+
+<!-- Firebase (compat SDK) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+<style>
+/* ==========================================================
+   Fruit Quiz Battle — Design Tokens
+   แนวคิด: ตลาดผลไม้ยามค่ำ (Neon Night Market) — ไฟขึงส้มอุ่นตัดกับ
+   สีผลไม้เขตร้อนสดจัด (มะม่วง มะนาว องุ่น กล้วย) บนพื้นหลังสีน้ำตาลไหม้เข้ม
+   คู่ตัวอักษร: Kanit (หัวข้อ, ตัวหนาอวบ) + Sarabun (เนื้อหา, รองรับภาษาไทยเต็มรูปแบบ)
+   โครงสร้าง: การ์ดถูก "ฟัน" มุมเฉียง (clip-path) + ริบบิ้นไฟขึงจุดเล็กๆ ที่ขอบบน
+   ========================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Kanit:wght@600;700;800&family=Sarabun:wght@400;600;700;800&display=swap");
+
+:root {
+  --bg-deep: #140f09;
+  --bg-mid: #241a0f;
+  --bg-panel: #2f2213;
+  --line: rgba(255, 224, 168, 0.14);
+
+  --fruit-apple: #ff5c5c;
+  --fruit-orange: #ff9f1c;
+  --fruit-lime: #b8e600;
+  --fruit-blueberry: #5b8dff;
+  --fruit-banana: #ffd83d;
+  --fruit-grape: #a35bff;
+
+  --text-hi: #fff8ec;
+  --text-mid: #d9c7a4;
+  --text-dim: #948162;
+
+  --radius-sm: 12px;
+  --shadow-glow: 0 0 0 1px var(--line), 0 14px 34px rgba(0, 0, 0, 0.55);
+
+  --font-display: "Kanit", sans-serif;
+  --font-body: "Sarabun", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--text-hi);
+  background:
+    radial-gradient(circle at 15% 0%, rgba(255, 159, 28, 0.14), transparent 40%),
+    radial-gradient(circle at 85% 15%, rgba(184, 230, 0, 0.12), transparent 45%),
+    linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-mid) 100%);
+  min-height: 100vh;
+  position: relative;
+}
+
+/* --- ไฟขึงตลาดกลางคืน: จุดไฟอุ่นเรียงเบาบางพาดผ่านด้านบนของหน้าจอ --- */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 216, 61, 0.55) 0 4px,
+    transparent 4px 26px
+  );
+  box-shadow: 0 0 12px rgba(255, 216, 61, 0.25);
+  pointer-events: none;
+  z-index: 0;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  margin: 0 0 0.4em;
+  line-height: 1.15;
+}
+
+p {
+  color: var(--text-mid);
+  line-height: 1.6;
+}
+
+.app-shell {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell.wide {
+  max-width: 960px;
+}
+
+.screen {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  animation: fade-in 0.35s ease;
+}
+
+.screen.active {
+  display: flex;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Slash panel: การ์ดตัดมุมเฉียงบนซ้าย-ล่างขวา แทนความรู้สึก "ฟัน" --- */
+.slash-panel {
+  position: relative;
+  background: linear-gradient(155deg, var(--bg-panel), var(--bg-mid));
+  box-shadow: var(--shadow-glow);
+  clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+  padding: 28px 22px 22px;
+}
+
+.slash-panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  height: 3px;
+  background: repeating-linear-gradient(90deg, var(--fruit-banana) 0 6px, transparent 6px 16px);
+  opacity: 0.6;
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+.field label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text-mid);
+  font-size: 0.92rem;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: rgba(255, 224, 168, 0.05);
+  color: var(--text-hi);
+  font-family: var(--font-body);
+  font-size: 1rem;
+}
+
+.field input:focus,
+.field select:focus {
+  outline: 2px solid var(--fruit-lime);
+  outline-offset: 1px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 22px;
+  border: none;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--fruit-lime), #6b9d00);
+  color: #182b00;
+  box-shadow: 0 10px 24px rgba(184, 230, 0, 0.35);
+}
+
+.btn-secondary {
+  background: rgba(255, 224, 168, 0.08);
+  color: var(--text-hi);
+  border: 1px solid var(--line);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--fruit-apple), #a3232f);
+  color: #2c0508;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.error-text {
+  color: var(--fruit-apple);
+  font-weight: 700;
+  min-height: 1.2em;
+  font-size: 0.9rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-family: var(--font-display);
+}
+
+.badge-correct {
+  background: rgba(184, 230, 0, 0.18);
+  color: var(--fruit-lime);
+}
+
+.badge-wrong {
+  background: rgba(255, 92, 92, 0.18);
+  color: var(--fruit-apple);
+}
+
+.center {
+  text-align: center;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hint {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+/* --- Generic top bar row (used on both teacher & student pages) --- */
+.t-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+
+/* ===== teacher.css ===== */
+.t-room-code-box {
+  text-align: center;
+  padding: 32px;
+}
+
+.t-room-code-box .code {
+  font-family: var(--font-display);
+  font-size: 3.2rem;
+  letter-spacing: 6px;
+  color: var(--fruit-lime);
+  text-shadow: 0 0 24px rgba(184, 230, 0, 0.45);
+}
+
+.t-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 18px;
+}
+
+@media (max-width: 800px) {
+  .t-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.t-choice-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.t-choice-list div {
+  background: rgba(255, 224, 168, 0.05);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.control-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.status-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.status-table th {
+  text-align: left;
+  color: var(--text-dim);
+  font-weight: 700;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.status-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ranking-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 700;
+}
+
+.lobby-player-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+/* --- Team panels (Team Battle Mode) --- */
+.team-panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.team-panel {
+  background: rgba(255, 224, 168, 0.05);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+
+.team-panel-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.status-table .btn-kick {
+  white-space: nowrap;
+}
+
+
+/* ===== student.css ===== */
+.logo-emoji {
+  font-size: 3rem;
+  margin-bottom: 4px;
+}
+
+.tagline {
+  color: var(--text-dim);
+  margin-bottom: 24px;
+}
+
+/* --- Lobby --- */
+.lobby-players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.player-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 224, 168, 0.06);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+}
+
+.player-chip .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fruit-lime);
+}
+
+.player-chip.offline .dot {
+  background: var(--text-dim);
+}
+
+/* --- คลังคำถาม / โหมดฝึกซ้อม --- */
+.bank-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(255, 224, 168, 0.05);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.bank-item-info {
+  min-width: 0;
+}
+
+.bank-item-info .title {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text-hi);
+}
+
+.bank-item-info .meta {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.bank-item-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.bank-item-actions .btn {
+  padding: 8px 12px;
+  font-size: 0.82rem;
+}
+
+.practice-code-box {
+  text-align: center;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(184, 230, 0, 0.1);
+  border: 1px dashed var(--fruit-lime);
+  margin-top: 8px;
+}
+
+.practice-code-box .code {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--fruit-lime);
+}
+
+.miss-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.miss-row .miss-q {
+  font-size: 0.9rem;
+  color: var(--text-hi);
+}
+
+.miss-row .miss-rate {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--fruit-apple);
+  white-space: nowrap;
+}
+
+.waiting-spinner {
+  margin-top: 24px;
+  color: var(--text-dim);
+  font-weight: 700;
+}
+
+/* --- Question screen --- */
+.question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.timer-pill {
+  background: var(--fruit-orange);
+  color: #3a2200;
+  font-family: var(--font-display);
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: 999px;
+  min-width: 46px;
+  text-align: center;
+}
+
+.question-text {
+  font-size: 1.35rem;
+  margin-bottom: 20px;
+}
+
+.choice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.choice-btn {
+  background: rgba(255, 224, 168, 0.06);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text-hi);
+  font-family: var(--font-body);
+  font-weight: 700;
+  padding: 18px 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.choice-btn:hover:not(:disabled) {
+  border-color: var(--fruit-lime);
+}
+
+.choice-btn.selected {
+  border-color: var(--fruit-lime);
+  background: rgba(184, 230, 0, 0.16);
+}
+
+.choice-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+#answer-locked-msg {
+  margin-top: 16px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--fruit-lime);
+}
+
+/* --- Result screen --- */
+.result-wrap {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 18px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* --- Fruit battle --- */
+.fruit-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.hp-bar-track {
+  flex: 1;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(255, 224, 168, 0.08);
+  overflow: hidden;
+  margin: 0 12px;
+}
+
+.hp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--fruit-apple), var(--fruit-orange));
+  width: 100%;
+  transition: width 0.25s ease;
+}
+
+.fruit-canvas-wrap {
+  position: relative;
+  flex: 1;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 20%, rgba(255, 224, 168, 0.06), transparent 60%);
+  touch-action: none;
+  min-height: 420px;
+}
+
+#fruit-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+#combo-label {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: var(--fruit-orange);
+  text-shadow: 0 0 12px rgba(255, 182, 39, 0.8);
+}
+
+.powerup-label {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--fruit-blueberry);
+  background: rgba(12, 11, 30, 0.7);
+  padding: 6px 16px;
+  border-radius: 999px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+#my-team-badge {
+  margin: 10px auto;
+}
+
+.win-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 15, 9, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* --- รอบบอสผลไม้ / เหตุการณ์สุ่ม / จุดอ่อน --- */
+.boss-banner {
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1rem;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, rgba(255, 159, 28, 0.25), rgba(163, 91, 255, 0.25));
+  border: 1px solid rgba(255, 216, 61, 0.4);
+  margin-bottom: 10px;
+  animation: boss-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes boss-pulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(255, 216, 61, 0); }
+  50% { box-shadow: 0 0 18px rgba(255, 216, 61, 0.35); }
+}
+
+.event-banner {
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.92rem;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(91, 141, 255, 0.18);
+  border: 1px solid rgba(91, 141, 255, 0.4);
+  margin-bottom: 10px;
+  color: var(--fruit-blueberry);
+}
+
+.comeback-banner {
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.92rem;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 92, 92, 0.16);
+  border: 1px solid rgba(255, 92, 92, 0.45);
+  margin-bottom: 10px;
+  color: var(--fruit-apple);
+}
+
+.weakpoint-label {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #fff8ec;
+  background: rgba(255, 92, 92, 0.85);
+  padding: 6px 14px;
+  border-radius: 999px;
+  animation: boss-pulse 0.6s ease-in-out infinite;
+}
+
+/* หมอกลง: เบลอเฉพาะ canvas ที่วาดผลไม้ ไม่เบลอปุ่ม/ป้ายที่ลอยทับอยู่ (เช่น ตัวเลือกทีมเป้าหมาย) */
+#fruit-canvas.foggy {
+  filter: blur(3.5px) brightness(0.85);
+  transition: filter 0.3s ease;
+}
+
+/* --- แถบปะทะทีม (PvP) ระหว่างฟันผลไม้ --- */
+.pvp-bar {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pvp-bar .btn {
+  flex: 1;
+  font-size: 0.82rem;
+  padding: 12px 8px;
+}
+
+.pvp-target-picker {
+  position: absolute;
+  inset: 0;
+  background: rgba(12, 11, 30, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 20px;
+  gap: 10px;
+  z-index: 20;
+}
+
+/* --- เลือกสกินมีดตอนเข้าห้อง --- */
+.skin-picker {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.skin-swatch {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  background: var(--swatch);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.skin-swatch:hover {
+  transform: scale(1.1);
+}
+
+.skin-swatch.active {
+  border-color: var(--fruit-lime);
+  transform: scale(1.12);
+}
+
+/* --- เอฟเฟกต์ "สลับซ้าย-ขวา" จากการ์ดกวนคู่แข่ง --- */
+#fruit-canvas.mirrored {
+  transform: scaleX(-1);
+}
+
+/* --- Confetti: เอฟเฟกต์ฉลองตอนชนะ/จบเกม --- */
+.confetti-piece {
+  position: fixed;
+  top: -20px;
+  width: 9px;
+  height: 13px;
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 9999;
+  animation: confetti-fall linear forwards;
+}
+
+@keyframes confetti-fall {
+  to {
+    transform: translateY(110vh) rotate(560deg);
+    opacity: 0;
+  }
+}
+
+/* --- Final ranking rows (shared look) --- */
+.final-rank-row {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 700;
+}
+
+
+/* ===== role selector ===== */
+
+    .role-grid { display: grid; gap: 16px; margin-top: 28px; }
+    .role-card { text-decoration: none; color: inherit; padding: 26px 22px; display: block; width: 100%; border: none; background: none; cursor: pointer; font-family: var(--font-body); }
+    .role-card .emoji { font-size: 2.2rem; }
+    .role-card h2 { margin: 10px 0 4px; }
+    #role-select-shell, #teacher-app-shell, #student-app-shell, #practice-app-shell { min-height: 100vh; }
+    .back-to-role { position: fixed; top: 14px; left: 14px; z-index: 50; }
+
+</style>
+</head>
+<body>
+
+<button class="btn btn-secondary back-to-role" style="display:none" onclick="backToRoleSelect()">← กลับหน้าแรก</button>
+
+
+    <div class="app-shell center" id="role-select-shell">
+      <div class="logo-emoji">🍉🗡️🍎</div>
+      <h1>Fruit Quiz Battle</h1>
+      <p class="tagline">ตอบคำถามให้ถูก แล้วไปฟันผลไม้ให้หมดก่อนเพื่อน!</p>
+
+      <div class="role-grid">
+        <button type="button" class="role-card slash-panel" onclick="selectRole('teacher')">
+          <div class="emoji">👨‍🏫</div>
+          <h2>ฉันเป็นครู</h2>
+          <p class="hint">สร้างห้อง ควบคุมเกม ดูคะแนนนักเรียน</p>
+        </button>
+        <button type="button" class="role-card slash-panel" onclick="selectRole('student')">
+          <div class="emoji">🧑‍🎓</div>
+          <h2>ฉันเป็นนักเรียน</h2>
+          <p class="hint">กรอกชื่อ + รหัสห้อง แล้วเริ่มเล่นได้เลย</p>
+        </button>
+        <button type="button" class="role-card slash-panel" onclick="selectRole('practice')">
+          <div class="emoji">🧠</div>
+          <h2>ฝึกซ้อมด้วยตัวเอง</h2>
+          <p class="hint">กรอกรหัสฝึกซ้อมที่ครูให้ แล้วทบทวนได้ทุกที่</p>
+        </button>
+      </div>
+    </div>
+
+
+<div class="app-shell wide" id="teacher-app-shell" style="display:none">
+
+    <!-- ============ ตั้งค่าห้องใหม่ ============ -->
+    <section id="t-screen-setup" class="screen active">
+      <div class="t-topbar">
+        <div></div>
+        <button type="button" class="btn btn-secondary sound-toggle-btn" id="btn-sound-toggle-setup">🔊</button>
+      </div>
+      <div class="center">
+        <div class="logo-emoji">🍇🗡️</div>
+        <h1>สร้างห้อง Fruit Quiz Battle</h1>
+        <p class="tagline">เลือกชุดคำถามและตั้งค่าก่อนเริ่มเกม</p>
+      </div>
+
+      <div class="slash-panel stack" style="max-width:440px;margin:0 auto 16px;">
+        <h3 style="margin-bottom:4px;">🗂️ คลังคำถามของฉัน</h3>
+        <p class="hint" id="bank-auth-hint">กำลังเชื่อมต่อ...</p>
+        <div id="bank-list" class="stack" style="gap:8px;"></div>
+        <div class="field" style="margin-bottom:0;">
+          <button type="button" class="btn btn-secondary btn-block" id="btn-save-to-bank">💾 บันทึกชุดคำถามที่เลือกไว้ลงคลัง</button>
+        </div>
+        <p id="bank-status" class="hint"></p>
+      </div>
+
+      <form id="form-create-room" class="slash-panel stack" style="max-width:440px;margin:0 auto;">
+        <div class="field">
+          <label for="select-question-set">ชุดคำถาม</label>
+          <select id="select-question-set">
+            <option value="demo_general">ความรู้รอบตัว (ชุดทดลอง)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="input-csv-file">หรือนำเข้าคำถามจากไฟล์ CSV ของตัวเอง (ไม่บังคับ)</label>
+          <input id="input-csv-file" type="file" accept=".csv" />
+          <p class="hint">รูปแบบคอลัมน์: question,A,B,C,D,answer,timeLimit,points</p>
+          <p id="csv-import-status" class="hint"></p>
+        </div>
+
+        <div class="field">
+          <label for="select-mode">โหมดการเล่น</label>
+          <select id="select-mode">
+            <option value="individual">รายบุคคล (Individual Battle)</option>
+            <option value="team">แบ่งทีม (Team Battle)</option>
+          </select>
+        </div>
+        <div class="field" id="field-team-count" hidden>
+          <label for="input-team-count">จำนวนทีม</label>
+          <input id="input-team-count" type="number" value="2" min="2" max="4" />
+        </div>
+
+        <div class="field">
+          <label for="input-time-limit">เวลาต่อข้อ (วินาที)</label>
+          <input id="input-time-limit" type="number" value="15" min="5" max="60" />
+        </div>
+        <div class="field">
+          <label for="input-fruit-hp">HP ผลไม้ต่อรอบ (ต่อคน/ต่อทีม 1 คน)</label>
+          <input id="input-fruit-hp" type="number" value="10" min="4" max="30" />
+        </div>
+        <div class="field">
+          <label for="input-boss-every">👑 รอบบอสผลไม้ทุกกี่ข้อ (0 = ปิด)</label>
+          <input id="input-boss-every" type="number" value="3" min="0" max="10" />
+          <p class="hint">ทุกคนช่วยกันฟันบอสตัวเดียวในเวลาจำกัด ถ้าฟันไม่ทันโดนหักคะแนนทั้งห้อง</p>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:8px;font-weight:400;">
+            <input id="input-random-events" type="checkbox" checked style="width:auto;" />
+            🎲 เปิดใช้เหตุการณ์สุ่มระหว่างรอบฟันผลไม้ปกติ
+          </label>
+        </div>
+        <div class="field">
+          <label for="select-game-mode">🎮 รูปแบบเกม</label>
+          <select id="select-game-mode">
+            <option value="normal">ปกติ (Normal)</option>
+            <option value="elimination">ตกรอบ (Elimination) — ตอบผิด/ฟันไม่ทัน เสียชีวิต</option>
+            <option value="speed">แข่งความเร็ว (Speed Round) — ตอบไวได้คะแนนมากกว่า</option>
+            <option value="wager">เดิมพัน (Wager Mode) — เดิมพันคะแนนก่อนตอบทุกข้อ</option>
+          </select>
+        </div>
+        <div class="field" id="field-elimination-lives" hidden>
+          <label for="input-elimination-lives">จำนวนชีวิตต่อคน (โหมดตกรอบ)</label>
+          <input id="input-elimination-lives" type="number" value="3" min="1" max="5" />
+        </div>
+        <div class="field" id="field-wager-cap" hidden>
+          <label for="input-wager-cap">เพดานเดิมพันสูงสุดต่อข้อ (โหมดเดิมพัน)</label>
+          <input id="input-wager-cap" type="number" value="50" min="10" max="200" />
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">สร้างห้อง</button>
+      </form>
+    </section>
+
+    <!-- ============ Lobby ============ -->
+    <section id="t-screen-lobby" class="screen">
+      <div class="slash-panel t-room-code-box">
+        <p class="hint">รหัสห้อง</p>
+        <div class="code" id="room-code-display">-----</div>
+        <p class="hint" id="join-url-display"></p>
+      </div>
+
+      <div class="slash-panel" style="margin-top:16px;">
+        <h3>ผู้เล่นเข้าร่วมแล้ว: <span id="lobby-player-count">0</span> คน</h3>
+        <div class="lobby-player-list" id="lobby-player-list"></div>
+        <button class="btn btn-primary btn-block" id="btn-start-game">🚀 เริ่มเกม</button>
+      </div>
+    </section>
+
+    <!-- ============ Dashboard ระหว่างเล่น ============ -->
+    <section id="t-screen-dashboard" class="screen">
+      <div class="t-topbar">
+        <h2 id="t-question-progress">ข้อ 1 / 5</h2>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button type="button" class="btn btn-secondary sound-toggle-btn" id="btn-sound-toggle-dash">🔊</button>
+          <span class="timer-pill" id="t-question-timer">15</span>
+        </div>
+      </div>
+
+      <div id="t-boss-badge" class="boss-banner" style="margin-bottom:12px;" hidden>👑 รอบถัดไปจะเป็นรอบบอสผลไม้!</div>
+      <div id="t-round-winner-banner" class="slash-panel" style="margin-bottom:12px;background:linear-gradient(135deg,#b8e600,#6b9d00);" hidden></div>
+
+      <div id="t-team-panels" class="team-panels" hidden></div>
+
+      <div class="t-dashboard-grid">
+        <div class="slash-panel">
+          <p class="hint" id="t-answered-label">ตอบแล้ว <span id="t-answered-count">0</span> / <span id="t-total-players">0</span></p>
+          <h3 id="t-question-text">กำลังโหลด...</h3>
+          <div class="t-choice-list">
+            <div id="t-choice-A"></div>
+            <div id="t-choice-B"></div>
+            <div id="t-choice-C"></div>
+            <div id="t-choice-D"></div>
+          </div>
+          <p class="hint">เฉลย: <strong id="t-correct-answer-label">-</strong> | เวลาฟันผลไม้เหลือ: <strong id="t-fruit-timer">-</strong> วินาที</p>
+
+          <div class="control-row">
+            <button class="btn btn-secondary" id="btn-start-fruit">🗡️ เริ่มฟันผลไม้ (ถ้ายังไม่เข้า)</button>
+            <button class="btn btn-primary" id="btn-next-question">➡️ ข้อถัดไป</button>
+            <button class="btn btn-secondary" id="btn-pause-resume">⏸ หยุดชั่วคราว</button>
+            <button class="btn btn-secondary" id="btn-skip-question">⏭ ข้าม</button>
+            <button class="btn btn-danger" id="btn-end-game">🛑 จบเกม</button>
+          </div>
+        </div>
+
+        <div class="stack">
+          <div class="slash-panel">
+            <h3>🏆 Live Ranking</h3>
+            <div id="t-live-ranking"></div>
+          </div>
+          <div class="slash-panel">
+            <h3>📊 สถานะนักเรียน</h3>
+            <table class="status-table">
+              <thead><tr><th>ชื่อ</th><th>ทีม</th><th>คำตอบ</th><th>ผลไม้</th><th>สถานะ</th><th></th></tr></thead>
+              <tbody id="t-status-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ จบเกม ============ -->
+    <section id="t-screen-gameover" class="screen">
+      <div class="slash-panel center">
+        <h1>🏆 จบเกมแล้ว!</h1>
+        <div id="t-final-ranking" style="max-width:420px;margin:16px auto;text-align:left;"></div>
+        <button class="btn btn-primary" id="btn-export-csv">📥 ดาวน์โหลดรายงาน CSV (รวมรายข้อ)</button>
+      </div>
+      <div class="slash-panel" id="t-miss-report-panel" style="margin-top:16px;max-width:420px;margin-left:auto;margin-right:auto;" hidden>
+        <h3>📊 ข้อที่นักเรียนพลาดบ่อยที่สุด</h3>
+        <p class="hint">ใช้ทบทวนจุดที่ห้องนี้ยังไม่แม่นก่อนสอนต่อรอบหน้า</p>
+        <div id="t-miss-report-list"></div>
+      </div>
+    </section>
+  </div>
+
+<div class="app-shell" id="student-app-shell" style="display:none">
+
+    <!-- ============ เข้าร่วมห้อง ============ -->
+    <section id="screen-join" class="screen active">
+      <div class="t-topbar" style="justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary" id="btn-sound-toggle-student">🔊</button>
+      </div>
+      <div class="center">
+        <div class="logo-emoji">🍎🗡️</div>
+        <h1>เข้าร่วมเกม</h1>
+        <p class="tagline">กรอกชื่อและรหัสห้องที่ครูให้</p>
+      </div>
+      <form id="form-join" class="slash-panel stack">
+        <div class="field">
+          <label for="input-name">ชื่อของคุณ</label>
+          <input id="input-name" type="text" maxlength="20" placeholder="เช่น สมชาย" required />
+        </div>
+        <div class="field">
+          <label for="input-room-code">รหัสห้อง</label>
+          <input id="input-room-code" type="text" maxlength="5" placeholder="เช่น F7K29" required style="text-transform:uppercase" />
+        </div>
+        <div class="field">
+          <label>🎨 เลือกสีมีดฟันผลไม้ของคุณ</label>
+          <div class="skin-picker" id="skin-picker">
+            <button type="button" class="skin-swatch active" data-color="rgba(255,244,214,0.9)" style="--swatch:#fff4d6;" aria-label="คลาสสิก"></button>
+            <button type="button" class="skin-swatch" data-color="rgba(91,222,255,0.95)" style="--swatch:#5bdeff;" aria-label="นีออน"></button>
+            <button type="button" class="skin-swatch" data-color="rgba(255,120,180,0.95)" style="--swatch:#ff78b4;" aria-label="ซากุระ"></button>
+            <button type="button" class="skin-swatch" data-color="rgba(255,130,60,0.95)" style="--swatch:#ff823c;" aria-label="ไฟ"></button>
+            <button type="button" class="skin-swatch" data-color="rgba(163,91,255,0.95)" style="--swatch:#a35bff;" aria-label="อวกาศ"></button>
+          </div>
+        </div>
+        <p id="join-error" class="error-text"></p>
+        <button class="btn btn-primary btn-block" type="submit">เข้าร่วมเกม</button>
+      </form>
+    </section>
+
+    <!-- ============ Lobby ============ -->
+    <section id="screen-lobby" class="screen">
+      <div class="slash-panel center">
+        <h2>🟢 เข้าห้องสำเร็จแล้ว</h2>
+        <p>รอครูเริ่มเกม...</p>
+        <span id="my-team-badge" class="badge" hidden></span>
+        <div class="waiting-spinner">⏳ กำลังรอ</div>
+      </div>
+    </section>
+
+    <!-- ============ ตกรอบแล้ว (โหมด Elimination) ============ -->
+    <section id="screen-spectator" class="screen">
+      <div class="slash-panel center">
+        <h1>👀 คุณตกรอบแล้ว</h1>
+        <p class="hint">รอชมจนกว่าเกมจะจบ ลุ้นดูว่าใครจะเป็นคนสุดท้ายที่เหลือรอด!</p>
+        <p style="margin-top:12px;">คะแนนสุดท้ายของคุณ: <strong id="spectator-final-score">0</strong></p>
+      </div>
+    </section>
+
+    <!-- ============ คำถาม ============ -->
+    <section id="screen-question" class="screen">
+      <div class="question-header">
+        <span class="hint">ตอบให้ไวและถูกต้อง!</span>
+        <span class="timer-pill" id="question-timer">15</span>
+      </div>
+      <div id="wager-panel" class="slash-panel" hidden>
+        <h3>💰 เดิมพันคะแนนก่อนตอบ</h3>
+        <p class="hint">ถูก = ได้เพิ่มตามที่เดิมพัน / ผิด = เสียเท่าที่เดิมพัน (คะแนนรวมไม่ติดลบ)</p>
+        <div class="stack" id="wager-choice-list" style="flex-direction:row;gap:8px;"></div>
+        <p class="hint" id="wager-current-label" style="margin-top:6px;">เดิมพันปัจจุบัน: 0 คะแนน</p>
+      </div>
+      <div class="slash-panel">
+        <p class="question-text" id="question-text">กำลังโหลดคำถาม...</p>
+        <div class="choice-grid">
+          <button class="choice-btn" id="choice-A"></button>
+          <button class="choice-btn" id="choice-B"></button>
+          <button class="choice-btn" id="choice-C"></button>
+          <button class="choice-btn" id="choice-D"></button>
+        </div>
+        <p id="answer-locked-msg" hidden>✓ ส่งคำตอบแล้ว รอผลลัพธ์...</p>
+      </div>
+    </section>
+
+    <!-- ============ ผลคำตอบ ============ -->
+    <section id="screen-result" class="screen">
+      <div class="result-wrap">
+        <span class="badge" id="result-badge">กำลังตรวจคำตอบ...</span>
+        <p class="hint">เตรียมตัวฟันผลไม้ได้เลย!</p>
+      </div>
+    </section>
+
+    <!-- ============ Fruit Battle ============ -->
+    <section id="screen-fruit" class="screen">
+      <div id="boss-banner" class="boss-banner" hidden>👑 รอบบอสผลไม้! ทุกคนช่วยกันฟันให้บอสตายก่อนหมดเวลา</div>
+      <div id="event-banner" class="event-banner" hidden></div>
+      <div id="comeback-banner" class="comeback-banner" hidden>🔥 โบนัสไล่ตามหลัง! ดาเมจของคุณ +20% รอบนี้</div>
+      <div class="fruit-hud">
+        <span id="fruit-hud-icon">❤️</span>
+        <div class="hp-bar-track"><div class="hp-bar-fill" id="fruit-hp-bar-fill"></div></div>
+        <span id="fruit-hp-number">10</span>
+      </div>
+      <div class="fruit-canvas-wrap" id="fruit-canvas-wrap">
+        <canvas id="fruit-canvas"></canvas>
+        <div id="weakpoint-label" class="weakpoint-label" hidden>💥 จุดอ่อน! ดาเมจ x2</div>
+        <div id="combo-label" hidden></div>
+        <div id="powerup-label" class="powerup-label" hidden></div>
+        <div class="win-overlay" id="fruit-win-overlay" hidden>
+          <h2>🏆 ฟันผลไม้หมดแล้ว!</h2>
+          <p class="hint">รอเพื่อนคนอื่นและครูไปข้อถัดไป</p>
+        </div>
+        <div class="win-overlay" id="pause-overlay" hidden>
+          <h2>⏸ ครูหยุดเกมชั่วคราว</h2>
+          <p class="hint">รอครูกดเล่นต่อ...</p>
+        </div>
+        <div class="pvp-target-picker" id="pvp-target-picker" hidden>
+          <p class="hint" id="pvp-target-prompt">เลือกทีมเป้าหมาย:</p>
+          <div id="pvp-target-list" class="stack"></div>
+          <button type="button" class="btn btn-secondary btn-block" id="btn-pvp-cancel-target">ยกเลิก</button>
+        </div>
+      </div>
+      <div class="pvp-bar" id="pvp-action-bar" hidden>
+        <button type="button" class="btn btn-danger" id="btn-pvp-attack" disabled>💣 ส่งบอมบ์ (0)</button>
+        <button type="button" class="btn btn-secondary" id="btn-pvp-shield" disabled>🛡️ ซื้อโล่ (15 แต้ม)</button>
+        <button type="button" class="btn btn-secondary" id="btn-pvp-spy" disabled>🕵️ สายลับ</button>
+      </div>
+      <div class="pvp-bar" id="sabotage-bar" hidden>
+        <button type="button" class="btn btn-secondary btn-block" id="btn-sabotage" disabled>🌀 กวนคู่แข่ง (ที่ 1 เท่านั้น ใช้ได้ 1 ครั้ง)</button>
+      </div>
+    </section>
+
+    <!-- ============ จบรอบ ============ -->
+    <section id="screen-round-end" class="screen">
+      <div class="slash-panel center">
+        <h2>สรุปคะแนนรอบนี้</h2>
+        <p class="hint">รอครูไปคำถามข้อถัดไป...</p>
+      </div>
+    </section>
+
+    <!-- ============ จบเกม ============ -->
+    <section id="screen-gameover" class="screen">
+      <div class="slash-panel center">
+        <h1>🏆 จบเกมแล้ว!</h1>
+        <p class="hint">ขอบคุณที่ร่วมเล่น Fruit Quiz Battle</p>
+        <p>คะแนนรวมของคุณ: <strong id="my-total-score">0</strong></p>
+        <button class="btn btn-secondary" id="btn-leave-room">ออกจากห้อง</button>
+      </div>
+    </section>
+
+    <!-- แสดง HP ปัจจุบัน (ใช้ debug/แสดงในบาง state) -->
+    <span id="my-fruit-hp-label" hidden></span>
+  </div>
+
+<div class="app-shell" id="practice-app-shell" style="display:none">
+
+    <!-- ============ กรอกรหัสฝึกซ้อม ============ -->
+    <section id="p-screen-join" class="screen active">
+      <div class="center">
+        <div class="logo-emoji">🧠🍊</div>
+        <h1>ฝึกซ้อมด้วยตัวเอง</h1>
+        <p class="tagline">กรอกรหัสฝึกซ้อมที่ครูให้ ทำได้เรื่อย ๆ ไม่จำกัดจำนวนครั้ง</p>
+      </div>
+      <form id="form-practice-join" class="slash-panel stack">
+        <div class="field">
+          <label for="input-practice-code">รหัสฝึกซ้อม</label>
+          <input id="input-practice-code" type="text" maxlength="6" placeholder="เช่น AB12CD" required style="text-transform:uppercase;letter-spacing:2px;" />
+        </div>
+        <p class="error-text" id="practice-join-error"></p>
+        <button class="btn btn-primary btn-block" type="submit">เริ่มฝึกซ้อม</button>
+      </form>
+    </section>
+
+    <!-- ============ ทำโจทย์ทีละข้อ ============ -->
+    <section id="p-screen-quiz" class="screen">
+      <div class="t-topbar">
+        <span class="hint" id="p-progress-label">ข้อ 1 / 5</span>
+        <span class="hint" id="p-score-label">✅ 0</span>
+      </div>
+      <div class="slash-panel">
+        <h3 id="p-question-text">กำลังโหลด...</h3>
+        <div class="stack" id="p-choice-list"></div>
+        <div id="p-feedback" class="center" style="margin-top:12px;" hidden>
+          <span class="badge" id="p-feedback-badge"></span>
+          <p class="hint" id="p-feedback-explain" style="margin-top:8px;"></p>
+          <button class="btn btn-primary btn-block" id="btn-practice-next" style="margin-top:8px;">ข้อถัดไป ➡️</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ สรุปผลฝึกซ้อม ============ -->
+    <section id="p-screen-summary" class="screen">
+      <div class="slash-panel center">
+        <h1>🎉 ฝึกซ้อมเสร็จแล้ว!</h1>
+        <p>ตอบถูก <strong id="p-final-score">0</strong> / <span id="p-final-total">0</span> ข้อ</p>
+        <div class="stack" style="margin-top:12px;">
+          <button class="btn btn-primary btn-block" id="btn-practice-retry">🔁 ทำอีกครั้ง (เฉพาะข้อที่พลาด)</button>
+          <button class="btn btn-secondary btn-block" id="btn-practice-restart-all">🔄 เริ่มใหม่ทั้งชุด</button>
+          <button class="btn btn-secondary btn-block" id="btn-practice-leave">← กลับหน้าแรก</button>
+        </div>
+      </div>
+      <div class="slash-panel" id="p-review-panel" style="margin-top:16px;" hidden>
+        <h3>ทบทวนข้อที่ตอบผิด</h3>
+        <div id="p-review-list"></div>
+      </div>
+    </section>
+  </div>
+
+<script>
+/* ================= firebase-config.js ================= */
+/**
+ * firebase-config.js
+ * ------------------------------------------------------------
+ * 1. ไปที่ https://console.firebase.google.com สร้างโปรเจกต์ใหม่
+ * 2. เปิดใช้งาน "Realtime Database" (โหมด test mode ไปก่อนสำหรับตอนทดสอบ)
+ * 3. เปิดใช้งาน "Authentication" > Sign-in method > Anonymous
+ * 4. คัดลอกค่า config จาก Project settings มาใส่แทนค่าด้านล่างนี้
+ * ------------------------------------------------------------
+ */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+// ต้องโหลด firebase-app-compat.js และ firebase-database-compat.js /
+// firebase-auth-compat.js ก่อนไฟล์นี้ (ดูใน <head> ของ teacher.html / student.html)
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const auth = firebase.auth();
+
+/** ล็อกอินแบบไม่ระบุตัวตน คืนค่า Promise<uid> */
+function ensureAnonymousAuth() {
+  return new Promise((resolve, reject) => {
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        resolve(user.uid);
+      } else {
+        auth.signInAnonymously().catch(reject);
+      }
+    });
+  });
+}
+
+
+/* ================= utils.js ================= */
+/**
+ * utils.js — ฟังก์ชันช่วยเหลือทั่วไปที่ใช้ร่วมกันทั้งฝั่งครูและนักเรียน
+ */
+
+/** สุ่มรหัสห้อง 5 ตัวอักษร (ตัดตัวที่สับสนง่ายออก เช่น 0/O, 1/I) */
+function generateRoomCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 5; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
+/** จำกัดความถี่การเรียกฟังก์ชัน (ใช้กันการยิง event ขึ้น Firebase ถี่เกินไป) */
+function throttle(fn, waitMs) {
+  let last = 0;
+  let timeout = null;
+  return function throttled(...args) {
+    const now = Date.now();
+    const remaining = waitMs - (now - last);
+    if (remaining <= 0) {
+      last = now;
+      fn.apply(this, args);
+    } else {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        last = Date.now();
+        fn.apply(this, args);
+      }, remaining);
+    }
+  };
+}
+
+/** สร้าง element จาก template string สั้น ๆ */
+function el(html) {
+  const wrap = document.createElement("div");
+  wrap.innerHTML = html.trim();
+  return wrap.firstElementChild;
+}
+
+/** สุ่มเลขจำนวนเต็มระหว่าง min ถึง max (รวมทั้งสองค่า) */
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+/** สุ่มเลือกสมาชิกจาก array */
+function randChoice(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+/** ยิงคอนเฟตตี้ฉลองเต็มจอ ใช้ตอนชนะรอบ/จบเกม (ลบตัวเองอัตโนมัติ) */
+function spawnConfetti(count = 46) {
+  const colors = ["#ff5c5c", "#ff9f1c", "#b8e600", "#ffd83d", "#a35bff", "#5b8dff"];
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement("div");
+    piece.className = "confetti-piece";
+    piece.style.left = `${Math.random() * 100}vw`;
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.borderRadius = Math.random() < 0.5 ? "50%" : "2px";
+    piece.style.animationDuration = `${1.6 + Math.random() * 1.4}s`;
+    piece.style.animationDelay = `${Math.random() * 0.35}s`;
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), 3400);
+  }
+}
+
+/** จัดรูปแบบวินาทีเหลือให้อ่านง่าย */
+function formatSeconds(totalSeconds) {
+  const s = Math.max(0, Math.ceil(totalSeconds));
+  return `${s}`;
+}
+
+/** เก็บชื่อผู้เล่น/รหัสห้องล่าสุดไว้ใน sessionStorage เผื่อ refresh หน้า */
+const SessionCache = {
+  save(roomCode, playerId, playerName) {
+    sessionStorage.setItem("fqb_room", roomCode);
+    sessionStorage.setItem("fqb_player", playerId);
+    sessionStorage.setItem("fqb_name", playerName);
+  },
+  load() {
+    return {
+      roomCode: sessionStorage.getItem("fqb_room"),
+      playerId: sessionStorage.getItem("fqb_player"),
+      playerName: sessionStorage.getItem("fqb_name")
+    };
+  },
+  clear() {
+    sessionStorage.removeItem("fqb_room");
+    sessionStorage.removeItem("fqb_player");
+    sessionStorage.removeItem("fqb_name");
+  }
+};
+
+
+/* ================= sound.js ================= */
+/**
+ * sound.js — เอฟเฟกต์เสียงแบบสังเคราะห์ (Web Audio API) ไม่พึ่งไฟล์เสียงภายนอก
+ * เพราะ GitHub Pages เป็น static hosting ล้วน การสังเคราะห์เสียงในเบราว์เซอร์
+ * ทำให้ไม่ต้องอัปโหลดไฟล์ .mp3/.wav เพิ่ม
+ */
+const SoundManager = (() => {
+  let ctx = null;
+  let enabled = true;
+
+  function ensureCtx() {
+    if (!ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      ctx = new AudioCtx();
+    }
+    if (ctx.state === "suspended") ctx.resume();
+    return ctx;
+  }
+
+  function beep({ freq = 440, duration = 0.15, type = "sine", volume = 0.2, glideTo = null }) {
+    if (!enabled) return;
+    try {
+      const c = ensureCtx();
+      const osc = c.createOscillator();
+      const gain = c.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.value = volume;
+      osc.connect(gain).connect(c.destination);
+      const now = c.currentTime;
+      if (glideTo) osc.frequency.exponentialRampToValueAtTime(glideTo, now + duration);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+      osc.start(now);
+      osc.stop(now + duration + 0.02);
+    } catch (e) {
+      /* เบราว์เซอร์บางตัวต้องรอ user gesture ก่อนเล่นเสียง — เงียบไว้ ไม่ต้อง throw */
+    }
+  }
+
+  return {
+    setEnabled(v) {
+      enabled = v;
+    },
+    isEnabled() {
+      return enabled;
+    },
+    unlock() {
+      // เรียกตอนมี user gesture แรก (เช่น กดปุ่ม) เพื่อปลดล็อก AudioContext บน iOS/Safari
+      ensureCtx();
+    },
+    questionStart() {
+      beep({ freq: 660, duration: 0.18, type: "triangle", volume: 0.15 });
+    },
+    correct() {
+      beep({ freq: 523.25, duration: 0.12, volume: 0.18 });
+      setTimeout(() => beep({ freq: 783.99, duration: 0.18, volume: 0.18 }), 90);
+    },
+    wrong() {
+      beep({ freq: 190, duration: 0.28, type: "sawtooth", volume: 0.16 });
+    },
+    slice() {
+      beep({ freq: 900, duration: 0.05, type: "square", volume: 0.06, glideTo: 260 });
+    },
+    combo(n) {
+      beep({ freq: 480 + n * 35, duration: 0.09, type: "triangle", volume: 0.14 });
+    },
+    bomb() {
+      beep({ freq: 130, duration: 0.35, type: "sawtooth", volume: 0.22, glideTo: 45 });
+    },
+    golden() {
+      beep({ freq: 1046.5, duration: 0.14, volume: 0.16 });
+      setTimeout(() => beep({ freq: 1318.5, duration: 0.16, volume: 0.16 }), 80);
+    },
+    freeze() {
+      beep({ freq: 1200, duration: 0.3, type: "sine", volume: 0.1, glideTo: 2000 });
+    },
+    lightning() {
+      beep({ freq: 200, duration: 0.05, type: "square", volume: 0.2, glideTo: 1600 });
+      setTimeout(() => beep({ freq: 1600, duration: 0.12, type: "sawtooth", volume: 0.12 }), 40);
+    },
+    shield() {
+      beep({ freq: 500, duration: 0.16, type: "sine", volume: 0.15, glideTo: 800 });
+    },
+    shieldBlock() {
+      beep({ freq: 800, duration: 0.1, type: "sine", volume: 0.18 });
+      setTimeout(() => beep({ freq: 500, duration: 0.14, type: "sine", volume: 0.14 }), 70);
+    },
+    win() {
+      [523.25, 659.25, 783.99, 1046.5].forEach((f, i) =>
+        setTimeout(() => beep({ freq: f, duration: 0.2, volume: 0.18 }), i * 110)
+      );
+    }
+  };
+})();
+
+
+/* ================= room.js ================= */
+/**
+ * room.js — จัดการห้องเกม (rooms/{roomCode}) บน Firebase Realtime Database
+ * v1.1: เพิ่มระบบทีม (Team Battle Mode) และฟิลด์ paused
+ */
+
+const DEFAULT_SETTINGS = {
+  mode: "individual",       // "individual" | "team"
+  teamCount: 2,              // ใช้เมื่อ mode === "team"
+  fruitHpPerRound: 10,
+  questionTimeLimit: 15,
+  fruitTimeLimit: 20,
+  fruitScorePerHit: 10,
+  quizScorePerCorrect: 100,
+  bossRoundEvery: 3,         // ทุกกี่ข้อจะมีรอบบอสผลไม้ (0 = ปิด)
+  bossHpPerPlayer: 15,       // HP ของบอส คำนวณจาก จำนวนผู้เล่น x ค่านี้
+  bossTimeBonus: 10,         // วินาทีเพิ่มพิเศษให้รอบบอส (บวกกับ fruitTimeLimit)
+  randomEventsEnabled: true, // เปิด/ปิดเหตุการณ์สุ่มในรอบฟันผลไม้ปกติ
+  gameMode: "normal",        // "normal" | "elimination" | "speed" | "wager"
+  eliminationLives: 3,       // ใช้เมื่อ gameMode === "elimination"
+  wagerCap: 50                // ใช้เมื่อ gameMode === "wager"
+};
+
+const TEAM_DEFS = [
+  { id: "team1", name: "ทีมเบอร์รี่", color: "#5b8dff", emoji: "🔵" },
+  { id: "team2", name: "ทีมมะนาว", color: "#b8e600", emoji: "🟢" },
+  { id: "team3", name: "ทีมมะม่วง", color: "#ff9f1c", emoji: "🟠" },
+  { id: "team4", name: "ทีมแอปเปิ้ล", color: "#ff5c5c", emoji: "🔴" }
+];
+
+/** ครูสร้างห้องใหม่ คืนค่า roomCode */
+async function createRoom(teacherId, questionSetId, settingsOverride = {}) {
+  const settings = { ...DEFAULT_SETTINGS, ...settingsOverride };
+  let code;
+  do {
+    code = generateRoomCode();
+    // eslint-disable-next-line no-await-in-loop
+    var snap = await db.ref(`rooms/${code}`).get();
+  } while (snap.exists());
+
+  const roomData = {
+    teacherId,
+    status: "lobby",
+    phase: "lobby",
+    currentQuestionIndex: 0,
+    questionSetId,
+    createdAt: firebase.database.ServerValue.TIMESTAMP,
+    settings,
+    currentQuestionData: null,
+    revealedAnswer: null,
+    paused: false,
+    pausedAt: null,
+    bossRound: false,
+    boss: null,
+    activeEvent: null
+  };
+
+  // โหมดทีม: เตรียม node ทีมล่วงหน้าตามจำนวนทีมที่ตั้งไว้
+  if (settings.mode === "team") {
+    roomData.teams = {};
+    TEAM_DEFS.slice(0, settings.teamCount).forEach((t) => {
+      roomData.teams[t.id] = {
+        name: t.name,
+        color: t.color,
+        emoji: t.emoji,
+        hp: 0,
+        memberCount: 0,
+        finishedAt: null,
+        shieldActive: false,
+        frozenUntil: 0,
+        sabotagedUntil: 0
+      };
+    });
+  }
+
+  await db.ref(`rooms/${code}`).set(roomData);
+  return code;
+}
+
+/** นักเรียนเข้าร่วมห้อง คืนค่า playerId (= uid ของ anonymous auth) — จัดทีมอัตโนมัติถ้าเป็นโหมดทีม */
+async function joinRoom(roomCode, playerName, playerId) {
+  const roomSnap = await db.ref(`rooms/${roomCode}`).get();
+  if (!roomSnap.exists()) {
+    throw new Error("ไม่พบห้องนี้ ตรวจสอบรหัสห้องอีกครั้ง");
+  }
+  const room = roomSnap.val();
+  const settings = room.settings || DEFAULT_SETTINGS;
+
+  const playerData = {
+    name: playerName,
+    status: "ready",
+    online: true,
+    quizScore: 0,
+    fruitScore: 0,
+    totalScore: 0,
+    correctCount: 0,
+    wrongCount: 0,
+    currentFruitHp: 0,
+    hasAnswered: false,
+    currentAnswer: null,
+    lastAnswerCorrect: null,
+    damageMultiplier: 1,
+    finishedAt: null,
+    teamId: null,
+    joinedAt: firebase.database.ServerValue.TIMESTAMP,
+    attackCharges: 0,
+    correctStreak: 0,
+    spyAvailable: false,
+    lives: settings.eliminationLives || 3,
+    eliminated: false,
+    currentWager: 0,
+    sabotageUsed: false,
+    sabotagedUntil: 0,
+    lastRoundMaxCombo: 0
+  };
+
+  if (settings.mode === "team") {
+    const teamIds = Object.keys(room.teams || {});
+    if (teamIds.length > 0) {
+      // ใช้ transaction บนตัวนับกลาง (atomic) แทนการเทียบ memberCount จาก snapshot ที่อาจเก่า
+      // ป้องกันเคสนักเรียนหลายคนสแกน QR/กดเข้าห้องพร้อมกัน แล้วทุกคนเห็นทีมเดิมว่า "คนน้อยสุด" พร้อมกัน
+      // จนถูกจัดเข้าทีมเดียวกันหมด ทำให้ทีมไม่สมดุล — round-robin ผ่านตัวนับนี้รับประกันว่าสมดุลเสมอ
+      const counterResult = await db.ref(`rooms/${roomCode}/joinCounter`).transaction((cur) => (cur || 0) + 1);
+      const myIndex = (counterResult.snapshot.val() || 1) - 1;
+      const chosenTeam = teamIds[myIndex % teamIds.length];
+      playerData.teamId = chosenTeam;
+      await db.ref(`rooms/${roomCode}/teams/${chosenTeam}/memberCount`).transaction((cur) => (cur || 0) + 1);
+    }
+  }
+
+  const playerRef = db.ref(`rooms/${roomCode}/players/${playerId}`);
+  await playerRef.set(playerData);
+
+  playerRef.child("online").onDisconnect().set(false);
+  playerRef.child("status").onDisconnect().set("disconnected");
+
+  return playerId;
+}
+
+/** ฟังการเปลี่ยนแปลงของห้อง (phase, currentQuestionData, ฯลฯ) */
+function listenRoom(roomCode, callback) {
+  const ref = db.ref(`rooms/${roomCode}`);
+  ref.on("value", (snap) => callback(snap.val()));
+  return () => ref.off("value");
+}
+
+/** ฟังรายชื่อ/สถานะผู้เล่นทั้งหมดแบบเรียลไทม์ */
+function listenPlayers(roomCode, callback) {
+  const ref = db.ref(`rooms/${roomCode}/players`);
+  ref.on("value", (snap) => callback(snap.val() || {}));
+  return () => ref.off("value");
+}
+
+/** ฟังข้อมูลทีมทั้งหมดแบบเรียลไทม์ (โหมดทีมเท่านั้น) */
+function listenTeams(roomCode, callback) {
+  const ref = db.ref(`rooms/${roomCode}/teams`);
+  ref.on("value", (snap) => callback(snap.val() || {}));
+  return () => ref.off("value");
+}
+
+/** ออกจากห้อง (นักเรียนกดออกเอง) */
+async function leaveRoom(roomCode, playerId) {
+  await db.ref(`rooms/${roomCode}/players/${playerId}`).update({
+    online: false,
+    status: "disconnected"
+  });
+}
+
+/** ครูไล่ผู้เล่นออกจากห้อง — ถ้าอยู่ทีมด้วย ต้องลด memberCount ของทีมลง ไม่งั้น HP รวมของทีมจะคำนวณผิด */
+async function kickPlayer(roomCode, playerId) {
+  const playerSnap = await db.ref(`rooms/${roomCode}/players/${playerId}`).get();
+  const player = playerSnap.val();
+  await db.ref(`rooms/${roomCode}/players/${playerId}`).remove();
+  if (player && player.teamId) {
+    await db
+      .ref(`rooms/${roomCode}/teams/${player.teamId}/memberCount`)
+      .transaction((cur) => Math.max(0, (cur || 0) - 1));
+  }
+}
+
+/** อัปเดต phase ของห้อง — ควรเรียกจากฝั่งครูเท่านั้น */
+function setRoomPhase(roomCode, phase, extra = {}) {
+  return db.ref(`rooms/${roomCode}`).update({ phase, ...extra });
+}
+
+
+/* ================= fruit-engine.js ================= */
+/**
+ * fruit-engine.js
+ * ------------------------------------------------------------
+ * เกมฟันผลไม้บน <canvas> — ทำงาน local ทั้งหมด (physics/animation)
+ * ส่งขึ้น Firebase เฉพาะ "ผลลัพธ์" (HP ที่เหลือ, ชนะแล้วหรือยัง)
+ * ไม่ส่งพิกัด x,y ทุกเฟรม ตามหลักการในสเปก
+ *
+ * v1.1: เพิ่ม Power-up fruits (บอมบ์ 💣 / ผลไม้ทอง ⭐ / ผลไม้แช่แข็ง ❄️)
+ *       และ pause()/resume() สำหรับระบบ Master Control ของครู
+ * v1.2: เพิ่มพาวเวอร์อัพ "สายฟ้า ⚡" (ดาเมจ x2 ชั่วคราว), ความยากที่เพิ่มขึ้นตามเวลา
+ *       (spawn ถี่ขึ้นเรื่อยๆ + มีจังหวะปล่อยผลไม้เป็นชุด), เอฟเฟกต์ผลไม้แตกเป็นชิ้น
+ *       + ตัวเลขคะแนนลอยขึ้นตอนฟันโดน + สกรีนเชคตอนฟันโดนบอมบ์/คอมโบสูง
+ * v1.3: อัพเดทครั้งใหญ่ + รีธีมกราฟิกทั้งแอป — เพิ่มผลไม้ใหม่ (มะม่วง 🥭 / องุ่น 🍇)
+ *       และพาวเวอร์อัพ "โล่ 🛡️" (กันบอมบ์ 1 ครั้ง), เอฟเฟกต์คอนเฟตตี้ตอนชนะ/จบเกม
+ * ------------------------------------------------------------
+ */
+
+const FRUIT_TYPES = [
+  { type: "apple", emoji: "🍎", hp: 1, color: "#ff5c5c" },
+  { type: "orange", emoji: "🍊", hp: 1, color: "#ff9f1c" },
+  { type: "banana", emoji: "🍌", hp: 1, color: "#ffd83d" },
+  { type: "mango", emoji: "🥭", hp: 2, color: "#ffb703" },
+  { type: "grape", emoji: "🍇", hp: 2, color: "#a35bff" },
+  { type: "watermelon", emoji: "🍉", hp: 2, color: "#b8e600" },
+  { type: "pineapple", emoji: "🍍", hp: 3, color: "#ffd23f" }
+];
+
+const POWERUP_TYPES = [
+  { type: "bomb", emoji: "💣", special: "bomb", color: "#8a8a8a" },
+  { type: "golden", emoji: "⭐", special: "golden", color: "#ffd700" },
+  { type: "freeze", emoji: "❄️", special: "freeze", color: "#7fd8ff" },
+  { type: "lightning", emoji: "⚡", special: "lightning", color: "#a35bff" },
+  { type: "shield", emoji: "🛡️", special: "shield", color: "#5ee6c8" }
+];
+
+const POWERUP_SPAWN_CHANCE = 0.18; // 18% ของการ spawn แต่ละครั้งจะเป็น power-up แทนผลไม้ปกติ
+
+class FruitEngine {
+  /**
+   * @param {HTMLCanvasElement} canvas
+   * @param {Object} opts
+   * @param {number} opts.startHp - HP รวมของรอบนี้ (ใช้เป็นค่าอ้างอิงคำนวณ % แถบ HP เท่านั้น
+   *                                 ถ้าเป็นโหมดทีม ให้ปล่อยเป็นเลขใหญ่ๆ แล้วให้ตัวเรียกจัดการ HP เอง)
+   * @param {Function} opts.onHpChange - (hpRemaining) => void
+   * @param {Function} opts.onWin - () => void  (เรียกเมื่อ engine เห็นว่า hp <= 0 เอง — โหมดเดี่ยวใช้, โหมดทีมไม่ใช้)
+   * @param {Function} opts.onSlice - ({fruitType, damage, combo}) => void
+   * @param {Function} opts.onCombo - (comboCount) => void
+   * @param {Function} opts.onBomb - () => void
+   * @param {Function} opts.onGolden - (bonus) => void
+   * @param {Function} opts.onFreeze - () => void
+   * @param {Function} opts.onLightning - () => void (เรียกเมื่อฟันโดนผลไม้สายฟ้า ดาเมจ x2 ชั่วคราว)
+   * @param {Function} opts.onShield - () => void (เรียกเมื่อเก็บโล่ได้)
+   * @param {Function} opts.onShieldBlock - () => void (เรียกเมื่อโล่ดูดซับบอมบ์แทน)
+   */
+  constructor(canvas, opts) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext("2d");
+    this.opts = opts;
+    this.hp = opts.startHp;
+    this.fruits = [];
+    this.particles = [];
+    this.halves = []; // ชิ้นผลไม้ที่แตกออกตอนฟันโดน (เอฟเฟกต์ภาพ)
+    this.floatingTexts = []; // ตัวเลขคะแนนที่ลอยขึ้นตอนฟันโดน
+    this.trail = [];
+    this.running = false;
+    this.paused = false;
+    this.lastSliceTime = 0;
+    this.combo = 0;
+    this.spawnTimer = 0;
+    this.spawnInterval = 900; // ms — ค่าเริ่มต้น จะลดลงเรื่อยๆ ตามเวลาที่ผ่านไป (ดู _currentSpawnInterval)
+    this.minSpawnInterval = 350; // ms — จุดต่ำสุดที่ความยากจะไม่ถี่ไปกว่านี้
+    this.damageMultiplier = opts.damageMultiplier || 1;
+    this.frozenUntil = 0;
+    this.multiplierUntil = 0; // ช่วงเวลาที่ดาเมจ x2 จากพาวเวอร์อัพสายฟ้า
+    this.shieldActive = false; // มีโล่พร้อมกันบอมบ์ครั้งถัดไปหรือไม่
+    this.startTime = 0;
+    this.shakeUntil = 0;
+    this.shakeMag = 0;
+
+    this._resize = this._resize.bind(this);
+    this._loop = this._loop.bind(this);
+    this._onPointerDown = this._onPointerDown.bind(this);
+    this._onPointerMove = this._onPointerMove.bind(this);
+    this._onPointerUp = this._onPointerUp.bind(this);
+
+    window.addEventListener("resize", this._resize);
+    this._resize();
+
+    canvas.addEventListener("pointerdown", this._onPointerDown);
+    canvas.addEventListener("pointermove", this._onPointerMove);
+    window.addEventListener("pointerup", this._onPointerUp);
+  }
+
+  _resize() {
+    const rect = this.canvas.parentElement.getBoundingClientRect();
+    this.canvas.width = rect.width;
+    this.canvas.height = rect.height;
+  }
+
+  start() {
+    this.running = true;
+    this.paused = false;
+    this.lastFrame = performance.now();
+    this.startTime = performance.now();
+    requestAnimationFrame(this._loop);
+  }
+
+  /** ยิ่งเล่นนานเท่าไหร่ ผลไม้ยิ่ง spawn ถี่ขึ้น (ความยากไต่ระดับภายในรอบเดียว) */
+  _currentSpawnInterval() {
+    const elapsed = performance.now() - (this.startTime || performance.now());
+    const ramped = this.spawnInterval - elapsed / 55; // ไล่ลดลงเรื่อยๆ ตามเวลา
+    return Math.max(this.minSpawnInterval, ramped);
+  }
+
+  /** สั่นจอสั้นๆ เพื่อเน้นจังหวะ (โดนบอมบ์ / คอมโบสูง) */
+  _triggerShake(magnitude, durationMs) {
+    this.shakeMag = magnitude;
+    this.shakeUntil = performance.now() + durationMs;
+  }
+
+  /** หยุดเกมชั่วคราว (ใช้กับ Master Control ของครู) — ยังวาดค้างอยู่แต่ไม่ขยับ/รับฟันต่อ */
+  pause() {
+    this.paused = true;
+  }
+
+  /** เล่นต่อจากที่ pause ไว้ */
+  resume() {
+    if (!this.running) return;
+    this.paused = false;
+    this.lastFrame = performance.now();
+  }
+
+  stop() {
+    this.running = false;
+    window.removeEventListener("resize", this._resize);
+    this.canvas.removeEventListener("pointerdown", this._onPointerDown);
+    this.canvas.removeEventListener("pointermove", this._onPointerMove);
+    window.removeEventListener("pointerup", this._onPointerUp);
+  }
+
+  setDamageMultiplier(mult) {
+    this.damageMultiplier = mult;
+  }
+
+  _spawnFruit() {
+    const isPowerup = Math.random() < POWERUP_SPAWN_CHANCE;
+    const def = isPowerup ? randChoice(POWERUP_TYPES) : randChoice(FRUIT_TYPES);
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    this.fruits.push({
+      ...def,
+      id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      x: randInt(w * 0.15, w * 0.85),
+      y: h + 40,
+      vx: randInt(-2, 2) * 0.6,
+      vy: -(randInt(11, 15)) * (h / 700 || 1),
+      radius: 34,
+      rotation: 0,
+      rotSpeed: (Math.random() - 0.5) * 0.15,
+      sliced: false
+    });
+  }
+
+  _onPointerDown(e) {
+    if (this.paused) return;
+    if (typeof SoundManager !== "undefined") SoundManager.unlock();
+    this.trail = [{ x: this._px(e), y: this._py(e), t: performance.now() }];
+  }
+
+  _onPointerMove(e) {
+    if (this.paused) return;
+    if (this.trail.length === 0) return;
+    const point = { x: this._px(e), y: this._py(e), t: performance.now() };
+    this.trail.push(point);
+    if (this.trail.length > 10) this.trail.shift();
+    this._checkSliceAgainstTrail();
+  }
+
+  _onPointerUp() {
+    this.trail = [];
+  }
+
+  _px(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    return e.clientX - rect.left;
+  }
+  _py(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    return e.clientY - rect.top;
+  }
+
+  _checkSliceAgainstTrail() {
+    if (this.trail.length < 2) return;
+    const p1 = this.trail[this.trail.length - 2];
+    const p2 = this.trail[this.trail.length - 1];
+
+    for (const fruit of this.fruits) {
+      if (fruit.sliced) continue;
+      if (this._segmentIntersectsCircle(p1, p2, fruit)) {
+        this._sliceFruit(fruit);
+      }
+    }
+  }
+
+  _segmentIntersectsCircle(p1, p2, circle) {
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const lenSq = dx * dx + dy * dy || 1;
+    let t = ((circle.x - p1.x) * dx + (circle.y - p1.y) * dy) / lenSq;
+    t = Math.max(0, Math.min(1, t));
+    const closestX = p1.x + t * dx;
+    const closestY = p1.y + t * dy;
+    const distSq = (circle.x - closestX) ** 2 + (circle.y - closestY) ** 2;
+    return distSq <= circle.radius * circle.radius;
+  }
+
+  _bumpCombo(now) {
+    if (now - this.lastSliceTime < 700) {
+      this.combo += 1;
+    } else {
+      this.combo = 1;
+    }
+    this.lastSliceTime = now;
+    if (this.opts.onCombo) this.opts.onCombo(this.combo);
+  }
+
+  _sliceFruit(fruit) {
+    fruit.sliced = true;
+    const now = performance.now();
+    this._bumpCombo(now);
+    this._spawnParticles(fruit);
+
+    // ---- Power-up fruits: พฤติกรรมพิเศษ ไม่ลด HP แบบผลไม้ปกติ ----
+    if (fruit.special === "bomb") {
+      // ถ้ามีโล่อยู่ ให้โล่ดูดซับบอมบ์แทน ไม่ต้องรับโทษ
+      if (this.shieldActive) {
+        this.shieldActive = false;
+        if (this.opts.onShieldBlock) this.opts.onShieldBlock();
+        return;
+      }
+      // โดนบอมบ์ = โทษ ผลไม้ (HP) กลับมาเพิ่ม (ฟันยากขึ้น) ตามสเปก
+      this.hp = Math.min(this.opts.startHp, this.hp + 2);
+      if (this.opts.onHpChange) this.opts.onHpChange(this.hp);
+      if (this.opts.onBomb) this.opts.onBomb();
+      return;
+    }
+    if (fruit.special === "golden") {
+      if (this.opts.onGolden) this.opts.onGolden(5);
+      return;
+    }
+    if (fruit.special === "shield") {
+      this.shieldActive = true;
+      if (this.opts.onShield) this.opts.onShield();
+      return;
+    }
+    if (fruit.special === "freeze") {
+      this.frozenUntil = performance.now() + 2000;
+      if (this.opts.onFreeze) this.opts.onFreeze();
+      return;
+    }
+    if (fruit.special === "lightning") {
+      this.multiplierUntil = performance.now() + 5000;
+      this._triggerShake(4, 220);
+      if (this.opts.onLightning) this.opts.onLightning();
+      return;
+    }
+
+    // ---- ผลไม้ปกติ ----
+    const isBoosted = performance.now() < this.multiplierUntil;
+    const damage = fruit.hp * this.damageMultiplier * (isBoosted ? 2 : 1);
+    this.hp = Math.max(0, this.hp - damage);
+
+    this._spawnFloatingText(fruit.x, fruit.y, isBoosted ? `x2!` : `-${damage}`, isBoosted ? "#a35bff" : fruit.color);
+    if (this.combo > 0 && this.combo % 5 === 0) this._triggerShake(2.5, 160);
+
+    if (this.opts.onSlice) this.opts.onSlice({ fruitType: fruit.type, damage, combo: this.combo });
+    if (this.opts.onHpChange) this.opts.onHpChange(this.hp);
+
+    if (this.hp <= 0 && this.opts.onWin) {
+      this.opts.onWin();
+    }
+  }
+
+  _spawnParticles(fruit) {
+    // ยิ่งคอมโบสูง ยิ่งกระจายชิ้นส่วนเยอะขึ้น (จำกัดไว้ไม่ให้ล้นเกินไป)
+    const count = Math.min(22, 10 + this.combo * 2);
+    for (let i = 0; i < count; i++) {
+      this.particles.push({
+        x: fruit.x,
+        y: fruit.y,
+        vx: (Math.random() - 0.5) * 8,
+        vy: (Math.random() - 1.5) * 8,
+        life: 1,
+        color: fruit.color
+      });
+    }
+    if (!fruit.special) this._spawnHalves(fruit);
+  }
+
+  /** เอฟเฟกต์ "ผลไม้แตกเป็นสองชิ้น" บินแยกออกจากกันแทนการหายวับไปเฉยๆ */
+  _spawnHalves(fruit) {
+    [-1, 1].forEach((dir) => {
+      this.halves.push({
+        x: fruit.x,
+        y: fruit.y,
+        emoji: fruit.emoji,
+        radius: fruit.radius,
+        vx: dir * (2 + Math.random() * 3),
+        vy: -(4 + Math.random() * 3),
+        rotation: fruit.rotation,
+        rotSpeed: dir * (0.12 + Math.random() * 0.1),
+        clipSide: dir,
+        life: 1
+      });
+    });
+  }
+
+  /** ตัวเลขคะแนน/ดาเมจที่ลอยขึ้นแล้วจางหายตรงจุดที่ฟันโดน */
+  _spawnFloatingText(x, y, text, color) {
+    this.floatingTexts.push({ x, y, text, color: color || "#fff", life: 1 });
+  }
+
+  _loop(now) {
+    if (!this.running) return;
+
+    if (this.paused) {
+      // ยังวาดเฟรมปัจจุบันค้างไว้ (ไม่ขยับ ไม่ spawn) จนกว่าจะ resume()
+      this._draw();
+      requestAnimationFrame(this._loop);
+      return;
+    }
+
+    const dt = Math.min(32, now - this.lastFrame);
+    this.lastFrame = now;
+
+    const isFrozen = now < this.frozenUntil;
+
+    if (!isFrozen) {
+      this.spawnTimer += dt;
+      if (this.spawnTimer > this._currentSpawnInterval() && this.hp > 0) {
+        this.spawnTimer = 0;
+        this._spawnFruit();
+        // หลังผ่านไปสักพัก มีโอกาสปล่อยผลไม้เป็นชุดคู่ เพื่อเพิ่มความท้าทาย
+        const elapsed = now - this.startTime;
+        if (elapsed > 7000 && Math.random() < 0.3) this._spawnFruit();
+      }
+      this._update(dt);
+    } else {
+      this._updateParticlesOnly(dt);
+    }
+
+    this._draw(isFrozen);
+    requestAnimationFrame(this._loop);
+  }
+
+  _update(dt) {
+    const g = 0.35 * (dt / 16.6);
+    this.fruits.forEach((f) => {
+      f.vy += g;
+      f.x += f.vx * (dt / 16.6);
+      f.y += f.vy * (dt / 16.6);
+      f.rotation += f.rotSpeed;
+    });
+    this.fruits = this.fruits.filter((f) => f.y < this.canvas.height + 100 && !f.sliced);
+    this._updateParticlesOnly(dt);
+  }
+
+  _updateParticlesOnly(dt) {
+    const g = 0.35 * (dt / 16.6);
+    this.particles.forEach((p) => {
+      p.vy += g;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.life -= 0.03;
+    });
+    this.particles = this.particles.filter((p) => p.life > 0);
+
+    this.halves.forEach((h) => {
+      h.vy += g;
+      h.x += h.vx;
+      h.y += h.vy;
+      h.rotation += h.rotSpeed;
+      h.life -= 0.02;
+    });
+    this.halves = this.halves.filter((h) => h.life > 0);
+
+    this.floatingTexts.forEach((t) => {
+      t.y -= 1.4;
+      t.life -= 0.018;
+    });
+    this.floatingTexts = this.floatingTexts.filter((t) => t.life > 0);
+  }
+
+  _draw(isFrozen = false) {
+    const { ctx, canvas } = this;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const shaking = performance.now() < this.shakeUntil;
+    ctx.save();
+    if (shaking) {
+      ctx.translate((Math.random() - 0.5) * this.shakeMag * 2, (Math.random() - 0.5) * this.shakeMag * 2);
+    }
+
+    if (isFrozen) {
+      ctx.fillStyle = "rgba(127, 216, 255, 0.08)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    const isBoosted = performance.now() < this.multiplierUntil;
+    if (isBoosted) {
+      ctx.fillStyle = "rgba(163, 91, 255, 0.08)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // เส้นทางการฟัน (slash trail) — สีปรับได้ตามสกินที่ผู้เล่นเลือก (opts.trailColor)
+    if (this.trail.length > 1) {
+      ctx.strokeStyle = this.opts.trailColor || "rgba(255,244,214,0.9)";
+      ctx.lineWidth = 5;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(this.trail[0].x, this.trail[0].y);
+      for (let i = 1; i < this.trail.length; i++) ctx.lineTo(this.trail[i].x, this.trail[i].y);
+      ctx.stroke();
+    }
+
+    // ผลไม้ / power-up
+    this.fruits.forEach((f) => {
+      ctx.save();
+      ctx.translate(f.x, f.y);
+      ctx.rotate(f.rotation);
+      if (f.special) {
+        ctx.shadowColor = f.color;
+        ctx.shadowBlur = 18;
+      }
+      ctx.font = `${f.radius * 2}px serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(f.emoji, 0, 0);
+      ctx.restore();
+    });
+
+    // ชิ้นผลไม้ที่แตกออก (ครึ่งซ้าย/ขวา บินแยกทางกัน)
+    this.halves.forEach((h) => {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, h.life);
+      ctx.translate(h.x, h.y);
+      ctx.rotate(h.rotation);
+      ctx.beginPath();
+      ctx.rect(h.clipSide > 0 ? 0 : -h.radius, -h.radius, h.radius, h.radius * 2);
+      ctx.clip();
+      ctx.font = `${h.radius * 2}px serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(h.emoji, 0, 0);
+      ctx.restore();
+    });
+
+    // particle effects
+    this.particles.forEach((p) => {
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+
+    // ตัวเลขคะแนน/ดาเมจลอยขึ้น
+    this.floatingTexts.forEach((t) => {
+      ctx.globalAlpha = Math.max(0, t.life);
+      ctx.font = "bold 22px 'Fredoka', sans-serif";
+      ctx.fillStyle = t.color;
+      ctx.textAlign = "center";
+      ctx.fillText(t.text, t.x, t.y);
+      ctx.globalAlpha = 1;
+    });
+
+    if (isFrozen) {
+      ctx.font = "bold 20px sans-serif";
+      ctx.fillStyle = "#7fd8ff";
+      ctx.textAlign = "center";
+      ctx.fillText("❄️ FREEZE!", canvas.width / 2, 34);
+    }
+    if (isBoosted) {
+      ctx.font = "bold 20px sans-serif";
+      ctx.fillStyle = "#a35bff";
+      ctx.textAlign = "center";
+      ctx.fillText("⚡ DAMAGE x2!", canvas.width / 2, isFrozen ? 58 : 34);
+    }
+    if (this.shieldActive) {
+      ctx.font = "bold 18px sans-serif";
+      ctx.fillStyle = "#5ee6c8";
+      ctx.textAlign = "right";
+      ctx.fillText("🛡️ พร้อมกันบอมบ์", canvas.width - 14, 28);
+    }
+
+    ctx.restore();
+  }
+}
+
+
+/* ================= questions-data.js =================
+   ⚠️ เนื่องจากรวมเป็นไฟล์เดียว เฉลยจะฝังอยู่ใน HTML ไฟล์นี้
+   นักเรียนที่เปิด "View Page Source" จะเห็นเฉลยได้ — ดูคำอธิบาย
+   ในข้อความตอบกลับสำหรับทางเลือกที่ปลอดภัยกว่า
+======================================================== */
+/**
+ * questions-data.js
+ * ------------------------------------------------------------
+ * ⚠️ ไฟล์นี้ให้ <script> เฉพาะใน teacher.html เท่านั้น
+ *    ห้ามลิงก์ไฟล์นี้จาก student.html เด็ดขาด เพราะมี correctAnswer อยู่ในนี้
+ *
+ * ครูสามารถแก้ไข/เพิ่มชุดคำถามเองได้ตรงนี้ หรือจะทำหน้า UI แก้ไข
+ * (Question Bank) เพิ่มในเวอร์ชันถัดไปก็ได้ — ตอนนี้ทำเป็นไฟล์ static ก่อน
+ * เพื่อให้เริ่มทดสอบกับนักเรียนได้เร็วที่สุด
+ * ------------------------------------------------------------
+ */
+const QUESTION_SETS = {
+  demo_general: {
+    title: "ความรู้รอบตัว (ชุดทดลอง)",
+    questions: [
+      {
+        id: "q1",
+        question: "ประเทศไทยมีเมืองหลวงชื่อว่าอะไร?",
+        choices: { A: "เชียงใหม่", B: "กรุงเทพมหานคร", C: "ภูเก็ต", D: "อยุธยา" },
+        correctAnswer: "B",
+        timeLimit: 15,
+        points: 100
+      },
+      {
+        id: "q2",
+        question: "HTML ย่อมาจากอะไร?",
+        choices: {
+          A: "Hyper Text Markup Language",
+          B: "High Text Machine Language",
+          C: "Hyper Tool Multi Language",
+          D: "Home Tool Markup Language"
+        },
+        correctAnswer: "A",
+        timeLimit: 15,
+        points: 100
+      },
+      {
+        id: "q3",
+        question: "ผลไม้ชนิดใดมีเมล็ดอยู่ด้านนอก?",
+        choices: { A: "แอปเปิ้ล", B: "สตรอว์เบอร์รี", C: "แตงโม", D: "มะม่วง" },
+        correctAnswer: "B",
+        timeLimit: 15,
+        points: 100
+      },
+      {
+        id: "q4",
+        question: "ดาวเคราะห์ดวงใดอยู่ใกล้ดวงอาทิตย์ที่สุด?",
+        choices: { A: "โลก", B: "ศุกร์", C: "พุธ", D: "อังคาร" },
+        correctAnswer: "C",
+        timeLimit: 15,
+        points: 100
+      },
+      {
+        id: "q5",
+        question: "1 ชั่วโมง มีกี่นาที?",
+        choices: { A: "100 นาที", B: "60 นาที", C: "30 นาที", D: "90 นาที" },
+        correctAnswer: "B",
+        timeLimit: 10,
+        points: 100
+      }
+    ]
+  }
+};
+
+/** คืนรายการคำถามแบบ "ไม่มีเฉลย" สำหรับส่งให้นักเรียน */
+function stripAnswer(question) {
+  const { id, question: text, choices, timeLimit, points } = question;
+  return { id, question: text, choices, timeLimit, points };
+}
+
+/**
+ * แปลงไฟล์ CSV เป็นชุดคำถาม (question set)
+ * รูปแบบคอลัมน์ที่รองรับ: question,A,B,C,D,answer,timeLimit,points
+ * (timeLimit และ points เป็น optional มีค่า default ให้)
+ * ⚠️ พาร์เซอร์นี้เป็นแบบง่าย (comma-separated ตรงๆ) — ไม่รองรับฟิลด์ที่มีจุลภาคอยู่ในเครื่องหมายคำพูด
+ */
+function buildQuestionSetFromCsv(csvText, title) {
+  const lines = csvText
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+
+  if (lines.length < 2) {
+    throw new Error("ไฟล์ CSV ต้องมีอย่างน้อย 1 แถวหัวตาราง + 1 แถวคำถาม");
+  }
+
+  const header = lines[0].split(",").map((h) => h.trim().toLowerCase());
+  const col = (name) => header.indexOf(name);
+
+  const idxQuestion = col("question");
+  const idxA = col("a");
+  const idxB = col("b");
+  const idxC = col("c");
+  const idxD = col("d");
+  const idxAnswer = col("answer");
+  const idxTime = col("timelimit");
+  const idxPoints = col("points");
+
+  if ([idxQuestion, idxA, idxB, idxC, idxD, idxAnswer].some((i) => i === -1)) {
+    throw new Error("หัวตาราง CSV ต้องมีคอลัมน์: question,A,B,C,D,answer (ตัวพิมพ์เล็ก/ใหญ่ไม่เป็นไร)");
+  }
+
+  const questions = lines.slice(1).map((line, i) => {
+    const cells = line.split(",").map((c) => c.trim());
+    const answerRaw = (cells[idxAnswer] || "").toUpperCase();
+    if (!["A", "B", "C", "D"].includes(answerRaw)) {
+      throw new Error(`แถวที่ ${i + 2}: คอลัมน์ answer ต้องเป็น A, B, C หรือ D เท่านั้น`);
+    }
+    return {
+      id: `csv_q${i + 1}`,
+      question: cells[idxQuestion],
+      choices: { A: cells[idxA], B: cells[idxB], C: cells[idxC], D: cells[idxD] },
+      correctAnswer: answerRaw,
+      timeLimit: idxTime !== -1 && cells[idxTime] ? Number(cells[idxTime]) : 15,
+      points: idxPoints !== -1 && cells[idxPoints] ? Number(cells[idxPoints]) : 100
+    };
+  });
+
+  return { title: title || "ชุดคำถามนำเข้าจาก CSV", questions };
+}
+
+
+/* ================= teacher-app.js ================= */
+/**
+ * teacher-app.js (v1.1)
+ * ------------------------------------------------------------
+ * ครูเป็นผู้ควบคุม state machine ทั้งหมดของห้อง (phase transitions)
+ * และเป็นฝั่งเดียวที่โหลดคำถามพร้อมเฉลยจริง (questions-data.js)
+ *
+ * เพิ่มจาก v1:
+ *  - โหมดทีม (Team Battle) + จอแสดง HP ทีม
+ *  - นำเข้าคำถามจาก CSV
+ *  - Master Control: Pause / Resume
+ *  - ไล่ผู้เล่นออกจากห้อง (Kick)
+ *  - แบนเนอร์ประกาศผู้ชนะรอบ
+ *  - ปุ่มเปิด/ปิดเสียง
+ * ------------------------------------------------------------
+ */
+
+let T = {
+  roomCode: null,
+  teacherId: null,
+  questionSet: null,
+  settings: null,
+  questionTimer: null,
+  fruitTimer: null,
+  unsubTeams: null,
+  isBossRound: false,
+  currentQuestionIndex: 0
+};
+
+const screensT = {
+  setup: document.getElementById("t-screen-setup"),
+  lobby: document.getElementById("t-screen-lobby"),
+  dashboard: document.getElementById("t-screen-dashboard"),
+  gameOver: document.getElementById("t-screen-gameover")
+};
+
+function showT(name) {
+  Object.values(screensT).forEach((s) => s.classList.remove("active"));
+  screensT[name].classList.add("active");
+}
+
+/* ---------------- โหมดทีม: แสดง/ซ่อนช่องจำนวนทีม ---------------- */
+
+const selectModeEl = document.getElementById("select-mode");
+if (selectModeEl) {
+  selectModeEl.addEventListener("change", () => {
+    document.getElementById("field-team-count").hidden = selectModeEl.value !== "team";
+  });
+}
+
+/* ---------------- โหมดเกม: แสดง/ซ่อนช่องตั้งค่าเฉพาะโหมด ---------------- */
+
+const selectGameModeEl = document.getElementById("select-game-mode");
+if (selectGameModeEl) {
+  selectGameModeEl.addEventListener("change", () => {
+    document.getElementById("field-elimination-lives").hidden = selectGameModeEl.value !== "elimination";
+    document.getElementById("field-wager-cap").hidden = selectGameModeEl.value !== "wager";
+  });
+}
+
+/* ---------------- นำเข้าคำถามจาก CSV ---------------- */
+
+const csvInput = document.getElementById("input-csv-file");
+if (csvInput) {
+  csvInput.addEventListener("change", async () => {
+    const statusEl = document.getElementById("csv-import-status");
+    const file = csvInput.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const set = buildQuestionSetFromCsv(text, file.name.replace(/\.csv$/i, ""));
+      QUESTION_SETS["custom_import"] = set;
+      const select = document.getElementById("select-question-set");
+      let opt = select.querySelector('option[value="custom_import"]');
+      if (!opt) {
+        opt = document.createElement("option");
+        opt.value = "custom_import";
+        select.appendChild(opt);
+      }
+      opt.textContent = `${set.title} (นำเข้า ${set.questions.length} ข้อ)`;
+      select.value = "custom_import";
+      statusEl.textContent = `✅ นำเข้าสำเร็จ ${set.questions.length} ข้อ`;
+      statusEl.style.color = "var(--fruit-lime)";
+    } catch (err) {
+      statusEl.textContent = `❌ ${err.message}`;
+      statusEl.style.color = "var(--fruit-apple)";
+    }
+  });
+}
+
+/* ---------------- เสียง ---------------- */
+
+function wireSoundToggle(btnId) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    SoundManager.unlock();
+    const next = !SoundManager.isEnabled();
+    SoundManager.setEnabled(next);
+    document.querySelectorAll(`.sound-toggle-btn`).forEach((b) => (b.textContent = next ? "🔊" : "🔇"));
+  });
+}
+wireSoundToggle("btn-sound-toggle-setup");
+wireSoundToggle("btn-sound-toggle-dash");
+
+/* ---------------- คลังคำถามของครู (บันทึกไว้ใน Firebase ผูกกับ uid แบบ anonymous auth) ---------------- */
+/**
+ * โครงสร้าง Firebase: questionBanks/{teacherUid}/{bankId} = { title, questions, createdAt }
+ * ทำให้ครูกลับมาเปิดชุดคำถามเดิมได้ในคาบเรียนถัดไป โดยไม่ต้องนำเข้า CSV ซ้ำทุกครั้ง
+ * นอกจากนี้แต่ละชุดยังสามารถ "สร้างรหัสฝึกซ้อม" เพื่อให้นักเรียนเปิดทบทวนเองที่บ้านได้ (ดูส่วน practice-app.js)
+ */
+let bankTeacherUid = null;
+let bankPanelInitialized = false;
+
+async function initQuestionBankPanel() {
+  if (bankPanelInitialized) return;
+  bankPanelInitialized = true;
+  const hint = document.getElementById("bank-auth-hint");
+  try {
+    bankTeacherUid = await ensureAnonymousAuth();
+    hint.textContent = "ชุดคำถามที่บันทึกไว้จะซิงก์กลับมาให้อัตโนมัติทุกครั้งที่เปิดหน้านี้";
+    await refreshBankList();
+  } catch (err) {
+    hint.textContent = "⚠️ เชื่อมต่อคลังคำถามไม่สำเร็จ (ตรวจสอบการตั้งค่า Firebase)";
+  }
+}
+
+async function refreshBankList() {
+  const listEl = document.getElementById("bank-list");
+  if (!bankTeacherUid) return;
+  const snap = await db.ref(`questionBanks/${bankTeacherUid}`).get();
+  const banks = snap.val() || {};
+  const entries = Object.entries(banks).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+
+  listEl.innerHTML = "";
+  if (entries.length === 0) {
+    listEl.appendChild(el(`<p class="hint">ยังไม่มีชุดคำถามที่บันทึกไว้ — เลือกหรือนำเข้าชุดคำถามด้านล่าง แล้วกด "บันทึกลงคลัง"</p>`));
+    return;
+  }
+
+  entries.forEach(([bankId, bank]) => {
+    const row = el(`<div class="bank-item">
+      <div class="bank-item-info">
+        <div class="title">${bank.title}</div>
+        <div class="meta">${(bank.questions || []).length} ข้อ${bank.practiceCode ? ` · รหัสฝึกซ้อม: ${bank.practiceCode}` : ""}</div>
+      </div>
+      <div class="bank-item-actions">
+        <button type="button" class="btn btn-secondary" data-action="load">📂 ใช้ชุดนี้</button>
+        <button type="button" class="btn btn-secondary" data-action="practice">🧠 ${bank.practiceCode ? "ดูรหัส" : "สร้างรหัสฝึกซ้อม"}</button>
+        <button type="button" class="btn btn-danger" data-action="delete">🗑️</button>
+      </div>
+    </div>`);
+
+    row.querySelector('[data-action="load"]').addEventListener("click", () => loadBankIntoSelect(bankId, bank));
+    row.querySelector('[data-action="delete"]').addEventListener("click", () => deleteBank(bankId, bank.title));
+    row.querySelector('[data-action="practice"]').addEventListener("click", () => generatePracticeCode(bankId, bank));
+    listEl.appendChild(row);
+  });
+}
+
+function loadBankIntoSelect(bankId, bank) {
+  const setKey = `bank_${bankId}`;
+  QUESTION_SETS[setKey] = { title: bank.title, questions: bank.questions };
+  const select = document.getElementById("select-question-set");
+  let opt = select.querySelector(`option[value="${setKey}"]`);
+  if (!opt) {
+    opt = document.createElement("option");
+    opt.value = setKey;
+    select.appendChild(opt);
+  }
+  opt.textContent = `🗂️ ${bank.title} (${bank.questions.length} ข้อ)`;
+  select.value = setKey;
+  document.getElementById("bank-status").textContent = `✅ เลือกชุด "${bank.title}" แล้ว พร้อมสร้างห้องได้เลย`;
+  document.getElementById("bank-status").style.color = "var(--fruit-lime)";
+}
+
+async function deleteBank(bankId, title) {
+  if (!confirm(`ลบชุดคำถาม "${title}" ออกจากคลังหรือไม่? การกระทำนี้ย้อนกลับไม่ได้`)) return;
+  await db.ref(`questionBanks/${bankTeacherUid}/${bankId}`).remove();
+  await refreshBankList();
+}
+
+async function generatePracticeCode(bankId, bank) {
+  if (bank.practiceCode) {
+    alert(`รหัสฝึกซ้อมของชุด "${bank.title}" คือ: ${bank.practiceCode}\nส่งให้นักเรียนไปกรอกที่หน้า "ฝึกซ้อมด้วยตัวเอง" ได้เลย`);
+    return;
+  }
+  const code = generateRoomCode();
+  await db.ref(`practiceSets/${code}`).set({
+    title: bank.title,
+    questions: bank.questions,
+    teacherUid: bankTeacherUid,
+    bankId,
+    createdAt: firebase.database.ServerValue.TIMESTAMP
+  });
+  await db.ref(`questionBanks/${bankTeacherUid}/${bankId}/practiceCode`).set(code);
+  await refreshBankList();
+  alert(`สร้างรหัสฝึกซ้อมสำเร็จ: ${code}\nส่งรหัสนี้ให้นักเรียนไปกรอกที่หน้า "ฝึกซ้อมด้วยตัวเอง" เพื่อทบทวนเองได้ทุกที่`);
+}
+
+document.getElementById("btn-save-to-bank").addEventListener("click", async () => {
+  const statusEl = document.getElementById("bank-status");
+  if (!bankTeacherUid) {
+    statusEl.textContent = "⚠️ กำลังเชื่อมต่อคลังคำถาม ลองใหม่อีกครั้งในอีกสักครู่";
+    statusEl.style.color = "var(--fruit-apple)";
+    return;
+  }
+  const setId = document.getElementById("select-question-set").value;
+  const currentSet = QUESTION_SETS[setId];
+  if (!currentSet) {
+    statusEl.textContent = "⚠️ ไม่พบชุดคำถามที่เลือกไว้";
+    statusEl.style.color = "var(--fruit-apple)";
+    return;
+  }
+  const suggestedTitle = currentSet.title || "ชุดคำถามของฉัน";
+  const title = prompt("ตั้งชื่อชุดคำถามนี้เพื่อบันทึกลงคลัง:", suggestedTitle);
+  if (!title) return;
+
+  const bankId = db.ref(`questionBanks/${bankTeacherUid}`).push().key;
+  await db.ref(`questionBanks/${bankTeacherUid}/${bankId}`).set({
+    title,
+    questions: currentSet.questions,
+    createdAt: firebase.database.ServerValue.TIMESTAMP
+  });
+
+  statusEl.textContent = `✅ บันทึก "${title}" ลงคลังแล้ว`;
+  statusEl.style.color = "var(--fruit-lime)";
+  await refreshBankList();
+});
+
+/* ---------------- ตั้งค่าห้องใหม่ ---------------- */
+
+document.getElementById("form-create-room").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  SoundManager.unlock();
+
+  const setId = document.getElementById("select-question-set").value;
+  T.questionSet = QUESTION_SETS[setId];
+
+  const uid = await ensureAnonymousAuth();
+  T.teacherId = uid;
+
+  const mode = document.getElementById("select-mode").value;
+  const settings = {
+    ...DEFAULT_SETTINGS,
+    mode,
+    teamCount: Number(document.getElementById("input-team-count").value) || 2,
+    fruitHpPerRound: Number(document.getElementById("input-fruit-hp").value) || 10,
+    questionTimeLimit: Number(document.getElementById("input-time-limit").value) || 15,
+    bossRoundEvery: Number(document.getElementById("input-boss-every").value) || 0,
+    randomEventsEnabled: document.getElementById("input-random-events").checked,
+    gameMode: document.getElementById("select-game-mode").value,
+    eliminationLives: Number(document.getElementById("input-elimination-lives").value) || 3,
+    wagerCap: Number(document.getElementById("input-wager-cap").value) || 50
+  };
+  T.settings = settings;
+
+  T.roomCode = await createRoom(uid, setId, settings);
+
+  document.getElementById("room-code-display").textContent = T.roomCode;
+  document.getElementById("join-url-display").textContent =
+    `${window.location.origin}${window.location.pathname.replace("teacher.html", "student.html")}`;
+
+  showT("lobby");
+  listenPlayers(T.roomCode, renderLobbyPlayers);
+});
+
+function renderLobbyPlayers(players) {
+  const list = Object.values(players || {});
+  document.getElementById("lobby-player-count").textContent = list.length;
+  const container = document.getElementById("lobby-player-list");
+  container.innerHTML = "";
+  list.forEach((p) => {
+    const teamTag = p.teamId ? ` (${teamLabel(p.teamId)})` : "";
+    container.appendChild(el(`<div class="player-chip ${p.online ? "" : "offline"}">
+      <span class="dot"></span>${p.name}${teamTag}
+    </div>`));
+  });
+}
+
+function teamLabel(teamId) {
+  const idx = { team1: 0, team2: 1, team3: 2, team4: 3 }[teamId];
+  const def = TEAM_DEFS[idx];
+  return def ? `${def.emoji} ${def.name}` : teamId;
+}
+
+document.getElementById("btn-start-game").addEventListener("click", async () => {
+  showT("dashboard");
+  listenPlayers(T.roomCode, renderDashboardPlayers);
+  if (T.settings.mode === "team") {
+    document.getElementById("t-team-panels").hidden = false;
+    T.unsubTeams = listenTeams(T.roomCode, renderTeamPanels);
+  }
+  await goToQuestion(0);
+});
+
+/* ---------------- ไปยังคำถามข้อที่ index ---------------- */
+
+async function goToQuestion(index) {
+  clearInterval(T.questionTimer);
+  clearInterval(T.fruitTimer);
+  const questions = T.questionSet.questions;
+
+  document.getElementById("t-round-winner-banner").hidden = true;
+  document.getElementById("t-boss-badge").hidden = true;
+
+  const settings = T.settings || DEFAULT_SETTINGS;
+
+  // รีเซ็ตสถานะการตอบของทุกคนก่อนเริ่มข้อใหม่ + เช็คตกรอบ (โหมด Elimination)
+  const playersSnap = await db.ref(`rooms/${T.roomCode}/players`).get();
+  const players = playersSnap.val() || {};
+  const resetUpdates = {};
+  let remainingActive = 0;
+  const totalBefore = Object.keys(players).length;
+
+  // โหมดทีม: ใช้ teams/{tid}/finishedAt (ทีมฟันจบก่อนหมดเวลาหรือไม่) แทนสถานะรายบุคคล
+  // เพราะในโหมดทีม HP เป็นของทีมรวม ไม่มีการอัปเดต currentFruitHp/finishedAt รายคน
+  let teamsMap = {};
+  if (settings.gameMode === "elimination" && settings.mode === "team") {
+    const teamsSnap = await db.ref(`rooms/${T.roomCode}/teams`).get();
+    teamsMap = teamsSnap.val() || {};
+  }
+
+  Object.entries(players).forEach(([pid, p]) => {
+    resetUpdates[`players/${pid}/hasAnswered`] = false;
+    resetUpdates[`players/${pid}/currentAnswer`] = null;
+    resetUpdates[`players/${pid}/lastAnswerCorrect`] = null;
+    resetUpdates[`players/${pid}/currentWager`] = 0;
+
+    if (settings.gameMode === "elimination") {
+      if (p.eliminated) return; // ตกรอบไปแล้ว ไม่ต้องประเมินซ้ำ
+      // ตกรอบถ้า: ตอบผิดข้อที่แล้ว หรือ ฟันผลไม้ไม่ทัน (ยังมี HP เหลือตอนหมดเวลารอบก่อนหน้า)
+      const failedQuiz = index > 0 && p.lastAnswerCorrect === false;
+      let failedFruit = false;
+      // รอบบอสเป็นภารกิจร่วมมือ ไม่มีการอัปเดต currentFruitHp/finishedAt รายคน/รายทีม
+      // จึงไม่ใช้ผลของรอบบอสมาตัดสินตกรอบ (บทลงโทษของรอบบอสคือหักคะแนนไปแล้วต่างหาก)
+      if (index > 0 && !T.isBossRound) {
+        if (settings.mode === "team" && p.teamId) {
+          const team = teamsMap[p.teamId];
+          failedFruit = !(team && team.finishedAt); // ทีมยังฟันไม่จบตอนหมดเวลา
+        } else {
+          failedFruit = (p.currentFruitHp || 0) > 0 && p.finishedAt == null;
+        }
+      }
+      if (failedQuiz || failedFruit) {
+        const newLives = Math.max(0, (p.lives || 0) - 1);
+        resetUpdates[`players/${pid}/lives`] = newLives;
+        if (newLives <= 0) {
+          resetUpdates[`players/${pid}/eliminated`] = true;
+        } else {
+          remainingActive += 1;
+        }
+      } else {
+        remainingActive += 1;
+      }
+    }
+  });
+
+  await db.ref(`rooms/${T.roomCode}`).update(resetUpdates);
+
+  // ถ้าเหลือผู้เล่นที่ยังไม่ตกรอบ 1 คนหรือน้อยกว่า (และเริ่มด้วยมากกว่า 1 คน) จบเกมทันที
+  if (settings.gameMode === "elimination" && index > 0 && totalBefore > 1 && remainingActive <= 1) {
+    return endGame();
+  }
+
+  if (index >= questions.length) {
+    return endGame();
+  }
+
+  T.currentQuestionIndex = index;
+
+  const q = questions[index];
+  await db.ref(`rooms/${T.roomCode}`).update({
+    currentQuestionIndex: index,
+    currentQuestionData: stripAnswer(q),
+    questionStartedAt: firebase.database.ServerValue.TIMESTAMP,
+    phase: "question",
+    boss: null,
+    bossRound: false,
+    activeEvent: null
+  });
+
+  // แสดงป้ายเตือนล่วงหน้าถ้าข้อนี้ตอบจบแล้วจะเข้ารอบบอส
+  const bossEvery = settings.bossRoundEvery || 0;
+  const willBeBossRound = bossEvery > 0 && (index + 1) % bossEvery === 0;
+  document.getElementById("t-boss-badge").hidden = !willBeBossRound;
+
+  SoundManager.questionStart();
+  renderTeacherQuestion(q, index, questions.length);
+  runQuestionTimer(q.timeLimit || 15, Date.now(), index);
+}
+
+function runQuestionTimer(timeLimit, startedAt, index) {
+  T.questionTimer = setInterval(() => {
+    const remaining = timeLimit - (Date.now() - startedAt) / 1000;
+    document.getElementById("t-question-timer").textContent = formatSeconds(remaining);
+    if (remaining <= 0) {
+      clearInterval(T.questionTimer);
+      revealAnswer(index);
+    }
+  }, 200);
+}
+
+function renderTeacherQuestion(q, index, total) {
+  document.getElementById("t-question-progress").textContent = `ข้อ ${index + 1} / ${total}`;
+  document.getElementById("t-question-text").textContent = q.question;
+  ["A", "B", "C", "D"].forEach((k) => {
+    document.getElementById(`t-choice-${k}`).textContent = `${k}. ${q.choices[k]}`;
+  });
+  document.getElementById("t-answered-count").textContent = "0";
+  document.getElementById("t-correct-answer-label").textContent = "-";
+}
+
+function renderDashboardPlayers(players) {
+  const entries = Object.entries(players || {}); // [ [playerId, data], ... ]
+  const list = entries.map(([, p]) => p);
+  const answeredCount = list.filter((p) => p.hasAnswered).length;
+  const countEl = document.getElementById("t-answered-count");
+  if (countEl) countEl.textContent = answeredCount;
+  document.getElementById("t-total-players").textContent = list.length;
+
+  renderStatusTable(entries);
+  renderLiveRanking(list);
+  renderRoundWinnerBanner(list);
+}
+
+function renderStatusTable(entries) {
+  const body = document.getElementById("t-status-table-body");
+  if (!body) return;
+  body.innerHTML = "";
+  entries
+    .sort((a, b) => (b[1].totalScore || 0) - (a[1].totalScore || 0))
+    .forEach(([pid, p]) => {
+      const answerMark = p.hasAnswered
+        ? p.lastAnswerCorrect === null
+          ? "✓ ส่งแล้ว"
+          : p.lastAnswerCorrect
+          ? "✓ ถูก"
+          : "✗ ผิด"
+        : "ยังไม่ตอบ";
+      const teamCell = p.teamId ? teamLabel(p.teamId) : "-";
+      const row = el(`<tr>
+          <td>${p.name}</td>
+          <td>${teamCell}</td>
+          <td>${answerMark}</td>
+          <td>${p.currentFruitHp ?? "-"}</td>
+          <td>${p.online ? "🟢" : "🔴"}</td>
+          <td><button type="button" class="btn btn-danger btn-kick" style="padding:6px 12px;font-size:0.8rem;">ไล่ออก</button></td>
+        </tr>`);
+      row.querySelector(".btn-kick").addEventListener("click", () => onKickClicked(pid, p.name));
+      body.appendChild(row);
+    });
+}
+
+async function onKickClicked(playerId, playerName) {
+  if (!confirm(`ไล่ "${playerName}" ออกจากห้องหรือไม่?`)) return;
+  await kickPlayer(T.roomCode, playerId);
+}
+
+function renderLiveRanking(list) {
+  const container = document.getElementById("t-live-ranking");
+  if (!container) return;
+  const sorted = [...list].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0)).slice(0, 5);
+  const medals = ["🥇", "🥈", "🥉", "4", "5"];
+  container.innerHTML = "";
+  sorted.forEach((p, i) => {
+    container.appendChild(
+      el(`<div class="ranking-row"><span>${medals[i]} ${p.name}</span><span>${p.totalScore || 0}</span></div>`)
+    );
+  });
+}
+
+function renderRoundWinnerBanner(list) {
+  const finished = list.filter((p) => p.finishedAt).sort((a, b) => a.finishedAt - b.finishedAt);
+  const banner = document.getElementById("t-round-winner-banner");
+  if (!banner) return;
+
+  const comboMvp = [...list].sort((a, b) => (b.lastRoundMaxCombo || 0) - (a.lastRoundMaxCombo || 0))[0];
+  const lines = [];
+  if (finished.length > 0) lines.push(`🏆 ฟันเสร็จก่อนใคร: ${finished[0].name}`);
+  if (comboMvp && (comboMvp.lastRoundMaxCombo || 0) >= 3) {
+    lines.push(`🥇 MVP คอมโบรอบนี้: ${comboMvp.name} (คอมโบ ${comboMvp.lastRoundMaxCombo})`);
+  }
+
+  if (lines.length > 0) {
+    banner.hidden = false;
+    banner.innerHTML = lines.join("<br/>");
+  }
+}
+
+function renderTeamPanels(teams) {
+  const container = document.getElementById("t-team-panels");
+  if (!container) return;
+  container.innerHTML = "";
+  Object.entries(teams || {}).forEach(([id, t]) => {
+    const maxHp = (t.memberCount || 1) * (T.settings.fruitHpPerRound || 10);
+    const pct = maxHp > 0 ? Math.max(0, ((t.hp || 0) / maxHp) * 100) : 0;
+    container.appendChild(
+      el(`<div class="team-panel" style="border-left:4px solid ${t.color}">
+        <div class="team-panel-header"><span>${t.emoji} ${t.name}</span><span>${t.memberCount || 0} คน</span></div>
+        <div class="hp-bar-track"><div class="hp-bar-fill" style="width:${pct}%;background:${t.color}"></div></div>
+        <div class="hint">${t.finishedAt ? "🏆 ชนะรอบนี้แล้ว" : `HP ${t.hp || 0} / ${maxHp}`}</div>
+      </div>`)
+    );
+  });
+}
+
+/* ---------------- เฉลย + คำนวณคะแนน (ทำฝั่งครูเท่านั้น เพราะมีเฉลยจริง) ---------------- */
+
+async function revealAnswer(index) {
+  const q = T.questionSet.questions[index];
+  const playersSnap = await db.ref(`rooms/${T.roomCode}/players`).get();
+  const players = playersSnap.val() || {};
+  const settingsSnap = await db.ref(`rooms/${T.roomCode}/settings`).get();
+  const settings = settingsSnap.val() || DEFAULT_SETTINGS;
+  const questionStartedAtSnap = await db.ref(`rooms/${T.roomCode}/questionStartedAt`).get();
+  const questionStartedAt = questionStartedAtSnap.val() || Date.now();
+  const timeLimit = q.timeLimit || settings.questionTimeLimit || 15;
+
+  const updates = {};
+  const answerLogEntry = { question: q.question, correctAnswer: q.correctAnswer, answers: {} };
+  let correctTotal = 0;
+  let answeredTotal = 0;
+  Object.entries(players).forEach(([pid, p]) => {
+    // ผู้เล่นที่ตกรอบแล้ว (โหมด Elimination) ไม่ต้องประมวลผลคะแนน/สตรีคซ้ำ
+    if (settings.gameMode === "elimination" && p.eliminated) return;
+
+    const isCorrect = p.currentAnswer === q.correctAnswer;
+
+    // สตรีคตอบถูกติดต่อกันข้ามข้อ — ยิ่งต่อเนื่องยิ่งได้ตัวคูณคะแนนเพิ่ม (2=x1.2, 4=x1.5, 6+=x2)
+    const newStreak = isCorrect ? (p.correctStreak || 0) + 1 : 0;
+    const streakMultiplier = newStreak >= 6 ? 2 : newStreak >= 4 ? 1.5 : newStreak >= 2 ? 1.2 : 1;
+
+    let scoreGain;
+    if (settings.gameMode === "speed") {
+      // ยิ่งตอบไว (เทียบกับเวลาที่ใช้ไปจากเวลาที่มีทั้งหมด) ยิ่งได้คะแนนมาก ขั้นต่ำ 20% ของคะแนนเต็ม
+      if (isCorrect && p.answeredAt) {
+        const takenSec = Math.max(0, (p.answeredAt - questionStartedAt) / 1000);
+        const speedFraction = Math.max(0.2, 1 - takenSec / timeLimit);
+        scoreGain = Math.round(settings.quizScorePerCorrect * speedFraction);
+      } else {
+        scoreGain = 0;
+      }
+    } else if (settings.gameMode === "wager") {
+      // ได้/เสียคะแนนตามจำนวนที่เดิมพันไว้ก่อนตอบ
+      const wager = p.currentWager || 0;
+      scoreGain = isCorrect ? wager : -wager;
+    } else {
+      scoreGain = isCorrect ? settings.quizScorePerCorrect : 0;
+    }
+    scoreGain = Math.round(scoreGain * streakMultiplier);
+
+    updates[`players/${pid}/lastAnswerCorrect`] = isCorrect;
+    updates[`players/${pid}/damageMultiplier`] = isCorrect ? 2 : 1;
+    updates[`players/${pid}/quizScore`] = (p.quizScore || 0) + scoreGain;
+    updates[`players/${pid}/totalScore`] = Math.max(0, (p.totalScore || 0) + scoreGain);
+    updates[`players/${pid}/correctCount`] = (p.correctCount || 0) + (isCorrect ? 1 : 0);
+    updates[`players/${pid}/wrongCount`] = (p.wrongCount || 0) + (isCorrect ? 0 : 1);
+    updates[`players/${pid}/currentWager`] = 0;
+
+    // สตรีคตอบถูกติดต่อกัน — ครบ 3 ข้อปลดล็อกความสามารถ "สายลับ" (หยุดเวลาคู่แข่ง)
+    updates[`players/${pid}/correctStreak`] = newStreak;
+    if (newStreak >= 3) updates[`players/${pid}/spyAvailable`] = true;
+
+    // เก็บ log คำตอบรายข้อไว้ทำรายงาน "จุดที่พลาดบ่อย" ตอนจบเกม
+    if (p.currentAnswer) {
+      answeredTotal += 1;
+      if (isCorrect) correctTotal += 1;
+      answerLogEntry.answers[pid] = { name: p.name, choice: p.currentAnswer, correct: isCorrect };
+    }
+  });
+  answerLogEntry.answeredTotal = answeredTotal;
+  answerLogEntry.correctTotal = correctTotal;
+  updates[`answerLog/${index}`] = answerLogEntry;
+  updates["revealedAnswer"] = q.correctAnswer;
+  updates["phase"] = "result";
+
+  await db.ref(`rooms/${T.roomCode}`).update(updates);
+  document.getElementById("t-correct-answer-label").textContent = q.correctAnswer;
+}
+
+document.getElementById("btn-start-fruit").addEventListener("click", startFruitPhase);
+
+const RANDOM_EVENT_TYPES = ["double_score", "fog", "fruit_rain"];
+const RANDOM_EVENT_DURATION_MS = 10000;
+const RANDOM_EVENT_CHANCE = 0.45;
+
+async function startFruitPhase() {
+  clearInterval(T.fruitTimer);
+  const settingsSnap = await db.ref(`rooms/${T.roomCode}/settings`).get();
+  const settings = settingsSnap.val() || DEFAULT_SETTINGS;
+
+  const playersSnap = await db.ref(`rooms/${T.roomCode}/players`).get();
+  const players = playersSnap.val() || {};
+  const playerCount = Object.keys(players).length || 1;
+  const updates = {};
+  Object.keys(players).forEach((pid) => {
+    updates[`players/${pid}/currentFruitHp`] = settings.fruitHpPerRound;
+    updates[`players/${pid}/finishedAt`] = null;
+    updates[`players/${pid}/attackCharges`] = 0; // ชาร์จบอมบ์รีเซ็ตทุกรอบฟันผลไม้ใหม่
+    updates[`players/${pid}/lastRoundMaxCombo`] = 0; // เคลียร์คอมโบสูงสุดของรอบก่อนหน้า (ใช้หา MVP)
+  });
+
+  const bossEvery = settings.bossRoundEvery || 0;
+  const currentIndex = T.currentQuestionIndex || 0;
+  const isBossRound = bossEvery > 0 && (currentIndex + 1) % bossEvery === 0;
+  T.isBossRound = isBossRound;
+
+  if (settings.mode === "team") {
+    const teamsSnap = await db.ref(`rooms/${T.roomCode}/teams`).get();
+    const teams = teamsSnap.val() || {};
+    Object.entries(teams).forEach(([tid, t]) => {
+      const memberCount = t.memberCount || 1;
+      updates[`teams/${tid}/hp`] = settings.fruitHpPerRound * memberCount;
+      updates[`teams/${tid}/finishedAt`] = null;
+      // รอบบอสเป็นภารกิจร่วมมือ — รีเซ็ตโล่/แช่แข็งทีมทุกรอบใหม่กันสะสมได้เปรียบข้ามรอบ
+      updates[`teams/${tid}/shieldActive`] = false;
+      updates[`teams/${tid}/frozenUntil`] = 0;
+    });
+  }
+
+  if (isBossRound) {
+    const bossMaxHp = playerCount * (settings.bossHpPerPlayer || 15);
+    updates["boss"] = { hp: bossMaxHp, maxHp: bossMaxHp, active: true };
+    updates["activeEvent"] = null;
+  } else {
+    updates["boss"] = null;
+    if (settings.randomEventsEnabled && Math.random() < RANDOM_EVENT_CHANCE) {
+      const type = RANDOM_EVENT_TYPES[Math.floor(Math.random() * RANDOM_EVENT_TYPES.length)];
+      updates["activeEvent"] = { type, startedAt: Date.now(), until: Date.now() + RANDOM_EVENT_DURATION_MS };
+    } else {
+      updates["activeEvent"] = null;
+    }
+  }
+  updates["bossRound"] = isBossRound;
+
+  updates["phase"] = "fruit";
+  updates["fruitStartedAt"] = firebase.database.ServerValue.TIMESTAMP;
+
+  await db.ref(`rooms/${T.roomCode}`).update(updates);
+  document.getElementById("t-boss-badge").hidden = true;
+
+  const startedAt = Date.now();
+  const timeLimit = (settings.fruitTimeLimit || 20) + (isBossRound ? settings.bossTimeBonus || 10 : 0);
+  T.fruitTimer = setInterval(() => {
+    const remaining = timeLimit - (Date.now() - startedAt) / 1000;
+    const timerEl = document.getElementById("t-fruit-timer");
+    if (timerEl) timerEl.textContent = formatSeconds(remaining);
+    if (remaining <= 0) {
+      clearInterval(T.fruitTimer);
+    }
+  }, 200);
+}
+
+/** ถ้ารอบก่อนหน้าเป็นรอบบอสและบอสยังไม่ตาย ให้หักคะแนนทุกคนก่อนไปข้อถัดไป */
+async function finalizeBossRoundIfNeeded() {
+  const snap = await db.ref(`rooms/${T.roomCode}`).get();
+  const room = snap.val();
+  if (!room || !room.bossRound || !room.boss || room.boss.hp <= 0) return;
+
+  const playersSnap = await db.ref(`rooms/${T.roomCode}/players`).get();
+  const players = playersSnap.val() || {};
+  const penaltyUpdates = {};
+  Object.entries(players).forEach(([pid, p]) => {
+    penaltyUpdates[`players/${pid}/totalScore`] = Math.max(0, (p.totalScore || 0) - 10);
+  });
+  penaltyUpdates["boss/active"] = false;
+  await db.ref(`rooms/${T.roomCode}`).update(penaltyUpdates);
+  alert("⏰ หมดเวลา! บอสผลไม้ยังไม่ตาย ทุกคนโดนหักคะแนน 10 คะแนน");
+}
+
+document.getElementById("btn-next-question").addEventListener("click", async () => {
+  clearInterval(T.fruitTimer);
+  await finalizeBossRoundIfNeeded();
+  const nextIndex = (await db.ref(`rooms/${T.roomCode}/currentQuestionIndex`).get()).val() + 1;
+  await goToQuestion(nextIndex);
+});
+
+/* ---------------- Master Control: Pause / Resume ---------------- */
+
+let isPaused = false;
+document.getElementById("btn-pause-resume").addEventListener("click", async () => {
+  const btn = document.getElementById("btn-pause-resume");
+  if (!isPaused) {
+    isPaused = true;
+    btn.textContent = "▶ เล่นต่อ";
+    clearInterval(T.questionTimer);
+    clearInterval(T.fruitTimer);
+    await db.ref(`rooms/${T.roomCode}`).update({ paused: true, pausedAt: Date.now() });
+  } else {
+    isPaused = false;
+    btn.textContent = "⏸ หยุดชั่วคราว";
+    const roomSnap = await db.ref(`rooms/${T.roomCode}`).get();
+    const room = roomSnap.val();
+    const elapsed = Date.now() - (room.pausedAt || Date.now());
+    const updates = { paused: false, pausedAt: null };
+
+    if (room.phase === "question" && room.questionStartedAt) {
+      const newStarted = room.questionStartedAt + elapsed;
+      updates.questionStartedAt = newStarted;
+      await db.ref(`rooms/${T.roomCode}`).update(updates);
+      const q = T.questionSet.questions[room.currentQuestionIndex];
+      runQuestionTimer(q.timeLimit || 15, newStarted, room.currentQuestionIndex);
+      return;
+    }
+    if (room.phase === "fruit" && room.fruitStartedAt) {
+      const newStarted = room.fruitStartedAt + elapsed;
+      updates.fruitStartedAt = newStarted;
+      await db.ref(`rooms/${T.roomCode}`).update(updates);
+      const timeLimit = ((room.settings && room.settings.fruitTimeLimit) || 20) + (room.bossRound ? (room.settings && room.settings.bossTimeBonus) || 10 : 0);
+      T.fruitTimer = setInterval(() => {
+        const remaining = timeLimit - (Date.now() - newStarted) / 1000;
+        const timerEl = document.getElementById("t-fruit-timer");
+        if (timerEl) timerEl.textContent = formatSeconds(remaining);
+        if (remaining <= 0) clearInterval(T.fruitTimer);
+      }, 200);
+      return;
+    }
+    await db.ref(`rooms/${T.roomCode}`).update(updates);
+  }
+});
+
+/* ---------------- ควบคุมฉุกเฉิน ---------------- */
+
+document.getElementById("btn-skip-question").addEventListener("click", async () => {
+  clearInterval(T.fruitTimer);
+  await finalizeBossRoundIfNeeded();
+  const idx = (await db.ref(`rooms/${T.roomCode}/currentQuestionIndex`).get()).val();
+  await goToQuestion(idx + 1);
+});
+
+document.getElementById("btn-end-game").addEventListener("click", () => {
+  if (confirm("ต้องการจบเกมตอนนี้เลยหรือไม่?")) endGame();
+});
+
+/* ---------------- จบเกม ---------------- */
+
+async function endGame() {
+  clearInterval(T.questionTimer);
+  clearInterval(T.fruitTimer);
+
+  const playersSnap = await db.ref(`rooms/${T.roomCode}/players`).get();
+  const players = Object.values(playersSnap.val() || {});
+  const isElimination = T.settings && T.settings.gameMode === "elimination";
+  const ranking = players
+    .sort((a, b) => {
+      // โหมดตกรอบ: คนที่ยังไม่ตกรอบ (รอดถึงสุดท้าย) มาก่อนเสมอ แล้วค่อยเรียงตามคะแนน
+      if (isElimination) {
+        const aAlive = a.eliminated ? 0 : 1;
+        const bAlive = b.eliminated ? 0 : 1;
+        if (aAlive !== bAlive) return bAlive - aAlive;
+      }
+      return (b.totalScore || 0) - (a.totalScore || 0);
+    })
+    .map((p, i) => ({ rank: i + 1, name: p.name, totalScore: p.totalScore || 0 }));
+
+  let teamRanking = null;
+  if (T.settings && T.settings.mode === "team") {
+    const teamsSnap = await db.ref(`rooms/${T.roomCode}/teams`).get();
+    const teams = teamsSnap.val() || {};
+    const teamScores = {};
+    players.forEach((p) => {
+      if (!p.teamId) return;
+      teamScores[p.teamId] = (teamScores[p.teamId] || 0) + (p.totalScore || 0);
+    });
+    teamRanking = Object.entries(teams)
+      .map(([id, t]) => ({ id, name: t.name, emoji: t.emoji, score: teamScores[id] || 0 }))
+      .sort((a, b) => b.score - a.score);
+  }
+
+  await db.ref(`rooms/${T.roomCode}`).update({ phase: "gameOver", status: "finished" });
+  await db.ref(`gameResults/${T.roomCode}_${Date.now()}`).set({
+    roomCode: T.roomCode,
+    questionSetId: T.questionSet
+      ? Object.keys(QUESTION_SETS).find((k) => QUESTION_SETS[k] === T.questionSet)
+      : null,
+    ranking,
+    teamRanking,
+    playedAt: firebase.database.ServerValue.TIMESTAMP
+  });
+
+  showT("gameOver");
+  spawnConfetti();
+  SoundManager.win();
+  renderFinalRanking(ranking, teamRanking);
+  await renderMissReport();
+}
+
+/* ---------------- รายงาน: จุดที่นักเรียนพลาดบ่อยที่สุด (จาก answerLog รายข้อ) ---------------- */
+
+async function fetchAnswerLog() {
+  const snap = await db.ref(`rooms/${T.roomCode}/answerLog`).get();
+  return snap.val() || {};
+}
+
+function computeMissStats(answerLog) {
+  return Object.entries(answerLog)
+    .map(([index, entry]) => {
+      const answeredTotal = entry.answeredTotal || Object.keys(entry.answers || {}).length;
+      const correctTotal = entry.correctTotal || 0;
+      const missRate = answeredTotal > 0 ? (1 - correctTotal / answeredTotal) * 100 : 0;
+      return { index: Number(index), question: entry.question, answeredTotal, correctTotal, missRate };
+    })
+    .sort((a, b) => b.missRate - a.missRate);
+}
+
+async function renderMissReport() {
+  const panel = document.getElementById("t-miss-report-panel");
+  const listEl = document.getElementById("t-miss-report-list");
+  const answerLog = await fetchAnswerLog();
+  const stats = computeMissStats(answerLog).filter((s) => s.answeredTotal > 0);
+
+  if (stats.length === 0) {
+    panel.hidden = true;
+    return;
+  }
+
+  listEl.innerHTML = "";
+  stats.slice(0, 5).forEach((s) => {
+    listEl.appendChild(
+      el(`<div class="miss-row">
+        <span class="miss-q">ข้อ ${s.index + 1}: ${s.question}</span>
+        <span class="miss-rate">พลาด ${Math.round(s.missRate)}%</span>
+      </div>`)
+    );
+  });
+  panel.hidden = false;
+}
+
+function renderFinalRanking(ranking, teamRanking) {
+  const container = document.getElementById("t-final-ranking");
+  container.innerHTML = "";
+  const medals = ["🥇", "🥈", "🥉"];
+
+  if (teamRanking) {
+    container.appendChild(el(`<h3>🏆 อันดับทีม</h3>`));
+    teamRanking.forEach((t, i) => {
+      container.appendChild(
+        el(`<div class="final-rank-row">
+          <span>${medals[i] || i + 1}</span>
+          <span>${t.emoji} ${t.name}</span>
+          <span>${t.score}</span>
+        </div>`)
+      );
+    });
+    container.appendChild(el(`<h3 style="margin-top:16px;">คะแนนรายบุคคล</h3>`));
+  }
+
+  ranking.forEach((r) => {
+    container.appendChild(
+      el(`<div class="final-rank-row">
+        <span>${medals[r.rank - 1] || r.rank}</span>
+        <span>${r.name}</span>
+        <span>${r.totalScore}</span>
+      </div>`)
+    );
+  });
+}
+
+document.getElementById("btn-export-csv").addEventListener("click", async () => {
+  const playersSnap = await db.ref(`rooms/${T.roomCode}/players`).get();
+  const players = Object.values(playersSnap.val() || {});
+  let csv = "ชื่อ,ทีม,ตอบถูก,ตอบผิด,Quiz Score,Fruit Score,Total Score\n";
+  players.forEach((p) => {
+    const team = p.teamId ? teamLabel(p.teamId) : "-";
+    csv += `${p.name},${team},${p.correctCount || 0},${p.wrongCount || 0},${p.quizScore || 0},${p.fruitScore || 0},${p.totalScore || 0}\n`;
+  });
+
+  // ส่วนที่ 2: สรุปความแม่นยำรายข้อ ช่วยครูเห็นว่าข้อไหนที่ห้องนี้ยังไม่แม่น
+  const answerLog = await fetchAnswerLog();
+  const stats = computeMissStats(answerLog);
+  if (stats.length > 0) {
+    csv += "\nสรุปรายข้อ\n";
+    csv += "ข้อที่,คำถาม,ตอบถูก,ตอบทั้งหมด,อัตราพลาด (%)\n";
+    stats
+      .sort((a, b) => a.index - b.index)
+      .forEach((s) => {
+        const q = `"${(s.question || "").replace(/"/g, '""')}"`;
+        csv += `${s.index + 1},${q},${s.correctTotal},${s.answeredTotal},${Math.round(s.missRate)}\n`;
+      });
+  }
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `fruit-quiz-report-${T.roomCode}.csv`;
+  link.click();
+});
+
+
+/* ================= student-app.js ================= */
+/**
+ * student-app.js (v1.1) — ควบคุมหน้าจอฝั่งนักเรียนทั้งหมด (state machine ตาม phase ของห้อง)
+ * เพิ่มจาก v1: โหมดทีม (HP รวมของทีม), power-up fruits, pause overlay, เสียง, ตรวจจับถูกไล่ออก
+ */
+
+const screens = {
+  join: document.getElementById("screen-join"),
+  lobby: document.getElementById("screen-lobby"),
+  question: document.getElementById("screen-question"),
+  result: document.getElementById("screen-result"),
+  fruit: document.getElementById("screen-fruit"),
+  roundEnd: document.getElementById("screen-round-end"),
+  gameOver: document.getElementById("screen-gameover"),
+  spectator: document.getElementById("screen-spectator")
+};
+
+let state = {
+  roomCode: null,
+  playerId: null,
+  playerName: null,
+  settings: null,
+  teamId: null,
+  fruitEngine: null,
+  countdownTimer: null,
+  paused: false,
+  unsubTeam: null,
+  unsubEvent: null,
+  eventTimeoutIds: [],
+  weakPointIntervalId: null,
+  activeEventType: null,
+  activeEventUntil: 0,
+  isBossRound: false,
+  teamShieldActive: false,
+  comboMilestone: 0,
+  fruitStartedAt: null,
+  me: null,
+  trailColor: "rgba(255,244,214,0.9)",
+  sabotageAppliedUntil: 0
+};
+
+/* ---------------- เลือกสกินมีดตอนเข้าห้อง (แค่เปลี่ยนสีเส้นฟัน ไม่ต้องผูกกับบัญชี) ---------------- */
+document.querySelectorAll("#skin-picker .skin-swatch").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#skin-picker .skin-swatch").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    state.trailColor = btn.dataset.color;
+  });
+});
+
+function showScreen(name) {
+  Object.values(screens).forEach((s) => s.classList.remove("active"));
+  screens[name].classList.add("active");
+}
+
+/* ---------------- เสียง ---------------- */
+const soundBtn = document.getElementById("btn-sound-toggle-student");
+if (soundBtn) {
+  soundBtn.addEventListener("click", () => {
+    SoundManager.unlock();
+    const next = !SoundManager.isEnabled();
+    SoundManager.setEnabled(next);
+    soundBtn.textContent = next ? "🔊" : "🔇";
+  });
+}
+
+/* ---------------- เข้าร่วมห้อง ---------------- */
+
+document.getElementById("form-join").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  SoundManager.unlock();
+  const nameInput = document.getElementById("input-name");
+  const codeInput = document.getElementById("input-room-code");
+  const errorEl = document.getElementById("join-error");
+  errorEl.textContent = "";
+
+  const name = nameInput.value.trim();
+  const roomCode = codeInput.value.trim().toUpperCase();
+  if (!name || !roomCode) return;
+
+  try {
+    const uid = await ensureAnonymousAuth();
+    await joinRoom(roomCode, name, uid);
+    state.roomCode = roomCode;
+    state.playerId = uid;
+    state.playerName = name;
+    SessionCache.save(roomCode, uid, name);
+    startListening();
+  } catch (err) {
+    errorEl.textContent = err.message || "เข้าร่วมห้องไม่สำเร็จ ลองใหม่อีกครั้ง";
+  }
+});
+
+// พยายาม resume session เดิมถ้ามีการ refresh หน้า
+(async function tryResume() {
+  const cached = SessionCache.load();
+  if (cached.roomCode && cached.playerId) {
+    await ensureAnonymousAuth();
+
+    // เช็คก่อนว่ายังมีตัวตนอยู่ในห้องจริงไหม (เผื่อครูไล่ออกไปแล้วตอนที่ปิดหน้าจออยู่)
+    const playerRef = db.ref(`rooms/${cached.roomCode}/players/${cached.playerId}`);
+    const existingSnap = await playerRef.get();
+    if (!existingSnap.exists()) {
+      SessionCache.clear();
+      return;
+    }
+
+    state.roomCode = cached.roomCode;
+    state.playerId = cached.playerId;
+    state.playerName = cached.playerName;
+
+    // เชื่อมต่อกลับมาแล้ว ต้องตั้งสถานะเป็นออนไลน์ใหม่ (ตอน refresh หน้า onDisconnect เดิมจะสั่ง offline ไปแล้ว)
+    // และต้องลงทะเบียน onDisconnect ใหม่ทุกครั้ง เพราะ hook เดิมผูกกับ connection session ก่อนหน้าที่ตัดไปแล้ว
+    await playerRef.update({ online: true, status: "ready" });
+    playerRef.child("online").onDisconnect().set(false);
+    playerRef.child("status").onDisconnect().set("disconnected");
+
+    startListening();
+  }
+})();
+
+/* ---------------- ฟังการเปลี่ยนแปลงห้อง ---------------- */
+
+function startListening() {
+  listenRoom(state.roomCode, onRoomUpdate);
+  listenPlayers(state.roomCode, onPlayersUpdate);
+}
+
+let lastPhase = null;
+let wasKicked = false;
+
+function onRoomUpdate(room) {
+  if (!room) return;
+  state.settings = room.settings;
+
+  // ------ Pause overlay ------
+  const pauseOverlay = document.getElementById("pause-overlay");
+  if (pauseOverlay) {
+    const nowPaused = !!room.paused;
+    if (nowPaused !== state.paused) {
+      state.paused = nowPaused;
+      pauseOverlay.hidden = !nowPaused;
+      if (state.fruitEngine) {
+        if (nowPaused) state.fruitEngine.pause();
+        else state.fruitEngine.resume();
+      }
+    }
+  }
+
+  if (room.phase !== lastPhase) {
+    lastPhase = room.phase;
+    handlePhaseChange(room);
+  }
+
+  // ตอนครูหยุดชั่วคราวแล้วเล่นต่อระหว่างรอบฟันผลไม้ เวลาเริ่มรอบ (fruitStartedAt) จะถูกเลื่อนออกไปเท่าเวลาที่หยุด
+  // ต้องอัปเดตค่านี้ฝั่งนักเรียนด้วย ไม่งั้นจังหวะ "จุดอ่อน" ของรอบบอสจะคลาดเคลื่อนจากเวลาที่ควรจะเป็น
+  if (room.phase === "fruit" && room.fruitStartedAt && room.fruitStartedAt !== state.fruitStartedAt) {
+    state.fruitStartedAt = room.fruitStartedAt;
+  }
+
+  if (room.phase === "question" && room.currentQuestionData && !state.paused) {
+    renderQuestion(room.currentQuestionData, room.questionStartedAt);
+  }
+}
+
+function onPlayersUpdate(players) {
+  const me = players[state.playerId];
+  if (!me) {
+    // ผู้เล่นถูกลบออกจาก Firebase (ครูไล่ออก) — พากลับหน้า join
+    if (state.roomCode && !wasKicked) {
+      wasKicked = true;
+      if (state.fruitEngine) state.fruitEngine.stop();
+      clearInterval(state.countdownTimer);
+      alert("คุณถูกครูนำออกจากห้องนี้");
+      SessionCache.clear();
+      window.location.reload();
+    }
+    return;
+  }
+  state.teamId = me.teamId || null;
+  state.me = me;
+  renderMyStatus(me);
+  renderTeamBadge();
+  renderPvpButtons();
+  renderSabotageButton(players);
+
+  // สายลับ/บอมบ์กวนตัวบุคคล (โหมดรายบุคคล) — เช็คว่าเราเพิ่งโดนกวนหรือยัง
+  if (me.sabotagedUntil && me.sabotagedUntil !== state.sabotageAppliedUntil && me.sabotagedUntil > Date.now()) {
+    state.sabotageAppliedUntil = me.sabotagedUntil;
+    applyMirrorEffect(me.sabotagedUntil - Date.now());
+  }
+
+  maybeShowSpectator();
+}
+
+function maybeShowSpectator() {
+  // เกมจบแล้ว (phase = gameOver) ต้องให้ผู้เล่นที่ตกรอบเห็นผลสรุป/อันดับสุดท้ายเสมอ
+  // ไม่บังคับกลับไปหน้าผู้ชมซ้ำ (onPlayersUpdate ยิงถี่มากจากการอัปเดตของผู้เล่นคนอื่น)
+  if (lastPhase === "gameOver") return false;
+  if (state.me && state.me.eliminated && state.settings && state.settings.gameMode === "elimination") {
+    if (state.fruitEngine) state.fruitEngine.stop();
+    document.getElementById("spectator-final-score").textContent = state.me.totalScore || 0;
+    showScreen("spectator");
+    return true;
+  }
+  return false;
+}
+
+function applyMirrorEffect(durationMs) {
+  const canvas = document.getElementById("fruit-canvas");
+  canvas.classList.add("mirrored");
+  SoundManager.freeze();
+  showPowerupLabel("🌀 ถูกกวน! สลับซ้าย-ขวา 5 วิ (แตะฝั่งตรงข้ามของที่เห็น)");
+  setTimeout(() => canvas.classList.remove("mirrored"), Math.max(0, durationMs));
+}
+
+function renderTeamBadge() {
+  const badge = document.getElementById("my-team-badge");
+  if (!badge) return;
+  if (state.teamId) {
+    const idx = { team1: 0, team2: 1, team3: 2, team4: 3 }[state.teamId];
+    const def = TEAM_DEFS[idx];
+    badge.hidden = false;
+    badge.textContent = def ? `${def.emoji} ${def.name}` : state.teamId;
+    badge.style.color = def ? def.color : "";
+  } else {
+    badge.hidden = true;
+  }
+}
+
+function handlePhaseChange(room) {
+  switch (room.phase) {
+    case "lobby":
+      showScreen("lobby");
+      break;
+    case "question":
+      if (maybeShowSpectator()) break;
+      showScreen("question");
+      document.getElementById("answer-locked-msg").hidden = true;
+      resetChoiceButtons();
+      break;
+    case "result": {
+      showScreen("result");
+      break;
+    }
+    case "fruit":
+      if (maybeShowSpectator()) break;
+      showScreen("fruit");
+      startFruitBattle(room.settings);
+      break;
+    case "roundEnd":
+      showScreen("roundEnd");
+      break;
+    case "gameOver":
+      showScreen("gameOver");
+      spawnConfetti();
+      if (state.fruitEngine) state.fruitEngine.stop();
+      if (state.unsubTeam) state.unsubTeam();
+      break;
+    default:
+      break;
+  }
+}
+
+/* ---------------- หน้าคำถาม ---------------- */
+
+function resetChoiceButtons() {
+  document.querySelectorAll(".choice-btn").forEach((btn) => {
+    btn.disabled = false;
+    btn.classList.remove("selected");
+  });
+}
+
+let lastRenderedQuestionStartedAt = null;
+
+function renderQuestion(q, startedAt) {
+  // กันไม่ให้ render ซ้ำทุกครั้งที่มีการเปลี่ยนแปลงใดๆ ในห้อง (เช่น เพื่อนคนอื่นตอบคำถาม)
+  // ซึ่งจะไปรีเซ็ตปุ่มเดิมพันที่ผู้เล่นเพิ่งเลือกไว้โดยไม่ตั้งใจ — render ใหม่จริงๆ แค่ตอนขึ้นข้อใหม่เท่านั้น
+  const isNewQuestion = startedAt !== lastRenderedQuestionStartedAt;
+  lastRenderedQuestionStartedAt = startedAt;
+
+  document.getElementById("question-text").textContent = q.question;
+  const choiceKeys = ["A", "B", "C", "D"];
+  choiceKeys.forEach((key) => {
+    const btn = document.getElementById(`choice-${key}`);
+    btn.textContent = `${key}. ${q.choices[key]}`;
+    btn.onclick = () => submitMyAnswer(key);
+  });
+
+  if (!isNewQuestion) return;
+
+  renderWagerPanel();
+
+  clearInterval(state.countdownTimer);
+  const timeLimit = q.timeLimit || 15;
+  const timerEl = document.getElementById("question-timer");
+  const started = startedAt || Date.now();
+  state.countdownTimer = setInterval(() => {
+    if (state.paused) return;
+    const remaining = timeLimit - (Date.now() - started) / 1000;
+    timerEl.textContent = formatSeconds(remaining);
+    if (remaining <= 0) clearInterval(state.countdownTimer);
+  }, 200);
+}
+
+/* ---------------- โหมดเดิมพัน (Wager Mode): เลือกจำนวนแต้มเดิมพันก่อนตอบ ---------------- */
+
+function renderWagerPanel() {
+  const panel = document.getElementById("wager-panel");
+  if (!state.settings || state.settings.gameMode !== "wager") {
+    panel.hidden = true;
+    return;
+  }
+  panel.hidden = false;
+
+  const totalScore = (state.me && state.me.totalScore) || 0;
+  const cap = Math.max(0, Math.min(state.settings.wagerCap || 50, totalScore));
+  const listEl = document.getElementById("wager-choice-list");
+  listEl.innerHTML = "";
+  document.getElementById("wager-current-label").textContent = "เดิมพันปัจจุบัน: 0 คะแนน";
+
+  const rawPresets = [0, Math.round(cap * 0.25), Math.round(cap * 0.5), cap];
+  const presets = rawPresets.filter((v, i) => v >= 0 && rawPresets.indexOf(v) === i);
+
+  presets.forEach((amount) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn btn-secondary";
+    btn.style.flex = "1";
+    btn.textContent = amount === 0 ? "ไม่เดิมพัน" : `${amount} แต้ม`;
+    btn.addEventListener("click", async () => {
+      document.querySelectorAll("#wager-choice-list .btn").forEach((b) => (b.style.outline = "none"));
+      btn.style.outline = "2px solid var(--fruit-lime)";
+      document.getElementById("wager-current-label").textContent = `เดิมพันปัจจุบัน: ${amount} คะแนน`;
+      await db.ref(`rooms/${state.roomCode}/players/${state.playerId}/currentWager`).set(amount);
+    });
+    listEl.appendChild(btn);
+  });
+}
+
+async function submitMyAnswer(choice) {
+  document.querySelectorAll(".choice-btn").forEach((btn) => (btn.disabled = true));
+  document.getElementById(`choice-${choice}`).classList.add("selected");
+  document.getElementById("answer-locked-msg").hidden = false;
+
+  await db.ref(`rooms/${state.roomCode}/players/${state.playerId}`).update({
+    hasAnswered: true,
+    currentAnswer: choice,
+    answeredAt: firebase.database.ServerValue.TIMESTAMP
+  });
+}
+
+let lastCorrectFlagPlayed = undefined;
+function renderMyStatus(me) {
+  document.getElementById("my-total-score").textContent = me.totalScore || 0;
+  document.getElementById("my-fruit-hp-label").textContent = me.currentFruitHp ?? "-";
+
+  const resultBadge = document.getElementById("result-badge");
+  if (resultBadge && me.lastAnswerCorrect !== null) {
+    const streak = me.correctStreak || 0;
+    const streakNote = me.lastAnswerCorrect && streak >= 2 ? ` 🔥 สตรีค x${streak}` : "";
+    resultBadge.textContent = me.lastAnswerCorrect
+      ? `✅ ตอบถูก! ฟันแรงขึ้น 2 เท่า${streakNote}`
+      : "❌ ตอบผิด ยังฟันได้ตามปกติ";
+    resultBadge.className = me.lastAnswerCorrect ? "badge badge-correct" : "badge badge-wrong";
+
+    if (lastCorrectFlagPlayed !== me.lastAnswerCorrect) {
+      lastCorrectFlagPlayed = me.lastAnswerCorrect;
+      if (me.lastAnswerCorrect) SoundManager.correct();
+      else SoundManager.wrong();
+    }
+  }
+}
+
+/* ---------------- หน้าฟันผลไม้ ---------------- */
+
+/** ล้างเอฟเฟกต์เหตุการณ์สุ่ม/จุดอ่อนบอสที่ตั้งเวลาไว้ค้างจากรอบก่อนหน้า ก่อนเริ่มรอบใหม่ */
+function clearEventEffects() {
+  document.getElementById("event-banner").hidden = true;
+  document.getElementById("fruit-canvas").classList.remove("foggy");
+  document.getElementById("weakpoint-label").hidden = true;
+  state.eventTimeoutIds.forEach((id) => clearTimeout(id));
+  state.eventTimeoutIds = [];
+  if (state.weakPointIntervalId) clearInterval(state.weakPointIntervalId);
+  state.weakPointIntervalId = null;
+  state.activeEventType = null;
+  state.activeEventUntil = 0;
+}
+
+/** ใช้เอฟเฟกต์ของเหตุการณ์สุ่ม (คะแนนคูณสอง / หมอกลง / ฝนผลไม้) ให้ engine ที่เพิ่งสร้างเสร็จ */
+function applyRandomEvent(activeEvent) {
+  if (!activeEvent) return;
+  const remaining = activeEvent.until - Date.now();
+  if (remaining <= 0) return;
+
+  state.activeEventType = activeEvent.type;
+  state.activeEventUntil = activeEvent.until;
+
+  const banner = document.getElementById("event-banner");
+  const labels = {
+    double_score: "💰 คะแนนคูณสอง! ฟันตอนนี้ได้คะแนนเพิ่ม 2 เท่า",
+    fog: "🌫️ หมอกลง! มองผลไม้ไม่ชัด ฟันแม่นๆ นะ",
+    fruit_rain: "🌧️ ฝนผลไม้! ผลไม้ตกถี่ขึ้นชั่วคราว"
+  };
+  banner.textContent = labels[activeEvent.type] || "";
+  banner.hidden = false;
+
+  if (activeEvent.type === "fog") {
+    // เบลอเฉพาะตัว canvas เท่านั้น ไม่เบลอปุ่ม/ป้ายที่ลอยทับอยู่ (เช่น ตัวเลือกทีมเป้าหมายตอนส่งบอมบ์)
+    document.getElementById("fruit-canvas").classList.add("foggy");
+  }
+  if (activeEvent.type === "fruit_rain" && state.fruitEngine) {
+    const engine = state.fruitEngine;
+    const originalSpawn = engine.spawnInterval;
+    const originalMin = engine.minSpawnInterval;
+    engine.spawnInterval = originalSpawn * 0.5;
+    engine.minSpawnInterval = originalMin * 0.5;
+    state.eventTimeoutIds.push(
+      setTimeout(() => {
+        engine.spawnInterval = originalSpawn;
+        engine.minSpawnInterval = originalMin;
+      }, remaining)
+    );
+  }
+
+  state.eventTimeoutIds.push(
+    setTimeout(() => {
+      banner.hidden = true;
+      document.getElementById("fruit-canvas").classList.remove("foggy");
+      state.activeEventType = null;
+    }, remaining)
+  );
+}
+
+function currentEventScoreMultiplier() {
+  return state.activeEventType === "double_score" && Date.now() < state.activeEventUntil ? 2 : 1;
+}
+
+/* ---------------- แถบปะทะทีม (PvP): บอมบ์ / โล่ / สายลับ ---------------- */
+
+function hidePvpBar() {
+  document.getElementById("pvp-action-bar").hidden = true;
+  document.getElementById("pvp-target-picker").hidden = true;
+  document.getElementById("sabotage-bar").hidden = true;
+}
+
+function renderPvpButtons() {
+  const bar = document.getElementById("pvp-action-bar");
+  if (!state.teamId || !state.settings || state.settings.mode !== "team" || state.isBossRound) {
+    bar.hidden = true;
+    return;
+  }
+  bar.hidden = false;
+  const me = state.me || {};
+
+  const attackBtn = document.getElementById("btn-pvp-attack");
+  attackBtn.textContent = `💣 ส่งบอมบ์ (${me.attackCharges || 0})`;
+  attackBtn.disabled = !(me.attackCharges > 0);
+
+  const shieldBtn = document.getElementById("btn-pvp-shield");
+  const shieldCost = 15;
+  shieldBtn.textContent = state.teamShieldActive ? "🛡️ ทีมมีโล่แล้ว" : `🛡️ ซื้อโล่ (${shieldCost} แต้ม)`;
+  shieldBtn.disabled = state.teamShieldActive || (me.fruitScore || 0) < shieldCost;
+
+  const spyBtn = document.getElementById("btn-pvp-spy");
+  spyBtn.disabled = !me.spyAvailable;
+}
+
+async function openPvpTargetPicker(action) {
+  const listEl = document.getElementById("pvp-target-list");
+  const picker = document.getElementById("pvp-target-picker");
+  const isTeamAction = action === "attack" || action === "spy" || action === "sabotage-team";
+  const prompts = {
+    attack: "เลือกทีมที่จะส่งบอมบ์ใส่:",
+    spy: "เลือกทีมที่จะหยุดเวลา 2 วิ:",
+    "sabotage-team": "เลือกทีมที่จะกวน (สลับซ้าย-ขวา 5 วิ):",
+    "sabotage-player": "เลือกคนที่จะกวน (สลับซ้าย-ขวา 5 วิ):"
+  };
+  document.getElementById("pvp-target-prompt").textContent = prompts[action] || "เลือกเป้าหมาย:";
+  listEl.innerHTML = "";
+
+  if (isTeamAction) {
+    const teamsSnap = await db.ref(`rooms/${state.roomCode}/teams`).get();
+    const teams = teamsSnap.val() || {};
+    Object.entries(teams).forEach(([tid, t]) => {
+      if (tid === state.teamId) return;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn btn-secondary btn-block";
+      btn.textContent = `${t.emoji || ""} ${t.name}`;
+      btn.addEventListener("click", () => {
+        picker.hidden = true;
+        if (action === "attack") sendPvpAttack(tid, t.name);
+        else if (action === "spy") usePvpSpy(tid, t.name);
+        else sendSabotage("team", tid, t.name);
+      });
+      listEl.appendChild(btn);
+    });
+  } else {
+    const playersSnap = await db.ref(`rooms/${state.roomCode}/players`).get();
+    const players = playersSnap.val() || {};
+    Object.entries(players).forEach(([pid, p]) => {
+      if (pid === state.playerId) return;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn btn-secondary btn-block";
+      btn.textContent = p.name;
+      btn.addEventListener("click", () => {
+        picker.hidden = true;
+        sendSabotage("player", pid, p.name);
+      });
+      listEl.appendChild(btn);
+    });
+  }
+  picker.hidden = false;
+}
+
+async function sendPvpAttack(targetTeamId, targetName) {
+  if (!state.me || (state.me.attackCharges || 0) <= 0) return;
+  // ใช้ transaction เช็ค-และ-หักชาร์จบอมบ์แบบ atomic ก่อนเสมอ (คล้ายบั๊กที่เคยแก้ในโล่/สายลับ)
+  // จำลองแล้วพบว่าถ้าเช็คค่าจาก cache ก่อนแล้วค่อยหักทีหลัง การกดรัวๆ หลายครั้งก่อนปุ่มจะ disable
+  // สามารถส่งบอมบ์ได้มากกว่าจำนวนชาร์จที่มีจริงทั้งหมด (ทดสอบพบว่ากด 5 ครั้งพร้อมกันหลุดผ่านทั้ง 5 ครั้งจาก 1 ชาร์จ)
+  const chargeResult = await db
+    .ref(`rooms/${state.roomCode}/players/${state.playerId}/attackCharges`)
+    .transaction((cur) => (cur && cur > 0 ? cur - 1 : undefined));
+  if (!chargeResult.committed) return; // ไม่มีชาร์จเหลือจริงแล้ว (กันกดซ้ำเร็วๆ)
+
+  const targetRef = db.ref(`rooms/${state.roomCode}/teams/${targetTeamId}`);
+  const targetSnap = await targetRef.get();
+  const target = targetSnap.val();
+
+  if (target && target.shieldActive) {
+    await targetRef.update({ shieldActive: false });
+    showPowerupLabel(`🛡️ ${targetName} มีโล่กันบอมบ์ไว้ได้!`);
+  } else {
+    const memberCount = (target && target.memberCount) || 1;
+    const maxHp = memberCount * ((state.settings && state.settings.fruitHpPerRound) || 10);
+    await targetRef.child("hp").transaction((cur) => Math.min(maxHp, (cur || 0) + 3));
+    SoundManager.bomb();
+    showPowerupLabel(`💣 ส่งบอมบ์ใส่ ${targetName} สำเร็จ!`);
+  }
+}
+
+async function usePvpSpy(targetTeamId, targetName) {
+  if (!state.me || !state.me.spyAvailable) return;
+  // ใช้ transaction กันกดซ้ำเร็วๆ ให้ใช้สิทธิ์สายลับได้จริงแค่ครั้งเดียว
+  const result = await db
+    .ref(`rooms/${state.roomCode}/players/${state.playerId}/spyAvailable`)
+    .transaction((cur) => (cur ? false : undefined));
+  if (!result.committed) return; // ใช้สิทธิ์ไปแล้วก่อนหน้านี้แล้ว
+
+  await db.ref(`rooms/${state.roomCode}/teams/${targetTeamId}/frozenUntil`).set(Date.now() + 2000);
+  SoundManager.freeze();
+  showPowerupLabel(`🕵️ หยุดเวลา ${targetName} สำเร็จ!`);
+}
+
+async function buyPvpShield() {
+  if (!state.teamId || !state.me) return;
+  const cost = 15;
+  if ((state.me.fruitScore || 0) < cost) {
+    showPowerupLabel("แต้มไม่พอซื้อโล่ทีม");
+    return;
+  }
+  // ใช้ transaction บน shieldActive กันเพื่อนร่วมทีม 2 คนกดซื้อพร้อมกันแล้วโดนหักแต้มทั้งคู่
+  const teamRef = db.ref(`rooms/${state.roomCode}/teams/${state.teamId}`);
+  const result = await teamRef.child("shieldActive").transaction((cur) => (cur ? undefined : true));
+  if (!result.committed || !result.snapshot.val()) {
+    showPowerupLabel("ทีมมีโล่อยู่แล้ว");
+    return;
+  }
+  await db
+    .ref(`rooms/${state.roomCode}/players/${state.playerId}/fruitScore`)
+    .transaction((cur) => Math.max(0, (cur || 0) - cost));
+  SoundManager.shield();
+  showPowerupLabel("🛡️ ซื้อโล่ทีมสำเร็จ!");
+}
+
+document.getElementById("btn-pvp-attack").addEventListener("click", () => openPvpTargetPicker("attack"));
+document.getElementById("btn-pvp-spy").addEventListener("click", () => openPvpTargetPicker("spy"));
+document.getElementById("btn-pvp-shield").addEventListener("click", () => buyPvpShield());
+document.getElementById("btn-pvp-cancel-target").addEventListener("click", () => {
+  document.getElementById("pvp-target-picker").hidden = true;
+});
+
+/* ---------------- การ์ดกวนคู่แข่ง (Sabotage): ใช้ได้เฉพาะคนที่คะแนนนำอยู่ 1 ครั้งต่อเกม ---------------- */
+
+function renderSabotageButton(players) {
+  const bar = document.getElementById("sabotage-bar");
+  const btn = document.getElementById("btn-sabotage");
+  if (!bar || state.isBossRound || !state.me) {
+    if (bar) bar.hidden = true;
+    return;
+  }
+
+  const list = Object.values(players || {});
+  if (list.length < 2) {
+    bar.hidden = true; // ต้องมีมากกว่า 1 คนถึงจะมีคู่แข่งให้กวนได้
+    return;
+  }
+  const maxScore = list.reduce((max, p) => Math.max(max, p.totalScore || 0), 0);
+  const isLeader = maxScore > 0 && (state.me.totalScore || 0) === maxScore;
+
+  if (!isLeader || state.me.sabotageUsed) {
+    bar.hidden = true;
+    return;
+  }
+
+  bar.hidden = false;
+  btn.disabled = false;
+}
+
+document.getElementById("btn-sabotage").addEventListener("click", () => {
+  const isTeam = state.settings && state.settings.mode === "team" && state.teamId;
+  openPvpTargetPicker(isTeam ? "sabotage-team" : "sabotage-player");
+});
+
+async function sendSabotage(targetType, targetId, targetName) {
+  if (!state.me || state.me.sabotageUsed) return;
+  // ใช้ transaction กันกดซ้ำเร็วๆ ให้ใช้สิทธิ์กวนคู่แข่งได้จริงแค่ครั้งเดียวต่อเกม
+  const result = await db
+    .ref(`rooms/${state.roomCode}/players/${state.playerId}/sabotageUsed`)
+    .transaction((cur) => (cur ? undefined : true));
+  if (!result.committed) return; // ใช้สิทธิ์ไปแล้วก่อนหน้านี้แล้ว
+
+  const path = targetType === "team" ? `teams/${targetId}/sabotagedUntil` : `players/${targetId}/sabotagedUntil`;
+  await db.ref(`rooms/${state.roomCode}/${path}`).set(Date.now() + 5000);
+  SoundManager.lightning();
+  showPowerupLabel(`🌀 กวน ${targetName} สำเร็จ! สลับซ้าย-ขวา 5 วิ`);
+}
+
+function startFruitBattle(settings) {
+  const canvas = document.getElementById("fruit-canvas");
+  if (state.fruitEngine) state.fruitEngine.stop();
+  if (state.unsubTeam) state.unsubTeam();
+  clearEventEffects();
+  hidePvpBar();
+
+  document.getElementById("fruit-win-overlay").hidden = true;
+  document.getElementById("fruit-hp-bar-fill").style.width = "100%";
+  document.getElementById("boss-banner").hidden = true;
+  document.getElementById("comeback-banner").hidden = true;
+  document.getElementById("fruit-hud-icon").textContent = "❤️";
+  canvas.classList.remove("mirrored");
+  state.comboMilestone = 0;
+  state.isBossRound = false;
+  state.teamShieldActive = false;
+  state.myMaxComboThisRound = 0;
+
+  const isTeam = settings && settings.mode === "team";
+
+  Promise.all([
+    db.ref(`rooms/${state.roomCode}/players/${state.playerId}`).get(),
+    db.ref(`rooms/${state.roomCode}`).get(),
+    db.ref(`rooms/${state.roomCode}/players`).get()
+  ]).then(([playerSnap, roomSnap, allPlayersSnap]) => {
+    const me = playerSnap.val();
+    const room = roomSnap.val() || {};
+    const allPlayers = allPlayersSnap.val() || {};
+    state.me = me;
+    let damageMultiplier = me && me.damageMultiplier ? me.damageMultiplier : 1;
+    state.fruitStartedAt = room.fruitStartedAt || Date.now();
+
+    // โบนัสไล่ตามหลัง: คนหรือทีมที่คะแนนรวมน้อยที่สุดตอนนี้ ได้ดาเมจเพิ่ม 20% เฉพาะรอบนี้ (ไม่ใช้ในรอบบอส เพราะเป็นภารกิจร่วมมือ)
+    if (!(room.bossRound && room.boss)) {
+      const isComeback = computeIsComeback(allPlayers, isTeam && me.teamId ? me.teamId : null);
+      if (isComeback) {
+        damageMultiplier *= 1.2;
+        document.getElementById("comeback-banner").hidden = false;
+      }
+    }
+
+    if (room.bossRound && room.boss) {
+      startBossFruitBattle(canvas, damageMultiplier, settings);
+    } else if (isTeam && me.teamId) {
+      startTeamFruitBattle(canvas, damageMultiplier, me.teamId, room.activeEvent);
+    } else {
+      startIndividualFruitBattle(canvas, damageMultiplier, settings, room.activeEvent);
+    }
+  });
+}
+
+/** หาว่าเรา (หรือทีมเรา) เป็นฝ่ายคะแนนรวมน้อยที่สุดในห้องตอนนี้หรือไม่ ต้องมีมากกว่า 1 คน/ทีมถึงจะมีสิทธิ์ */
+function computeIsComeback(allPlayers, myTeamId) {
+  const list = Object.entries(allPlayers);
+  if (list.length < 2) return false;
+
+  if (myTeamId) {
+    const teamScores = {};
+    list.forEach(([, p]) => {
+      if (!p.teamId) return;
+      teamScores[p.teamId] = (teamScores[p.teamId] || 0) + (p.totalScore || 0);
+    });
+    const scores = Object.values(teamScores);
+    if (scores.length < 2) return false;
+    const minScore = Math.min(...scores);
+    return teamScores[myTeamId] === minScore;
+  }
+
+  const scores = list.map(([, p]) => p.totalScore || 0);
+  const minScore = Math.min(...scores);
+  const myScore = (state.me && state.me.totalScore) || 0;
+  return myScore === minScore;
+}
+
+/** บันทึกคอมโบสูงสุดของรอบนี้ไว้ที่ Firebase (เขียนเฉพาะตอนทำสถิติใหม่) ใช้หา MVP คอมโบตอนจบรอบ */
+function trackMaxCombo(combo) {
+  if (combo > (state.myMaxComboThisRound || 0)) {
+    state.myMaxComboThisRound = combo;
+    db.ref(`rooms/${state.roomCode}/players/${state.playerId}/lastRoundMaxCombo`).set(combo);
+  }
+}
+
+function startIndividualFruitBattle(canvas, damageMultiplier, settings, activeEvent) {
+  const startHp = (settings && settings.fruitHpPerRound) || 10;
+
+  state.fruitEngine = new FruitEngine(canvas, {
+    startHp,
+    damageMultiplier,
+    trailColor: state.trailColor,
+    onHpChange: throttle((hp) => {
+      const pct = Math.max(0, (hp / startHp) * 100);
+      document.getElementById("fruit-hp-bar-fill").style.width = `${pct}%`;
+      document.getElementById("fruit-hp-number").textContent = Math.ceil(hp);
+      db.ref(`rooms/${state.roomCode}/players/${state.playerId}/currentFruitHp`).set(hp);
+    }, 400),
+    onSlice: ({ damage, combo }) => {
+      SoundManager.slice();
+      const base = state.settings.fruitScorePerHit || 10;
+      const comboBonus = combo >= 8 ? 5 : combo >= 5 ? 3 : combo >= 3 ? 1 : 0;
+      const points = (base + comboBonus) * currentEventScoreMultiplier();
+      db.ref(`rooms/${state.roomCode}/players/${state.playerId}/fruitScore`).transaction((cur) => (cur || 0) + points);
+      db.ref(`rooms/${state.roomCode}/players/${state.playerId}/totalScore`).transaction((cur) => (cur || 0) + points);
+    },
+    onCombo: (combo) => {
+      showComboLabel(combo);
+      if (combo >= 2) SoundManager.combo(combo);
+      trackMaxCombo(combo);
+    },
+    onBomb: () => {
+      SoundManager.bomb();
+      showPowerupLabel("💣 โดนบอมบ์! ผลไม้เพิ่มขึ้น");
+      db.ref(`rooms/${state.roomCode}/players/${state.playerId}/fruitScore`).transaction((cur) =>
+        Math.max(0, (cur || 0) - 2)
+      );
+    },
+    onGolden: (bonus) => {
+      SoundManager.golden();
+      showPowerupLabel(`⭐ ผลไม้ทอง! +${bonus} คะแนน`);
+      db.ref(`rooms/${state.roomCode}/players/${state.playerId}/fruitScore`).transaction((cur) => (cur || 0) + bonus);
+      db.ref(`rooms/${state.roomCode}/players/${state.playerId}/totalScore`).transaction((cur) => (cur || 0) + bonus);
+    },
+    onFreeze: () => {
+      SoundManager.freeze();
+      showPowerupLabel("❄️ เวลาหยุด 2 วินาที!");
+    },
+    onLightning: () => {
+      SoundManager.lightning();
+      showPowerupLabel("⚡ สายฟ้า! ดาเมจ x2 เป็นเวลา 5 วิ");
+    },
+    onShield: () => {
+      SoundManager.shield();
+      showPowerupLabel("🛡️ ได้โล่! กันบอมบ์ครั้งถัดไปได้");
+    },
+    onShieldBlock: () => {
+      SoundManager.shieldBlock();
+      showPowerupLabel("🛡️ โล่กันบอมบ์ไว้ได้!");
+    },
+    onWin: () => {
+      state.fruitEngine.stop();
+      SoundManager.win();
+      db.ref(`rooms/${state.roomCode}/players/${state.playerId}`).update({
+        finishedAt: firebase.database.ServerValue.TIMESTAMP,
+        status: "finished-round"
+      });
+      db.ref(`rooms/${state.roomCode}/events`).push({
+        type: "PLAYER_WIN",
+        playerId: state.playerId,
+        playerName: state.playerName,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+      });
+      document.getElementById("fruit-win-overlay").hidden = false;
+      spawnConfetti();
+    }
+  });
+
+  state.fruitEngine.start();
+  applyRandomEvent(activeEvent);
+}
+
+function startTeamFruitBattle(canvas, damageMultiplier, teamId, activeEvent) {
+  const teamRef = db.ref(`rooms/${state.roomCode}/teams/${teamId}`);
+  let currentMaxHp = 10;
+  let alreadyWon = false;
+  let appliedFreezeUntil = 0;
+  let appliedSabotageUntil = 0;
+  renderPvpButtons();
+
+  // ฟังค่า HP ของทีม (ทุกคนในทีมเห็นแถบเดียวกัน แบบเรียลไทม์) + สถานะโล่/การแช่แข็ง/การกวนจากคู่แข่ง
+  state.unsubTeam = (() => {
+    teamRef.on("value", (snap) => {
+      const team = snap.val();
+      if (!team) return;
+      currentMaxHp = (team.memberCount || 1) * ((state.settings && state.settings.fruitHpPerRound) || 10);
+      const pct = currentMaxHp > 0 ? Math.max(0, ((team.hp || 0) / currentMaxHp) * 100) : 0;
+      document.getElementById("fruit-hp-bar-fill").style.width = `${pct}%`;
+      document.getElementById("fruit-hp-number").textContent = Math.ceil(team.hp || 0);
+
+      state.teamShieldActive = !!team.shieldActive;
+      renderPvpButtons();
+
+      if (team.frozenUntil && team.frozenUntil !== appliedFreezeUntil && team.frozenUntil > Date.now()) {
+        appliedFreezeUntil = team.frozenUntil;
+        const remainingMs = team.frozenUntil - Date.now();
+        if (state.fruitEngine) state.fruitEngine.frozenUntil = performance.now() + remainingMs;
+        SoundManager.freeze();
+        showPowerupLabel("❄️ ถูกทีมคู่แข่งใช้สายลับ! หยุดเวลา 2 วิ");
+      }
+
+      if (team.sabotagedUntil && team.sabotagedUntil !== appliedSabotageUntil && team.sabotagedUntil > Date.now()) {
+        appliedSabotageUntil = team.sabotagedUntil;
+        applyMirrorEffect(team.sabotagedUntil - Date.now());
+      }
+
+      if ((team.hp || 0) <= 0 && !alreadyWon) {
+        alreadyWon = true;
+        if (state.fruitEngine) state.fruitEngine.stop();
+        SoundManager.win();
+        document.getElementById("fruit-win-overlay").hidden = false;
+        spawnConfetti();
+        // บันทึกเวลาที่ทีมฟันจบ ไว้ใช้ทั้งแสดง "ชนะรอบนี้แล้ว" บนแดชบอร์ดครู และตัดสินโหมด Elimination
+        teamRef.child("finishedAt").transaction((cur) => cur || Date.now());
+      }
+    });
+    return () => teamRef.off("value");
+  })();
+
+  state.fruitEngine = new FruitEngine(canvas, {
+    startHp: 999999, // ไม่ใช้ระบบ hp ภายในของ engine — ยึดตาม team hp บน Firebase แทน
+    damageMultiplier,
+    trailColor: state.trailColor,
+    onHpChange: () => {
+      /* ไม่ใช้ในโหมดทีม เพราะแถบ HP อ้างอิงจาก teamRef listener ด้านบนแทน */
+    },
+    onSlice: ({ damage, combo }) => {
+      SoundManager.slice();
+      teamRef.child("hp").transaction((cur) => Math.max(0, (cur || 0) - damage));
+      const base = state.settings.fruitScorePerHit || 10;
+      const comboBonus = combo >= 8 ? 5 : combo >= 5 ? 3 : combo >= 3 ? 1 : 0;
+      const points = (base + comboBonus) * currentEventScoreMultiplier();
+      db.ref(`rooms/${state.roomCode}/players/${state.playerId}/fruitScore`).transaction((cur) => (cur || 0) + points);
+      db.ref(`rooms/${state.roomCode}/players/${state.playerId}/totalScore`).transaction((cur) => (cur || 0) + points);
+    },
+    onCombo: (combo) => {
+      showComboLabel(combo);
+      if (combo >= 2) SoundManager.combo(combo);
+      trackMaxCombo(combo);
+      // ทุกๆ คอมโบ 5 ที เก็บ "ชาร์จบอมบ์" ไว้ส่งใส่ทีมคู่แข่ง (สูงสุด 3 ชาร์จต่อรอบ)
+      const milestone = Math.floor(combo / 5);
+      if (milestone > state.comboMilestone) {
+        state.comboMilestone = milestone;
+        db.ref(`rooms/${state.roomCode}/players/${state.playerId}/attackCharges`).transaction((cur) =>
+          Math.min(3, (cur || 0) + 1)
+        );
+        showPowerupLabel("💣 ได้ชาร์จบอมบ์ +1!");
+      }
+    },
+    onBomb: () => {
+      SoundManager.bomb();
+      showPowerupLabel("💣 โดนบอมบ์! HP ทีมเพิ่มขึ้น");
+      teamRef.child("hp").transaction((cur) => Math.min(currentMaxHp, (cur || 0) + 2));
+    },
+    onGolden: (bonus) => {
+      SoundManager.golden();
+      showPowerupLabel(`⭐ ผลไม้ทอง! ทีม +${bonus} คะแนน`);
+      db.ref(`rooms/${state.roomCode}/players/${state.playerId}/fruitScore`).transaction((cur) => (cur || 0) + bonus);
+      db.ref(`rooms/${state.roomCode}/players/${state.playerId}/totalScore`).transaction((cur) => (cur || 0) + bonus);
+    },
+    onFreeze: () => {
+      SoundManager.freeze();
+      showPowerupLabel("❄️ เวลาหยุด 2 วินาที!");
+    },
+    onLightning: () => {
+      SoundManager.lightning();
+      showPowerupLabel("⚡ สายฟ้า! ทีมดาเมจ x2 เป็นเวลา 5 วิ");
+    },
+    onShield: () => {
+      SoundManager.shield();
+      showPowerupLabel("🛡️ ทีมได้โล่! กันบอมบ์ครั้งถัดไปได้");
+    },
+    onShieldBlock: () => {
+      SoundManager.shieldBlock();
+      showPowerupLabel("🛡️ โล่กันบอมบ์ไว้ได้!");
+    }
+    // ไม่ตั้ง onWin — ชัยชนะของทีมตัดสินจาก teamRef listener ด้านบนแทน
+  });
+
+  state.fruitEngine.start();
+  applyRandomEvent(activeEvent);
+}
+
+/** รอบบอสผลไม้: ทุกคนในห้อง (ไม่ว่าจะอยู่ทีมไหน) ช่วยกันฟันบอสตัวเดียวที่มี HP รวมสูง
+ *  มี "ช่วงจุดอ่อน" (weak point) เกิดขึ้นเป็นจังหวะ คำนวณจาก fruitStartedAt ที่ทุกคนเห็นตรงกัน
+ *  เพื่อให้ทุกเครื่องเห็นจังหวะจุดอ่อนพร้อมกันโดยไม่ต้องยิง Firebase เพิ่ม
+ */
+function startBossFruitBattle(canvas, damageMultiplier, settings) {
+  const bossRef = db.ref(`rooms/${state.roomCode}/boss`);
+  let bossMaxHp = 100;
+  let alreadyWon = false;
+  state.isBossRound = true;
+  hidePvpBar(); // รอบบอสเป็นภารกิจร่วมมือ ไม่มีปะทะทีมในรอบนี้
+
+  document.getElementById("boss-banner").hidden = false;
+  document.getElementById("fruit-hud-icon").textContent = "👑";
+
+  const weakPointLabel = document.getElementById("weakpoint-label");
+  const WEAK_POINT_CYCLE_MS = 6000;
+  const WEAK_POINT_WINDOW_MS = 1500;
+
+  function isWeakPointActiveNow() {
+    if (!state.fruitStartedAt) return false;
+    const elapsed = Date.now() - state.fruitStartedAt;
+    return elapsed % WEAK_POINT_CYCLE_MS < WEAK_POINT_WINDOW_MS;
+  }
+
+  state.weakPointIntervalId = setInterval(() => {
+    weakPointLabel.hidden = !isWeakPointActiveNow();
+  }, 200);
+
+  state.unsubTeam = (() => {
+    bossRef.on("value", (snap) => {
+      const boss = snap.val();
+      if (!boss) return;
+      bossMaxHp = boss.maxHp || bossMaxHp;
+      const pct = bossMaxHp > 0 ? Math.max(0, ((boss.hp || 0) / bossMaxHp) * 100) : 0;
+      document.getElementById("fruit-hp-bar-fill").style.width = `${pct}%`;
+      document.getElementById("fruit-hp-number").textContent = Math.ceil(boss.hp || 0);
+
+      if ((boss.hp || 0) <= 0 && !alreadyWon) {
+        alreadyWon = true;
+        if (state.fruitEngine) state.fruitEngine.stop();
+        SoundManager.win();
+        document.getElementById("fruit-win-overlay").hidden = false;
+        spawnConfetti();
+      }
+    });
+    return () => bossRef.off("value");
+  })();
+
+  state.fruitEngine = new FruitEngine(canvas, {
+    startHp: 999999, // ไม่ใช้ระบบ hp ภายในของ engine — ยึดตาม boss.hp บน Firebase แทน
+    damageMultiplier,
+    trailColor: state.trailColor,
+    onHpChange: () => {},
+    onSlice: ({ damage, combo }) => {
+      SoundManager.slice();
+      const bossDamage = isWeakPointActiveNow() ? damage * 2 : damage;
+      bossRef.child("hp").transaction((cur) => Math.max(0, (cur || 0) - bossDamage));
+      const base = state.settings.fruitScorePerHit || 10;
+      const comboBonus = combo >= 8 ? 5 : combo >= 5 ? 3 : combo >= 3 ? 1 : 0;
+      const points = base + comboBonus;
+      db.ref(`rooms/${state.roomCode}/players/${state.playerId}/fruitScore`).transaction((cur) => (cur || 0) + points);
+      db.ref(`rooms/${state.roomCode}/players/${state.playerId}/totalScore`).transaction((cur) => (cur || 0) + points);
+    },
+    onCombo: (combo) => {
+      showComboLabel(combo);
+      if (combo >= 2) SoundManager.combo(combo);
+      trackMaxCombo(combo);
+    },
+    onBomb: () => {
+      SoundManager.bomb();
+      showPowerupLabel("💣 โดนบอมบ์! บอสฟื้น HP คืนมา");
+      bossRef.child("hp").transaction((cur) => Math.min(bossMaxHp, (cur || 0) + 2));
+    },
+    onGolden: (bonus) => {
+      SoundManager.golden();
+      showPowerupLabel(`⭐ ผลไม้ทอง! +${bonus} คะแนน`);
+      db.ref(`rooms/${state.roomCode}/players/${state.playerId}/fruitScore`).transaction((cur) => (cur || 0) + bonus);
+      db.ref(`rooms/${state.roomCode}/players/${state.playerId}/totalScore`).transaction((cur) => (cur || 0) + bonus);
+    },
+    onFreeze: () => {
+      SoundManager.freeze();
+      showPowerupLabel("❄️ เวลาหยุด 2 วินาที!");
+    },
+    onLightning: () => {
+      SoundManager.lightning();
+      showPowerupLabel("⚡ สายฟ้า! ดาเมจ x2 เป็นเวลา 5 วิ");
+    },
+    onShield: () => {
+      SoundManager.shield();
+      showPowerupLabel("🛡️ ได้โล่! กันบอมบ์ครั้งถัดไปได้");
+    },
+    onShieldBlock: () => {
+      SoundManager.shieldBlock();
+      showPowerupLabel("🛡️ โล่กันบอมบ์ไว้ได้!");
+    }
+    // ไม่ตั้ง onWin — ชัยชนะของรอบบอสตัดสินจาก bossRef listener ด้านบนแทน
+  });
+
+  state.fruitEngine.start();
+}
+
+function showComboLabel(combo) {
+  const el = document.getElementById("combo-label");
+  if (combo >= 2) {
+    el.textContent = `🔥 COMBO x${combo}`;
+    el.hidden = false;
+    clearTimeout(el._hideTimer);
+    el._hideTimer = setTimeout(() => (el.hidden = true), 1200);
+  }
+}
+
+function showPowerupLabel(text) {
+  const el = document.getElementById("powerup-label");
+  if (!el) return;
+  el.textContent = text;
+  el.hidden = false;
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(() => (el.hidden = true), 1600);
+}
+
+document.getElementById("btn-leave-room").addEventListener("click", async () => {
+  if (state.fruitEngine) state.fruitEngine.stop();
+  if (state.unsubTeam) state.unsubTeam();
+  await leaveRoom(state.roomCode, state.playerId);
+  SessionCache.clear();
+  window.location.reload();
+});
+
+
+/* ================= practice-app.js ================= */
+/**
+ * practice-app.js
+ * ------------------------------------------------------------
+ * โหมดฝึกซ้อมด้วยตัวเอง: นักเรียนกรอกรหัสฝึกซ้อมที่ครูสร้างไว้ (จากคลังคำถาม)
+ * แล้วทำโจทย์ทีละข้อ เห็นเฉลยทันทีหลังตอบ ไม่มี timer กดดัน ไม่ต้องรอเพื่อน
+ * และไม่ต้องมีห้อง/ไม่ sync กับใคร — ทำได้ไม่จำกัดจำนวนครั้ง ใช้ทบทวนได้ทุกที่
+ * (ยังไม่รวมมินิเกมฟันผลไม้ในโหมดนี้ เพื่อให้ทำคนเดียวได้เร็วและโฟกัสที่เนื้อหา)
+ * ------------------------------------------------------------
+ */
+
+const screensP = {
+  join: document.getElementById("p-screen-join"),
+  quiz: document.getElementById("p-screen-quiz"),
+  summary: document.getElementById("p-screen-summary")
+};
+
+function showP(name) {
+  Object.values(screensP).forEach((s) => s.classList.remove("active"));
+  screensP[name].classList.add("active");
+}
+
+let P = {
+  title: null,
+  questions: [], // ชุดคำถามเต็มทั้งหมด (คงที่ตลอด session ไว้ใช้ตอน "เริ่มใหม่ทั้งชุด")
+  activeQuestions: [], // ชุดที่กำลังทำอยู่ตอนนี้ (อาจเป็นชุดเต็ม หรือเฉพาะข้อที่เคยตอบผิด)
+  currentIndex: 0,
+  score: 0,
+  wrongQuestions: []
+};
+
+document.getElementById("form-practice-join").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById("practice-join-error");
+  errorEl.textContent = "";
+  const code = document.getElementById("input-practice-code").value.trim().toUpperCase();
+  if (!code) return;
+
+  try {
+    await ensureAnonymousAuth();
+    const snap = await db.ref(`practiceSets/${code}`).get();
+    const set = snap.val();
+    if (!set) {
+      errorEl.textContent = "❌ ไม่พบรหัสฝึกซ้อมนี้ ตรวจสอบรหัสอีกครั้ง";
+      return;
+    }
+    P.title = set.title;
+    P.questions = set.questions || [];
+    startPracticeRun(P.questions);
+  } catch (err) {
+    errorEl.textContent = "❌ เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง";
+  }
+});
+
+function startPracticeRun(questions) {
+  // เก็บชุดคำถามที่ "กำลังทำรอบนี้" แยกจาก P.questions (ชุดเต็มต้นฉบับ)
+  // บั๊กเดิม: ใช้ index ชี้กลับไปที่ P.questions เสมอ ทำให้ตอน "ทำซ้ำเฉพาะข้อที่พลาด" ดันไปโชว์ข้อจากชุดเต็มผิดๆ
+  P.activeQuestions = questions;
+  P.currentIndex = 0;
+  P.score = 0;
+  P.wrongQuestions = [];
+  showP("quiz");
+  renderPracticeQuestion();
+}
+
+function renderPracticeQuestion() {
+  const total = P.activeQuestions.length;
+  document.getElementById("p-progress-label").textContent = `ข้อ ${P.currentIndex + 1} / ${total}`;
+  document.getElementById("p-score-label").textContent = `✅ ${P.score}`;
+  document.getElementById("p-feedback").hidden = true;
+
+  const q = P.activeQuestions[P.currentIndex];
+  document.getElementById("p-question-text").textContent = q.question;
+
+  const choiceList = document.getElementById("p-choice-list");
+  choiceList.innerHTML = "";
+  ["A", "B", "C", "D"].forEach((key) => {
+    const btn = el(`<button type="button" class="btn btn-secondary btn-block" data-choice="${key}">${key}. ${q.choices[key]}</button>`);
+    btn.addEventListener("click", () => submitPracticeAnswer(key, q));
+    choiceList.appendChild(btn);
+  });
+}
+
+function submitPracticeAnswer(choice, q) {
+  document.querySelectorAll("#p-choice-list .btn").forEach((b) => (b.disabled = true));
+  const isCorrect = choice === q.correctAnswer;
+  const chosenBtn = document.querySelector(`#p-choice-list [data-choice="${choice}"]`);
+  const correctBtn = document.querySelector(`#p-choice-list [data-choice="${q.correctAnswer}"]`);
+  if (chosenBtn) chosenBtn.style.outline = `2px solid ${isCorrect ? "var(--fruit-lime)" : "var(--fruit-apple)"}`;
+  if (correctBtn) correctBtn.style.outline = "2px solid var(--fruit-lime)";
+
+  if (isCorrect) {
+    P.score += 1;
+  } else {
+    P.wrongQuestions.push(q);
+  }
+
+  const badge = document.getElementById("p-feedback-badge");
+  badge.textContent = isCorrect ? "✅ ตอบถูก!" : `❌ ตอบผิด — เฉลยคือ ${q.correctAnswer}`;
+  badge.className = isCorrect ? "badge badge-correct" : "badge badge-wrong";
+  document.getElementById("p-feedback-explain").textContent = "";
+  document.getElementById("p-feedback").hidden = false;
+  document.getElementById("p-score-label").textContent = `✅ ${P.score}`;
+}
+
+document.getElementById("btn-practice-next").addEventListener("click", () => {
+  P.currentIndex += 1;
+  if (P.currentIndex >= P.activeQuestions.length) {
+    finishPracticeRun();
+  } else {
+    renderPracticeQuestion();
+  }
+});
+
+function finishPracticeRun() {
+  showP("summary");
+  document.getElementById("p-final-score").textContent = P.score;
+  document.getElementById("p-final-total").textContent = P.activeQuestions.length;
+
+  const reviewPanel = document.getElementById("p-review-panel");
+  const reviewList = document.getElementById("p-review-list");
+  reviewList.innerHTML = "";
+  if (P.wrongQuestions.length > 0) {
+    reviewPanel.hidden = false;
+    P.wrongQuestions.forEach((q) => {
+      reviewList.appendChild(
+        el(`<div class="miss-row">
+          <span class="miss-q">${q.question}</span>
+          <span class="miss-rate" style="color:var(--fruit-lime)">เฉลย: ${q.correctAnswer}</span>
+        </div>`)
+      );
+    });
+  } else {
+    reviewPanel.hidden = true;
+  }
+}
+
+document.getElementById("btn-practice-retry").addEventListener("click", () => {
+  if (P.wrongQuestions.length === 0) {
+    alert("ไม่มีข้อที่พลาดแล้ว ลองเริ่มใหม่ทั้งชุดแทนได้เลย 🎉");
+    return;
+  }
+  startPracticeRun(P.wrongQuestions);
+});
+
+document.getElementById("btn-practice-restart-all").addEventListener("click", () => {
+  startPracticeRun(P.questions);
+});
+
+document.getElementById("btn-practice-leave").addEventListener("click", () => {
+  document.getElementById("practice-app-shell").style.display = "none";
+  document.getElementById("role-select-shell").style.display = "flex";
+  showP("join");
+  document.getElementById("input-practice-code").value = "";
+  document.getElementById("practice-join-error").textContent = "";
+});
+
+
+/* ================= role selector logic ================= */
+
+/* ---------------- สลับหน้าจอครู / นักเรียน ---------------- */
+function selectRole(role) {
+  document.getElementById("role-select-shell").style.display = "none";
+  document.getElementById("teacher-app-shell").style.display = role === "teacher" ? "flex" : "none";
+  document.getElementById("student-app-shell").style.display = role === "student" ? "flex" : "none";
+  document.getElementById("practice-app-shell").style.display = role === "practice" ? "flex" : "none";
+  document.querySelectorAll(".back-to-role").forEach((b) => (b.style.display = "inline-flex"));
+  if (role === "teacher") initQuestionBankPanel();
+}
+
+function backToRoleSelect() {
+  if (!confirm("ออกจากโหมดนี้และกลับไปหน้าเลือกบทบาทหรือไม่? (การเชื่อมต่อห้องปัจจุบันจะยังทำงานอยู่เบื้องหลัง)")) return;
+  document.getElementById("teacher-app-shell").style.display = "none";
+  document.getElementById("student-app-shell").style.display = "none";
+  document.getElementById("practice-app-shell").style.display = "none";
+  document.getElementById("role-select-shell").style.display = "flex";
+}
+
+</script>
+</body>
+</html>
